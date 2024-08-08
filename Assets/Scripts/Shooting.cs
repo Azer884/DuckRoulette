@@ -16,7 +16,7 @@ public class Shooting : MonoBehaviour
     {
         inputActions = new PlayerInput();
     }
-    private void OnEnable()
+    private void OnEnable() 
     {
         inputActions.Enable();
     }

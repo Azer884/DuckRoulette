@@ -13,21 +13,25 @@ public class Movement : MonoBehaviour
     [SerializeField] public float lookSensitivity = 1.0f;
     private float xRotation = 0f;
 
-    // Movement Vars
+    [Header("Movement Variables"), Space]
     private Vector3 velocity;
     public float gravity = -9.81f;
     private bool grounded;
     private float speedMultiplier = 1.0f;
     [SerializeField] private float jumpHeight = 1.5f;
+    
 
-    // Animation Vars
+    [Header("Crouch Variables"), Space]
+    private float initHeight;
+    [SerializeField] private float crouchHeight;
+
+
+    [Header("Animation Variables"), Space]
     [SerializeField] private Animator[] animators;
+    [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
 
-    // Crouch Vars
-    private float initHeight;
-    [SerializeField] private float crouchHeight;
 
     private void Awake()
     {
@@ -112,6 +116,8 @@ public class Movement : MonoBehaviour
             animator.SetFloat("YVelocity", yVelocity);
             animator.SetBool("IsGrounded", grounded);
         }
+        handAnim.SetFloat("XVelocity", xVelocity);
+        handAnim.SetFloat("YVelocity", yVelocity);
     }
 
     private void DoCrouch()

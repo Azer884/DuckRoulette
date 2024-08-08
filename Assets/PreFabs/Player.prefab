@@ -2076,16 +2076,16 @@ MonoBehaviour:
   movementSpeed: 3
   lookSensitivity: 5
   gravity: -9.81
+  jumpHeight: 1.5
+  crouchHeight: 2
   animators:
   - {fileID: 4116219021587931367}
   - {fileID: 7982222125460271496}
   - {fileID: 1242506703170523968}
   - {fileID: 5463386286171489986}
-  VelocityX: 0
-  VelocityZ: 0
-  Acceleration: 2
-  Decceleration: 2
-  crouchHeight: 2
+  handAnim: {fileID: 0}
+  velocityX: 0
+  velocityZ: 0
 --- !u!114 &5993872244831146990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2411,7 +2411,7 @@ Transform:
   m_GameObject: {fileID: 3007406930311217395}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.044, y: -1.048, z: -0.558}
+  m_LocalPosition: {x: 0.004, y: -1.048, z: -0.5540001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
