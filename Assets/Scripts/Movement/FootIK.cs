@@ -1,72 +1,140 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class FootIK : MonoBehaviour
-{
-    private Animator anim;
-    public LayerMask layerMask; // Select all layers that foot placement applies to.
-    [Range(0, 1f)]
-    public float DistanceToGround;
-    public Transform pelvis; // Reference to the pelvis bone
-    public float pelvisOffset = 0.1f; // Amount to adjust pelvis
+[RequireComponent(typeof(Animator))]
+public class CleanIK : MonoBehaviour {
 
-    private float lastPelvisPositionY;
-    public float heightThreshold = 0.01f;
+	protected Animator animator;
+	public Transform LeftFoot = null;
+	public Transform RightFoot = null;
+	public float footOffset;
 
-    private void Awake()
-    {
-        anim = GetComponent<Animator>();
-        lastPelvisPositionY = pelvis.localPosition.y;
-    }
+	//length of the linecast
+	float legDistance;
+	//
+	int layerMask = 1 << 8;
+	CharacterController controller;
 
-    private void OnAnimatorIK(int layerIndex = 2)
-    {
-        AdjustPelvisHeight();
+	float LeftFootY, RightFootY;
+	private float colliderHeight;
+	public float deltaAmplifier = 1f;
 
-        SetFootPos(anim, AvatarIKGoal.LeftFoot);
-        SetFootPos(anim, AvatarIKGoal.RightFoot);
-    }
+    void Start ()
+	{
+		animator = GetComponent<Animator> ();
+		controller = transform.parent.GetComponent<CharacterController> ();
 
-    private void SetFootPos(Animator anim, AvatarIKGoal avatarGoal)
-    {
-        anim.SetIKPositionWeight(avatarGoal, 1f);
-        anim.SetIKRotationWeight(avatarGoal, 1f);
+		//hit all layers but the players layer
+		layerMask = ~layerMask;
+		colliderHeight = controller.height;
+		//controllerBoundsBottom = controller.bounds.extents.y;
+	}
 
-        Ray ray = new(anim.GetIKPosition(avatarGoal) + Vector3.up, Vector3.down);
-        if (Physics.Raycast(ray, out RaycastHit hit, DistanceToGround + 1f, layerMask))
+	void Update()
+	{
+		handleColliderOffset();
+	}
+
+	void OnAnimatorIK(int layerIndex = 2)
+	{
+		if(animator) {
+
+            if(LeftFoot != null) {
+                SolveIK (ref LeftFoot);
+            }
+
+            if(RightFoot != null) {
+                SolveIK (ref RightFoot);
+            }
+		}
+	}
+
+	private void SolveIK(ref Transform foot)
+	{
+		string footName = foot.name;
+        _ = new RaycastHit();
+        _ = new
+        Vector3();
+        _ = Quaternion.identity;
+        if (Physics.Linecast(CheckOrigin(foot.position), CheckTarget(foot.position), out RaycastHit floorHit, layerMask))
         {
-            if (hit.transform.CompareTag("Walkable"))
+            Vector3 newPosition = FootPosition(floorHit);
+            Quaternion newRotation = FootRotation(floorHit);
+
+            if (Equals(footName, LeftFoot.name))
             {
-                Vector3 footPosition = hit.point;
-                footPosition.y += DistanceToGround;
-                anim.SetIKPosition(avatarGoal, footPosition);
-                anim.SetIKRotation(avatarGoal, Quaternion.LookRotation(transform.forward, hit.normal));
+                animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 1f);
+                animator.SetIKPosition(AvatarIKGoal.LeftFoot, newPosition);
+
+                LeftFootY = newPosition.y;
+
+                animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 1f);
+                animator.SetIKRotation(AvatarIKGoal.LeftFoot, newRotation);
+            }
+
+            if (Equals(footName, RightFoot.name))
+            {
+                animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 1f);
+                animator.SetIKPosition(AvatarIKGoal.RightFoot, newPosition);
+
+                RightFootY = newPosition.y;
+
+                animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, 1f);
+                animator.SetIKRotation(AvatarIKGoal.RightFoot, newRotation);
             }
         }
     }
 
-    private void AdjustPelvisHeight()
-    {
-        // Get the position of both feet
-        Vector3 leftFootPos = anim.GetIKPosition(AvatarIKGoal.LeftFoot);
-        Vector3 rightFootPos = anim.GetIKPosition(AvatarIKGoal.RightFoot);
+	private void handleColliderOffset()
+	{
+		//this will change the length of the linecast based on the agents speed
+		StateBasedLegDistance ();
 
-        // Calculate the height difference
-        float heightDifference = Mathf.Abs(leftFootPos.y - rightFootPos.y);
+		if (PlaneSpeed (ref controller) < 0.1f) {
+			float delta = Mathf.Abs (LeftFootY - RightFootY);
+			controller.height = colliderHeight - delta * deltaAmplifier;
+			//controller.center = new Vector3(0, Mathf.Lerp(controller.center.y, colliderCenterY + delta, Time.deltaTime * smooth), 0);//new Vector3 (0, colliderCenterY + delta, 0);
+		} else {
+			controller.height = colliderHeight;
+			//controller.center = new Vector3 (0, colliderCenterY, 0);
+		}
+	}
 
-        // Adjust pelvis height if there is a significant height difference
-        if (heightDifference > heightThreshold) // Adjust this threshold as needed
-        {
-            float newPelvisY = Mathf.Lerp(lastPelvisPositionY, pelvis.localPosition.y - heightDifference * pelvisOffset, Time.deltaTime * 10f);
-            pelvis.localPosition = new Vector3(pelvis.localPosition.x, newPelvisY, pelvis.localPosition.z);
-        }
-        else
-        {
-            // Reset pelvis position if no significant difference
-            pelvis.localPosition = new Vector3(pelvis.localPosition.x, lastPelvisPositionY, pelvis.localPosition.z);
-        }
+	private void StateBasedLegDistance()
+	{
+		if (controller) {
+			legDistance = 1 / (PlaneSpeed (ref controller) + 0.8f);
+		}
+	}
 
-        lastPelvisPositionY = pelvis.localPosition.y;
-    }
+
+	private float PlaneSpeed(ref CharacterController characterController)
+	{
+		Vector3 planeSpeed = new(characterController.velocity.x, 0, characterController.velocity.z);
+		return planeSpeed.magnitude;
+	}
+
+	private Quaternion FootRotation(RaycastHit hit)
+	{
+		Quaternion footRotation = Quaternion.LookRotation( Vector3.ProjectOnPlane(transform.forward, hit.normal), hit.normal );
+		return footRotation;
+	}
+
+	private Vector3 FootPosition(RaycastHit hit)
+	{
+		Vector3 displacement = hit.point;
+		displacement.y += footOffset;
+		return displacement;
+	}
+
+	private Vector3 CheckOrigin(Vector3 footPosition)
+	{
+		Vector3 origin = footPosition + ((legDistance + 0.25f) * Vector3.up);
+		return origin;
+	}
+
+	private Vector3 CheckTarget(Vector3 footPosition)
+	{
+		Vector3 target = footPosition - (legDistance / 2f * Vector3.up);
+		return target;
+	}
 }

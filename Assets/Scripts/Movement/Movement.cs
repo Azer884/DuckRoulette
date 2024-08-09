@@ -53,8 +53,8 @@ public class Movement : MonoBehaviour
     private void Update()
     {
         DoMovement();
-        DoLooking();
         DoCrouch();
+        DoLooking();
     }
 
     private void DoLooking()
