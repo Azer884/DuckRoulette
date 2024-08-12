@@ -1,5 +1,60 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!206 &-8909378065376567511
+BlendTree:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Turn
+  m_Childs:
+  - serializedVersion: 2
+    m_Motion: {fileID: -203655887218126122, guid: cbb90ad2c80a12747a3efbc64abb21a5, type: 3}
+    m_Threshold: -1
+    m_Position: {x: 0, y: 0}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: -203655887218126122, guid: cbb90ad2c80a12747a3efbc64abb21a5, type: 3}
+    m_Threshold: -0.5
+    m_Position: {x: 0, y: 0}
+    m_TimeScale: 0.5
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 0c715fd5459fad84fa84067883bd048a, type: 2}
+    m_Threshold: 0
+    m_Position: {x: 0, y: 0}
+    m_TimeScale: 0.1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: -203655887218126122, guid: 8f6e0126ab182f04c95a68924a130b82, type: 3}
+    m_Threshold: 0.5
+    m_Position: {x: 0, y: 0}
+    m_TimeScale: 0.5
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: -203655887218126122, guid: 8f6e0126ab182f04c95a68924a130b82, type: 3}
+    m_Threshold: 1
+    m_Position: {x: 0, y: 0}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
+    m_Mirror: 0
+  m_BlendParameter: Turning
+  m_BlendParameterY: Blend
+  m_MinThreshold: -1
+  m_MaxThreshold: 1
+  m_UseAutomaticThresholds: 0
+  m_NormalizedBlendValues: 0
+  m_BlendType: 0
 --- !u!1107 &-8620997019244074862
 AnimatorStateMachine:
   serializedVersion: 6
@@ -113,7 +168,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: f9cac16195ada534dbd597975930b959, type: 2}
-    m_Threshold: 0.16592593
+    m_Threshold: 0.13827161
     m_Position: {x: 0, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
@@ -121,7 +176,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 076ad5302e1f64242ad8c17e6aa02c34, type: 2}
-    m_Threshold: 0.33185187
+    m_Threshold: 0.27654323
     m_Position: {x: 0, y: 2}
     m_TimeScale: 1
     m_CycleOffset: 0
@@ -129,7 +184,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 402bef08919ad764ca3734155c6a347b, type: 2}
-    m_Threshold: 0.49777782
+    m_Threshold: 0.41481483
     m_Position: {x: -1, y: 0}
     m_TimeScale: 0.75
     m_CycleOffset: 0
@@ -137,7 +192,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 0fbb78c5f003993409cd242784c6fc42, type: 2}
-    m_Threshold: 0.66370374
+    m_Threshold: 0.55308646
     m_Position: {x: 1, y: -0}
     m_TimeScale: 0.75
     m_CycleOffset: 0
@@ -145,11 +200,19 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: b01a85ff7d11ebf4a9c56bc1e5b0030e, type: 2}
-    m_Threshold: 0.82962966
+    m_Threshold: 0.69135803
     m_Position: {x: 0, y: -1}
     m_TimeScale: 0.75
     m_CycleOffset: 0
     m_DirectBlendParameter: 
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: -8909378065376567511}
+    m_Threshold: 0.82962966
+    m_Position: {x: -2, y: 0}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: XVelocity
     m_Mirror: 0
   m_BlendParameter: XVelocity
   m_BlendParameterY: YVelocity
@@ -198,6 +261,12 @@ AnimatorController:
     m_DefaultBool: 0
     m_Controller: {fileID: 0}
   - m_Name: RightFootPositionWeight
+    m_Type: 1
+    m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {fileID: 0}
+  - m_Name: Turning
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0

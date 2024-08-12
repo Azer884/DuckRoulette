@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class CleanIK : MonoBehaviour {
+public class FootIK : MonoBehaviour {
 
 	protected Animator animator;
 	public Transform LeftFoot = null;
@@ -17,6 +17,8 @@ public class CleanIK : MonoBehaviour {
 	float LeftFootY, RightFootY;
 	private float colliderHeight;
 	public float deltaAmplifier = 1f;
+
+	public float leftFootWeight, rightFootWeight;
 
     void Start ()
 	{
@@ -62,23 +64,23 @@ public class CleanIK : MonoBehaviour {
 
             if (Equals(footName, LeftFoot.name))
             {
-                animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 1f);
+                animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
                 animator.SetIKPosition(AvatarIKGoal.LeftFoot, newPosition);
 
                 LeftFootY = newPosition.y;
 
-                animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 1f);
+                animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
                 animator.SetIKRotation(AvatarIKGoal.LeftFoot, newRotation);
             }
 
             if (Equals(footName, RightFoot.name))
             {
-                animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 1f);
+                animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
                 animator.SetIKPosition(AvatarIKGoal.RightFoot, newPosition);
 
                 RightFootY = newPosition.y;
 
-                animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, 1f);
+                animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, rightFootWeight);
                 animator.SetIKRotation(AvatarIKGoal.RightFoot, newRotation);
             }
         }

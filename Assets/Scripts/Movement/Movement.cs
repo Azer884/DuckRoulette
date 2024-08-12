@@ -31,6 +31,7 @@ public class Movement : MonoBehaviour
     [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
+    float mouseXSmooth = 0f;
 
 
     private void Awake()
@@ -68,6 +69,9 @@ public class Movement : MonoBehaviour
 
         cam.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * lookX);
+
+        
+        mouseXSmooth = Mathf.Lerp(mouseXSmooth, Input.GetAxis("Mouse X"), 4 * Time.deltaTime);
     }
 
     private void DoMovement()
@@ -115,6 +119,7 @@ public class Movement : MonoBehaviour
             animator.SetFloat("XVelocity", xVelocity);
             animator.SetFloat("YVelocity", yVelocity);
             animator.SetBool("IsGrounded", grounded);
+            animator.SetFloat("Turning", mouseXSmooth);
         }
         handAnim.SetFloat("XVelocity", xVelocity);
         handAnim.SetFloat("YVelocity", yVelocity);

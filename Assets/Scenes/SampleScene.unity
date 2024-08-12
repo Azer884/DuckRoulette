@@ -261,6 +261,8 @@ MonoBehaviour:
   RightFoot: {fileID: 897753943}
   footOffset: 0.12
   deltaAmplifier: 1
+  leftFootWeight: 0
+  rightFootWeight: 0
 --- !u!1 &689518447
 GameObject:
   m_ObjectHideFlags: 0
@@ -672,6 +674,8 @@ MonoBehaviour:
   RightFoot: {fileID: 1234119264}
   footOffset: 0.12
   deltaAmplifier: 1
+  leftFootWeight: 0
+  rightFootWeight: 0
 --- !u!1 &1626150912 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2431616952988622430, guid: 9937698c9d0c18b4ba3771f2ae379339, type: 3}
@@ -763,6 +767,8 @@ MonoBehaviour:
   RightFoot: {fileID: 1639897144}
   footOffset: 0.12
   deltaAmplifier: 1
+  leftFootWeight: 0
+  rightFootWeight: 0
 --- !u!1 &2138677391
 GameObject:
   m_ObjectHideFlags: 0
