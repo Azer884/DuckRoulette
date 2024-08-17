@@ -10,7 +10,7 @@ public class Shooting : MonoBehaviour
     public Transform spawnPt;
     public Transform cam;
     private PlayerInput inputActions;
-    public Animator animator;
+    public Animator[] animators;
     // Start is called before the first frame update
     void Awake()
     {
@@ -30,7 +30,10 @@ public class Shooting : MonoBehaviour
     {
         if (inputActions.PlayerControls.Shoot.triggered)
         {
-            animator.Play("Shooting");
+            foreach (Animator animator in animators)
+            {
+                animator.Play("Shooting");
+            }
             bullet = Instantiate(bulletPrefab, spawnPt.position, Quaternion.identity);
 
             if (bullet.TryGetComponent<Rigidbody>(out var bulletRigidbody))
