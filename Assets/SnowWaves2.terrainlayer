@@ -7,8 +7,8 @@ TerrainLayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: SnowWaves2
-  m_DiffuseTexture: {fileID: 2800000, guid: 9f71188410ef6478dbfa23aa6c4641a3, type: 3}
-  m_NormalMapTexture: {fileID: 2800000, guid: 061c52d861e727042919108ea1c08e08, type: 3}
+  m_DiffuseTexture: {fileID: 10307, guid: 0000000000000000f000000000000000, type: 0}
+  m_NormalMapTexture: {fileID: 0}
   m_MaskMapTexture: {fileID: 0}
   m_TileSize: {x: 2, y: 2}
   m_TileOffset: {x: 0, y: 0}
