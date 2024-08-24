@@ -41,7 +41,7 @@ public class Shooting : MonoBehaviour
                 Vector3 direction = cam.forward;
 
                 bulletRigidbody.rotation = Quaternion.LookRotation(direction);
-                bulletRigidbody.velocity = direction * bulletSpeed;
+                bulletRigidbody.linearVelocity = direction * bulletSpeed;
             }
         }
         
