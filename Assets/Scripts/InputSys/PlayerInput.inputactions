@@ -27,7 +27,7 @@
                     "name": "Crouch",
                     "type": "Button",
                     "id": "c863efc0-5558-4bfd-9e1f-2f090a5f5683",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -36,7 +36,16 @@
                     "name": "Shoot",
                     "type": "Button",
                     "id": "0ffd7257-70af-4749-99c2-af58117cadb8",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Reload",
+                    "type": "Button",
+                    "id": "8b1f9b54-991c-40a2-8968-9c29136351ca",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -45,7 +54,7 @@
                     "name": "Jump",
                     "type": "Button",
                     "id": "2a99c090-1b73-40d7-993c-8ebaa217a8cc",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -265,6 +274,28 @@
                     "processors": "",
                     "groups": "FPSControllerInputs",
                     "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "dd92ead1-14fb-4a5b-8261-2f169b4f87ee",
+                    "path": "<Gamepad>/buttonEast",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Reload",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1efc9b75-8bba-4d11-84ec-4a8afee3247b",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Reload",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

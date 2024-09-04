@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
-public class Movement : MonoBehaviour
+public class Movement : NetworkBehaviour
 {
     private PlayerInput inputActions;
     private CharacterController controller;
@@ -31,12 +32,42 @@ public class Movement : MonoBehaviour
     [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
+    [SerializeField] private GameObject legs;
+    [SerializeField] private GameObject FPShadow;
+    [SerializeField] private GameObject Hands;
+    [SerializeField] private GameObject fullBody;
+    
     float mouseXSmooth = 0f;
 
 
     private void Awake()
     {
         inputActions = new PlayerInput();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+
+        if (!IsOwner)
+        {
+            enabled = false;
+            cam.gameObject.SetActive(false);
+            ChangeLayerRecursively(fullBody, 3);
+            ChangeLayerRecursively(legs, 2);
+            ChangeLayerRecursively(FPShadow, 2);
+            ChangeLayerRecursively(Hands, 2);
+        }
+        else
+        {
+            transform.position = new Vector3(0, 2, 1);
+            cam.gameObject.SetActive(true);
+            ChangeLayerRecursively(fullBody, 2);
+            ChangeLayerRecursively(legs, 3);
+            ChangeLayerRecursively(FPShadow, 3);
+            ChangeLayerRecursively(Hands, LayerMask.NameToLayer("Hands"));
+        }
     }
 
     private void Start()
@@ -92,7 +123,6 @@ public class Movement : MonoBehaviour
         if (grounded && inputActions.PlayerControls.Jump.triggered)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            PlayJumpAnimation();
         }
         
 
@@ -102,14 +132,6 @@ public class Movement : MonoBehaviour
         velocityX = Mathf.Lerp(velocityX, movement.x, 10f * Time.deltaTime);
         velocityZ = Mathf.Lerp(velocityZ, movement.y * speedMultiplier, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
-    }
-
-    private void PlayJumpAnimation()
-    {
-        foreach (Animator animator in animators)
-        {
-            animator.Play("Jump");
-        }
     }
 
     private void UpdateAnimator(float xVelocity, float yVelocity)
@@ -123,6 +145,8 @@ public class Movement : MonoBehaviour
         }
         handAnim.SetFloat("XVelocity", xVelocity);
         handAnim.SetFloat("YVelocity", yVelocity);
+        handAnim.SetBool("IsGrounded", grounded);
+
     }
 
     private void DoCrouch()
@@ -153,5 +177,15 @@ public class Movement : MonoBehaviour
     public Vector2 GetPlayerLook()
     {
         return inputActions.PlayerControls.Look.ReadValue<Vector2>();
+    }
+
+    public void ChangeLayerRecursively(GameObject currentGameObject, int newLayer)
+    {
+        currentGameObject.layer = newLayer;
+
+        foreach (Transform child in currentGameObject.transform)
+        {
+            ChangeLayerRecursively(child.gameObject, newLayer);
+        }
     }
 }

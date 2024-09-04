@@ -12,7 +12,7 @@ BlendTree:
     m_Motion: {fileID: -203655887218126122, guid: cbb90ad2c80a12747a3efbc64abb21a5, type: 3}
     m_Threshold: -1
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 1
+    m_TimeScale: -3
     m_CycleOffset: 0
     m_DirectBlendParameter: XVelocity
     m_Mirror: 0
@@ -20,7 +20,7 @@ BlendTree:
     m_Motion: {fileID: -203655887218126122, guid: cbb90ad2c80a12747a3efbc64abb21a5, type: 3}
     m_Threshold: -0.5
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 0.5
+    m_TimeScale: -1.5
     m_CycleOffset: 0
     m_DirectBlendParameter: XVelocity
     m_Mirror: 0
@@ -36,7 +36,7 @@ BlendTree:
     m_Motion: {fileID: -203655887218126122, guid: 8f6e0126ab182f04c95a68924a130b82, type: 3}
     m_Threshold: 0.5
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 0.5
+    m_TimeScale: 1.5
     m_CycleOffset: 0
     m_DirectBlendParameter: XVelocity
     m_Mirror: 0
@@ -44,7 +44,7 @@ BlendTree:
     m_Motion: {fileID: -203655887218126122, guid: 8f6e0126ab182f04c95a68924a130b82, type: 3}
     m_Threshold: 1
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 1
+    m_TimeScale: 3
     m_CycleOffset: 0
     m_DirectBlendParameter: XVelocity
     m_Mirror: 0
@@ -126,6 +126,31 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!1101 &-3936704157024004007
+AnimatorStateTransition:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_Conditions:
+  - m_ConditionMode: 2
+    m_ConditionEvent: IsGrounded
+    m_EventTreshold: 0
+  m_DstStateMachine: {fileID: 0}
+  m_DstState: {fileID: 6196768856293682949}
+  m_Solo: 0
+  m_Mute: 0
+  m_IsExit: 0
+  serializedVersion: 3
+  m_TransitionDuration: 0.25
+  m_TransitionOffset: 0
+  m_ExitTime: 0.69008267
+  m_HasExitTime: 0
+  m_HasFixedDuration: 1
+  m_InterruptionSource: 0
+  m_OrderedInterruption: 1
+  m_CanTransitionToSelf: 1
 --- !u!1101 &-1962577423804725345
 AnimatorStateTransition:
   m_ObjectHideFlags: 1
@@ -160,7 +185,7 @@ BlendTree:
   m_Name: Blend Tree
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7400000, guid: 0c715fd5459fad84fa84067883bd048a, type: 2}
+    m_Motion: {fileID: -8909378065376567511}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
     m_TimeScale: 1
@@ -169,7 +194,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: f9cac16195ada534dbd597975930b959, type: 2}
-    m_Threshold: 0.13827161
+    m_Threshold: 0.16592593
     m_Position: {x: 0, y: 1}
     m_TimeScale: 1
     m_CycleOffset: 0
@@ -177,7 +202,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 076ad5302e1f64242ad8c17e6aa02c34, type: 2}
-    m_Threshold: 0.27654323
+    m_Threshold: 0.33185187
     m_Position: {x: 0, y: 2}
     m_TimeScale: 1
     m_CycleOffset: 0
@@ -185,7 +210,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 402bef08919ad764ca3734155c6a347b, type: 2}
-    m_Threshold: 0.41481483
+    m_Threshold: 0.49777782
     m_Position: {x: -1, y: 0}
     m_TimeScale: 0.75
     m_CycleOffset: 0
@@ -193,7 +218,7 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: 0fbb78c5f003993409cd242784c6fc42, type: 2}
-    m_Threshold: 0.55308646
+    m_Threshold: 0.66370374
     m_Position: {x: 1, y: -0}
     m_TimeScale: 0.75
     m_CycleOffset: 0
@@ -201,19 +226,11 @@ BlendTree:
     m_Mirror: 0
   - serializedVersion: 2
     m_Motion: {fileID: 7400000, guid: b01a85ff7d11ebf4a9c56bc1e5b0030e, type: 2}
-    m_Threshold: 0.69135803
+    m_Threshold: 0.82962966
     m_Position: {x: 0, y: -1}
     m_TimeScale: 0.75
     m_CycleOffset: 0
     m_DirectBlendParameter: 
-    m_Mirror: 0
-  - serializedVersion: 2
-    m_Motion: {fileID: -8909378065376567511}
-    m_Threshold: 0.82962966
-    m_Position: {x: -2, y: 0}
-    m_TimeScale: 1
-    m_CycleOffset: 0
-    m_DirectBlendParameter: XVelocity
     m_Mirror: 0
   m_BlendParameter: XVelocity
   m_BlendParameterY: YVelocity
@@ -534,7 +551,8 @@ AnimatorState:
   m_Name: Blend Tree
   m_Speed: 1
   m_CycleOffset: 0
-  m_Transitions: []
+  m_Transitions:
+  - {fileID: -3936704157024004007}
   m_StateMachineBehaviours: []
   m_Position: {x: 50, y: 50, z: 0}
   m_IKOnFeet: 0
