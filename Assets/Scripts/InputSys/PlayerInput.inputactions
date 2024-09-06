@@ -42,6 +42,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Trigger",
+                    "type": "Button",
+                    "id": "94dce328-7d3c-438e-8f36-ba0456ec1e1b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Reload",
                     "type": "Button",
                     "id": "8b1f9b54-991c-40a2-8968-9c29136351ca",
@@ -274,6 +283,28 @@
                     "processors": "",
                     "groups": "FPSControllerInputs",
                     "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "df190672-0972-4c68-a0b9-8ce0dd7efce2",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Trigger",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "279ade8a-ce68-4b4a-a54a-47cba8a21a91",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Trigger",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

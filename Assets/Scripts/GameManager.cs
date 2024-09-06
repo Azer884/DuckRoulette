@@ -28,14 +28,11 @@ public class GameManager : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            CheckPlayerGuScript();
+            CheckPlayerGunScript();
         }
     }
     public void OnClientShotChanged(ulong clientId, bool hasShot)
     {
-        Debug.Log($"Client {clientId} hasShot changed to {hasShot}");
-
-        // Handle the logic based on the clientId and hasShot value
         if (hasShot)
         {
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
@@ -43,7 +40,7 @@ public class GameManager : NetworkBehaviour
             {
                 playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             }
-            CheckPlayerGuScript();
+            CheckPlayerGunScript();
             bulletPosition.Value++;
             bulletPosition.Value %= 6;
         }
@@ -61,7 +58,7 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    private void CheckPlayerGuScript()
+    private void CheckPlayerGunScript()
     {
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {

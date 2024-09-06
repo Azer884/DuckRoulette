@@ -89,7 +89,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GunTrigger
+  m_Name: Trigger
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -116,7 +116,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Shootig
+  m_Name: Shooting
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:

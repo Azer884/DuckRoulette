@@ -65,6 +65,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""Trigger"",
+                    ""type"": ""Button"",
+                    ""id"": ""94dce328-7d3c-438e-8f36-ba0456ec1e1b"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Reload"",
                     ""type"": ""Button"",
                     ""id"": ""8b1f9b54-991c-40a2-8968-9c29136351ca"",
@@ -302,6 +311,28 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""df190672-0972-4c68-a0b9-8ce0dd7efce2"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Trigger"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""279ade8a-ce68-4b4a-a54a-47cba8a21a91"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Trigger"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""dd92ead1-14fb-4a5b-8261-2f169b4f87ee"",
                     ""path"": ""<Gamepad>/buttonEast"",
                     ""interactions"": """",
@@ -355,6 +386,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_PlayerControls_Run = m_PlayerControls.FindAction("Run", throwIfNotFound: true);
         m_PlayerControls_Crouch = m_PlayerControls.FindAction("Crouch", throwIfNotFound: true);
         m_PlayerControls_Shoot = m_PlayerControls.FindAction("Shoot", throwIfNotFound: true);
+        m_PlayerControls_Trigger = m_PlayerControls.FindAction("Trigger", throwIfNotFound: true);
         m_PlayerControls_Reload = m_PlayerControls.FindAction("Reload", throwIfNotFound: true);
         m_PlayerControls_Jump = m_PlayerControls.FindAction("Jump", throwIfNotFound: true);
         m_PlayerControls_Look = m_PlayerControls.FindAction("Look", throwIfNotFound: true);
@@ -429,6 +461,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Run;
     private readonly InputAction m_PlayerControls_Crouch;
     private readonly InputAction m_PlayerControls_Shoot;
+    private readonly InputAction m_PlayerControls_Trigger;
     private readonly InputAction m_PlayerControls_Reload;
     private readonly InputAction m_PlayerControls_Jump;
     private readonly InputAction m_PlayerControls_Look;
@@ -441,6 +474,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         public InputAction @Run => m_Wrapper.m_PlayerControls_Run;
         public InputAction @Crouch => m_Wrapper.m_PlayerControls_Crouch;
         public InputAction @Shoot => m_Wrapper.m_PlayerControls_Shoot;
+        public InputAction @Trigger => m_Wrapper.m_PlayerControls_Trigger;
         public InputAction @Reload => m_Wrapper.m_PlayerControls_Reload;
         public InputAction @Jump => m_Wrapper.m_PlayerControls_Jump;
         public InputAction @Look => m_Wrapper.m_PlayerControls_Look;
@@ -466,6 +500,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Shoot.started += instance.OnShoot;
             @Shoot.performed += instance.OnShoot;
             @Shoot.canceled += instance.OnShoot;
+            @Trigger.started += instance.OnTrigger;
+            @Trigger.performed += instance.OnTrigger;
+            @Trigger.canceled += instance.OnTrigger;
             @Reload.started += instance.OnReload;
             @Reload.performed += instance.OnReload;
             @Reload.canceled += instance.OnReload;
@@ -494,6 +531,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Shoot.started -= instance.OnShoot;
             @Shoot.performed -= instance.OnShoot;
             @Shoot.canceled -= instance.OnShoot;
+            @Trigger.started -= instance.OnTrigger;
+            @Trigger.performed -= instance.OnTrigger;
+            @Trigger.canceled -= instance.OnTrigger;
             @Reload.started -= instance.OnReload;
             @Reload.performed -= instance.OnReload;
             @Reload.canceled -= instance.OnReload;
@@ -538,6 +578,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         void OnRun(InputAction.CallbackContext context);
         void OnCrouch(InputAction.CallbackContext context);
         void OnShoot(InputAction.CallbackContext context);
+        void OnTrigger(InputAction.CallbackContext context);
         void OnReload(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);

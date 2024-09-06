@@ -12,6 +12,7 @@ public class Shooting : NetworkBehaviour
     public Animator[] animators;
     public Animator bulletAnimator;
     public NetworkVariable<bool> hasShot = new(false);
+    private bool canTrigger, canShoot, isTriggered;
 
     void Awake()
     {
@@ -38,6 +39,13 @@ public class Shooting : NetworkBehaviour
 
     void Update()
     {
+        Reload();
+        Trigger();
+        Shoot();
+    }
+
+    private void Reload()
+    {
         if (inputActions.PlayerControls.Reload.triggered && !GameManager.Instance.isReloaded.Value)
         {
             foreach (Animator animator in animators)
@@ -48,7 +56,39 @@ public class Shooting : NetworkBehaviour
             
             ReloadServerRpc();
         }
-        else if (inputActions.PlayerControls.Shoot.triggered && GameManager.Instance.isReloaded.Value)
+        if (animators[0].GetCurrentAnimatorStateInfo(0).IsName("Reload"))
+        {
+            canTrigger = false;
+        }
+        else
+        {
+            canTrigger = true;
+        }
+    }
+    private void Trigger()
+    {
+        if (inputActions.PlayerControls.Trigger.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger)
+        {
+            foreach (Animator animator in animators)
+            {
+                animator.Play("Trigger");
+            }
+            isTriggered = true;
+        }
+        if (animators[0].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
+        {
+            canShoot = false;
+        }
+        else
+        {
+            canShoot = true;
+        }
+
+    }
+
+    private void Shoot()
+    {
+        if (inputActions.PlayerControls.Shoot.triggered && canShoot && isTriggered)
         {
             if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
             {
@@ -56,11 +96,16 @@ public class Shooting : NetworkBehaviour
                 {
                     animator.Play("Shooting");
                 }
-                
                 // Notify the server to shoot and update hasShot on all clients
                 ShootServerRpc();
             }
             EnableHasShotServerRpc(true);
+
+            isTriggered = false;
+            foreach (Animator animator in animators)
+            {
+                animator.Play("GunIdle");
+            }
         }
     }
 
