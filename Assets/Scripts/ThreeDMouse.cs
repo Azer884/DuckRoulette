@@ -15,7 +15,7 @@ public class ThreeDMouse : MonoBehaviour
         }
         else
         {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, new Vector3(0, 0, 10), Time.deltaTime * rotSpeed);
+            transform.localPosition = Vector3.Lerp(transform.localPosition, new Vector3(0, 0, 200), Time.deltaTime * rotSpeed);
         }
     }
 }

@@ -13,6 +13,7 @@ public class Shooting : NetworkBehaviour
     public Animator bulletAnimator;
     public NetworkVariable<bool> hasShot = new(false);
     private bool canTrigger, canShoot, isTriggered;
+    [SerializeField] private Transform targetAim;
 
     void Awake()
     {
@@ -69,11 +70,11 @@ public class Shooting : NetworkBehaviour
     {
         if (inputActions.PlayerControls.Trigger.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger)
         {
+            isTriggered = true;
             foreach (Animator animator in animators)
             {
-                animator.Play("Trigger");
+                animator.SetBool("Triggered", isTriggered);
             }
-            isTriggered = true;
         }
         if (animators[0].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
         {
@@ -103,7 +104,7 @@ public class Shooting : NetworkBehaviour
             isTriggered = false;
             foreach (Animator animator in animators)
             {
-                animator.Play("GunIdle");
+                animator.SetBool("Triggered", isTriggered);
             }
         }
     }
@@ -118,7 +119,7 @@ public class Shooting : NetworkBehaviour
 
         if (bullet.TryGetComponent<Rigidbody>(out var bulletRigidbody))
         {
-            Vector3 direction = cam.forward;
+            Vector3 direction = (targetAim.position - spawnPt.position).normalized;
             bulletRigidbody.rotation = Quaternion.LookRotation(direction);
             bulletRigidbody.linearVelocity = direction * bulletSpeed;
         }
