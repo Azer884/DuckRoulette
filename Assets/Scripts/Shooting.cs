@@ -83,7 +83,6 @@ public class Shooting : NetworkBehaviour
         {
             canShoot = true;
         }
-
     }
 
     private void Shoot()
