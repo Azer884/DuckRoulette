@@ -9,7 +9,7 @@ public class Movement : NetworkBehaviour
     private PlayerInput inputActions;
     private CharacterController controller;
     
-    [SerializeField] private Camera cam;
+    [SerializeField] private Transform cam;
     [SerializeField] private float movementSpeed = 2.0f;
     [SerializeField] public float lookSensitivity = 1.0f;
     private float xRotation = 0f;
@@ -98,7 +98,7 @@ public class Movement : NetworkBehaviour
         xRotation -= lookY;
         xRotation = Mathf.Clamp(xRotation, -85f, 75f);
 
-        cam.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        cam.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * lookX);
 
         
