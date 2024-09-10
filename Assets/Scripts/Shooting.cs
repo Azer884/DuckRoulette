@@ -14,6 +14,9 @@ public class Shooting : NetworkBehaviour
     public NetworkVariable<bool> hasShot = new(false);
     private bool canTrigger, canShoot, isTriggered;
     [SerializeField] private Transform targetAim;
+    [SerializeField] private Hands fPHands;
+    public GameObject gun;
+    public NetworkVariable<bool> haveGun;
 
     void Awake()
     {
@@ -31,11 +34,17 @@ public class Shooting : NetworkBehaviour
         EnableHasShotServerRpc(false);
         inputActions.Enable();
         hasShot.OnValueChanged += OnHasShotChangedServerRpc;
+
+        HandsState(true);
+        haveGun.Value = true;
     }
     private void OnDisable()
     {
         inputActions.Disable();
         hasShot.OnValueChanged -= OnHasShotChangedServerRpc;
+        
+        HandsState(false);
+        haveGun.Value = false;
     }
 
     void Update()
@@ -149,4 +158,14 @@ public class Shooting : NetworkBehaviour
             GameManager.Instance.Reload();
         }
     }
+
+    private void HandsState(bool state)
+    {
+        foreach (Animator anim in animators)
+        {
+            anim.SetBool("HaveAGun", state);
+        }
+        fPHands.SwitchParent(state);
+    }
+    
 }

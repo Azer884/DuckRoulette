@@ -1,10 +1,16 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class ThreeDMouse : MonoBehaviour
+public class ThreeDMouse : NetworkBehaviour
 {
     [SerializeField]private Transform cam;
     [SerializeField] private LayerMask hitLayer;
     [SerializeField] private float rotSpeed = 5f;
+
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner) enabled = false;
+    }
     void Update()
     {
         Ray ray = new(cam.position, cam.forward);

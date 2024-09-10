@@ -49,9 +49,9 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void PlayerShootingScriptClientRpc(ulong clientId, bool activate)
     {
-        if (NetworkManager.Singleton.LocalClientId == clientId)
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Shooting>(out var shootingScript))
         {
-            if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Shooting>(out var shootingScript))
+            if (NetworkManager.Singleton.LocalClientId == clientId)
             {
                 shootingScript.enabled = activate;
             }

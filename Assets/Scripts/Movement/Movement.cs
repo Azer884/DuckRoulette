@@ -61,7 +61,7 @@ public class Movement : NetworkBehaviour
         }
         else
         {
-            transform.position = new Vector3(0, 2, 1);
+            transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
             cam.gameObject.SetActive(true);
             ChangeLayerRecursively(fullBody, 2);
             ChangeLayerRecursively(legs, 3);
