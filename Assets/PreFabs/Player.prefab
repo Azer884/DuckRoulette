@@ -2073,6 +2073,37 @@ Transform:
   - {fileID: 2759266149027572248}
   m_Father: {fileID: 4713912825267529730}
   m_LocalEulerAnglesHint: {x: -37.37322, y: -25.423498, z: 12.416033}
+--- !u!1 &2005213369316206993
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5800746380646867471}
+  m_Layer: 3
+  m_Name: SlapArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5800746380646867471
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005213369316206993}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 981001983473046836}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2051430462636126359
 GameObject:
   m_ObjectHideFlags: 0
@@ -2528,6 +2559,7 @@ GameObject:
   - component: {fileID: 7283489907467008536}
   - component: {fileID: 5993872244831146990}
   - component: {fileID: 1816800951425717793}
+  - component: {fileID: 4858632074287071628}
   - component: {fileID: 499319212786747193}
   - component: {fileID: 4177207364945662841}
   - component: {fileID: 5829919125709619413}
@@ -2562,6 +2594,7 @@ Transform:
   - {fileID: 8217111506234842972}
   - {fileID: 7906801068536445122}
   - {fileID: 2733836155631960369}
+  - {fileID: 5800746380646867471}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &7710566241767627445
@@ -2686,6 +2719,29 @@ MonoBehaviour:
   gun: {fileID: 8707107950020774255}
   haveGun:
     m_InternalValue: 0
+  slapScript: {fileID: 4858632074287071628}
+--- !u!114 &4858632074287071628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16a59172da2b4d49848f0090cfeae41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slapArea: {fileID: 5800746380646867471}
+  slapRaduis: 1
+  slapCoolDown: 1.5
+  animators:
+  - {fileID: 5463386286171489986}
+  - {fileID: 1242506703170523968}
+  - {fileID: 7982222125460271496}
+  otherPlayers:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!114 &499319212786747193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2730,7 +2786,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0561859517682194484a9002fdbb32f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransitionStateInfoList: []
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 1
+    OriginatingState: 31594670
+    DestinationState: -1781373234
+    TransitionDuration: 0.25
+    TriggerNameHash: -1781373234
+    TransitionIndex: 2
   m_Animator: {fileID: 1242506703170523968}
 --- !u!114 &5829919125709619413
 MonoBehaviour:

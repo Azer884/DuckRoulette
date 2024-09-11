@@ -17,6 +17,7 @@ public class Shooting : NetworkBehaviour
     [SerializeField] private Hands fPHands;
     public GameObject gun;
     public NetworkVariable<bool> haveGun;
+    [SerializeField] private Slap slapScript;
 
     void Awake()
     {
@@ -37,6 +38,7 @@ public class Shooting : NetworkBehaviour
 
         HandsState(true);
         haveGun.Value = true;
+        slapScript.enabled = false;
     }
     private void OnDisable()
     {
@@ -45,6 +47,7 @@ public class Shooting : NetworkBehaviour
         
         HandsState(false);
         haveGun.Value = false;
+        slapScript.enabled = true;
     }
 
     void Update()

@@ -65,6 +65,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""Slap"",
+                    ""type"": ""Button"",
+                    ""id"": ""68d301ce-5653-4a43-a402-253fdaae4589"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Trigger"",
                     ""type"": ""Button"",
                     ""id"": ""94dce328-7d3c-438e-8f36-ba0456ec1e1b"",
@@ -311,6 +320,28 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""2e5c4800-3a4a-43ef-a0bd-89235d8f0fd6"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Slap"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""68913e1c-9e0c-45c0-93cb-b10b9cb5479b"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Slap"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""df190672-0972-4c68-a0b9-8ce0dd7efce2"",
                     ""path"": ""<Gamepad>/rightTrigger"",
                     ""interactions"": """",
@@ -386,6 +417,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_PlayerControls_Run = m_PlayerControls.FindAction("Run", throwIfNotFound: true);
         m_PlayerControls_Crouch = m_PlayerControls.FindAction("Crouch", throwIfNotFound: true);
         m_PlayerControls_Shoot = m_PlayerControls.FindAction("Shoot", throwIfNotFound: true);
+        m_PlayerControls_Slap = m_PlayerControls.FindAction("Slap", throwIfNotFound: true);
         m_PlayerControls_Trigger = m_PlayerControls.FindAction("Trigger", throwIfNotFound: true);
         m_PlayerControls_Reload = m_PlayerControls.FindAction("Reload", throwIfNotFound: true);
         m_PlayerControls_Jump = m_PlayerControls.FindAction("Jump", throwIfNotFound: true);
@@ -461,6 +493,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Run;
     private readonly InputAction m_PlayerControls_Crouch;
     private readonly InputAction m_PlayerControls_Shoot;
+    private readonly InputAction m_PlayerControls_Slap;
     private readonly InputAction m_PlayerControls_Trigger;
     private readonly InputAction m_PlayerControls_Reload;
     private readonly InputAction m_PlayerControls_Jump;
@@ -474,6 +507,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         public InputAction @Run => m_Wrapper.m_PlayerControls_Run;
         public InputAction @Crouch => m_Wrapper.m_PlayerControls_Crouch;
         public InputAction @Shoot => m_Wrapper.m_PlayerControls_Shoot;
+        public InputAction @Slap => m_Wrapper.m_PlayerControls_Slap;
         public InputAction @Trigger => m_Wrapper.m_PlayerControls_Trigger;
         public InputAction @Reload => m_Wrapper.m_PlayerControls_Reload;
         public InputAction @Jump => m_Wrapper.m_PlayerControls_Jump;
@@ -500,6 +534,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Shoot.started += instance.OnShoot;
             @Shoot.performed += instance.OnShoot;
             @Shoot.canceled += instance.OnShoot;
+            @Slap.started += instance.OnSlap;
+            @Slap.performed += instance.OnSlap;
+            @Slap.canceled += instance.OnSlap;
             @Trigger.started += instance.OnTrigger;
             @Trigger.performed += instance.OnTrigger;
             @Trigger.canceled += instance.OnTrigger;
@@ -531,6 +568,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Shoot.started -= instance.OnShoot;
             @Shoot.performed -= instance.OnShoot;
             @Shoot.canceled -= instance.OnShoot;
+            @Slap.started -= instance.OnSlap;
+            @Slap.performed -= instance.OnSlap;
+            @Slap.canceled -= instance.OnSlap;
             @Trigger.started -= instance.OnTrigger;
             @Trigger.performed -= instance.OnTrigger;
             @Trigger.canceled -= instance.OnTrigger;
@@ -578,6 +618,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         void OnRun(InputAction.CallbackContext context);
         void OnCrouch(InputAction.CallbackContext context);
         void OnShoot(InputAction.CallbackContext context);
+        void OnSlap(InputAction.CallbackContext context);
         void OnTrigger(InputAction.CallbackContext context);
         void OnReload(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);

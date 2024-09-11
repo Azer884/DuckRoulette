@@ -27,11 +27,12 @@ public class Movement : NetworkBehaviour
     [SerializeField] private float crouchHeight;
 
 
-    [Header("Animation Variables"), Space]
     [SerializeField] private Animator[] animators;
     [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
+
+    
     [SerializeField] private GameObject legs;
     [SerializeField] private GameObject FPShadow;
     [SerializeField] private GameObject Hands;

@@ -42,6 +42,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Slap",
+                    "type": "Button",
+                    "id": "68d301ce-5653-4a43-a402-253fdaae4589",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Trigger",
                     "type": "Button",
                     "id": "94dce328-7d3c-438e-8f36-ba0456ec1e1b",
@@ -283,6 +292,28 @@
                     "processors": "",
                     "groups": "FPSControllerInputs",
                     "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2e5c4800-3a4a-43ef-a0bd-89235d8f0fd6",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Slap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "68913e1c-9e0c-45c0-93cb-b10b9cb5479b",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Slap",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
