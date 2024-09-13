@@ -71,7 +71,7 @@ public class Slap : NetworkBehaviour
     {
         slappedPlayers = Physics.OverlapSphere(slapArea.position, slapRaduis, otherPlayers);
 
-        if (slappedPlayers != null && slappedPlayers.Length > 0)
+        if (slappedPlayers != null && slappedPlayers.Length > 1)
         {
             GameObject slappedPlayer = slappedPlayers[0].gameObject;
             if (slappedPlayer != gameObject)
@@ -100,7 +100,7 @@ public class Slap : NetworkBehaviour
 
         if (slapCount[player] >= slapLimit[player])
         {
-            StartCoroutine(StunPlayer(player));
+            StunPlayer(player);
         }
         else
         {
@@ -118,31 +118,13 @@ public class Slap : NetworkBehaviour
     }
 
     // Stun the player
-    private IEnumerator StunPlayer(GameObject player)
+    private void StunPlayer(GameObject player)
     {
         Debug.Log($"{player.name} is stunned!");
 
-        // Disable player movement or any other stun effects here
-        if (player.TryGetComponent<Movement>(out var movement))
-        {
-            movement.enabled = false;
-        }
         if (player.TryGetComponent<Ragdoll>(out var ragdoll))
         {
-            ragdoll.DisableRagdoll();
-        }
-
-        // Stun duration
-        yield return new WaitForSeconds(2f);
-
-        // Re-enable player movement after stun ends
-        if (movement != null)
-        {
-            movement.enabled = true;
-        }
-        if (ragdoll)
-        {
-            ragdoll.EnableRagdoll();
+            ragdoll.TriggerRagdoll();
         }
 
         // Reset slap count and slap limit

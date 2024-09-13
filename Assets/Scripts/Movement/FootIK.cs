@@ -11,7 +11,7 @@ public class FootIK : MonoBehaviour {
 	//length of the linecast
 	float legDistance;
 	//
-	int layerMask = 1 << 8;
+	[SerializeField]private LayerMask layerMask;
 	CharacterController controller;
 
 	float LeftFootY, RightFootY;
@@ -19,21 +19,22 @@ public class FootIK : MonoBehaviour {
 	public float deltaAmplifier = 1f;
 
 	public float leftFootWeight, rightFootWeight;
+	public bool isLegs;
 
     void Start ()
 	{
 		animator = GetComponent<Animator> ();
 		controller = transform.parent.GetComponent<CharacterController> ();
-
-		//hit all layers but the players layer
-		layerMask = ~layerMask;
 		colliderHeight = controller.height;
 		//controllerBoundsBottom = controller.bounds.extents.y;
 	}
 
 	void Update()
 	{
-		handleColliderOffset();
+		if (isLegs)
+		{
+			handleColliderOffset();
+		}
 	}
 
 	void OnAnimatorIK(int layerIndex = 2)
