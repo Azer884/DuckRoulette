@@ -1,6 +1,8 @@
 using UnityEngine;
-
-public class Ragdoll : MonoBehaviour
+using Unity.Netcode;
+using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
+using Unity.VisualScripting;
+public class Ragdoll : NetworkBehaviour
 {
     private class BoneTransform
     {
@@ -44,6 +46,8 @@ public class Ragdoll : MonoBehaviour
     [SerializeField]
     private GameObject foots;
     [SerializeField]
+    private GameObject shadow;
+    [SerializeField]
     private GameObject hands;
     private CharacterController _characterController;
     private Movement movement;
@@ -80,6 +84,7 @@ public class Ragdoll : MonoBehaviour
             _faceDownStandUpBoneTransforms[boneIndex] = new BoneTransform();
             _ragdollBoneTransforms[boneIndex] = new BoneTransform();
         }
+        if (!IsOwner) return;
 
         PopulateAnimationStartBoneTransforms(_faceUpStandUpClipNames[0], _faceUpStandUpBoneTransforms);
         PopulateAnimationStartBoneTransforms(_faceDownStandUpClipNames[0], _faceDownStandUpBoneTransforms);
@@ -96,25 +101,45 @@ public class Ragdoll : MonoBehaviour
         switch (_currentState)
         {
             case PlayerState.Ragdoll:
-                RagdollBehaviour();
+                if (IsOwner)
+                {
+                    RagdollBehaviour();
+                }
+                foreach(Transform bone in _bones)
+                {
+                    bone.GetComponent<ClientNetworkTransform>().enabled = true;
+                }
                 break;
             case PlayerState.StandingUp:
                 StandingUpBehaviour();
+                foreach(Transform bone in _bones)
+                {
+                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
+                }
                 break;
             case PlayerState.ResettingBones:
                 ResettingBonesBehaviour();
+                foreach(Transform bone in _bones)
+                {
+                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
+                }
                 break;
             case PlayerState.Idle:
-                _animator.SetLayerWeight(1, 1);
+                foreach(Transform bone in _bones)
+                {
+                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
+                }
                 break;
         }
     }
 
     public void TriggerRagdoll()
     {
+        EnableRagdoll();
+
+        if(!IsOwner) return;
         _timeToWakeUp = Random.Range(3, 6);
         _currentState = PlayerState.Ragdoll;
-        EnableRagdoll();
     }
 
     private void DisableRagdoll()
@@ -134,6 +159,7 @@ public class Ragdoll : MonoBehaviour
         cam.SetActive(true);
         foots.SetActive(true);
         hands.SetActive(true);
+        shadow.SetActive(true);
         if (shootingStates && !shooting.enabled)
         {
             shooting.enabled = true;
@@ -148,6 +174,10 @@ public class Ragdoll : MonoBehaviour
 
     public void EnableRagdoll()
     {
+        _characterController.enabled = false;
+        
+        if(!IsOwner) return;
+
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
         {
             rigidbody.isKinematic = false;
@@ -159,13 +189,13 @@ public class Ragdoll : MonoBehaviour
             animator.enabled = false;
         }
         shootingStates = shooting.enabled;
-        _characterController.enabled = false;
         movement.enabled = false;
         slap.enabled = false;
         shooting.enabled = false;
         cam.SetActive(false);
         hands.SetActive(false);
         foots.SetActive(false);
+        shadow.SetActive(false);
     }
 
     private void RagdollBehaviour()
@@ -199,7 +229,14 @@ public class Ragdoll : MonoBehaviour
         {
             _currentState = PlayerState.StandingUp;
             DisableRagdoll();
-            _animator.Play(GetStandUpStateName(), 0, 0);
+            string animName = GetStandUpStateName();
+            _animator.Play(animName, 0, 0);
+            _animator.Play(animName, 1, 0);
+            foreach (Animator anim in otherAnimators)
+            {
+                anim.Play(animName, 0, 0);
+                anim.Play(animName, 1, 0);
+            }
         }
     }
 

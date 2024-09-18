@@ -72,7 +72,6 @@ public class GameManager : NetworkBehaviour
             }
         }
     }
-
     public void Reload()
     {
         randomBulletPosition.Value = Random.Range(0, 6);

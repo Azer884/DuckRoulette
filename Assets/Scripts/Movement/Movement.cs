@@ -9,7 +9,8 @@ public class Movement : NetworkBehaviour
     private PlayerInput inputActions;
     private CharacterController controller;
     
-    [SerializeField] private Transform cam;
+    [SerializeField] private Transform camHolder;
+    [SerializeField] private GameObject cam;
     [SerializeField] private float movementSpeed = 2.0f;
     [SerializeField] public float lookSensitivity = 1.0f;
     private float xRotation = 0f;
@@ -54,7 +55,8 @@ public class Movement : NetworkBehaviour
         if (!IsOwner)
         {
             enabled = false;
-            cam.gameObject.SetActive(false);
+            cam.SetActive(false);
+            camHolder.gameObject.SetActive(false);
             ChangeLayerRecursively(fullBody, 3);
             ChangeLayerRecursively(legs, 2);
             ChangeLayerRecursively(FPShadow, 2);
@@ -63,7 +65,8 @@ public class Movement : NetworkBehaviour
         else
         {
             transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
-            cam.gameObject.SetActive(true);
+            cam.SetActive(true);
+            camHolder.gameObject.SetActive(true);
             ChangeLayerRecursively(fullBody, 2);
             ChangeLayerRecursively(legs, 3);
             ChangeLayerRecursively(FPShadow, 3);
@@ -99,7 +102,7 @@ public class Movement : NetworkBehaviour
         xRotation -= lookY;
         xRotation = Mathf.Clamp(xRotation, -85f, 75f);
 
-        cam.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        camHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * lookX);
 
         
