@@ -10,6 +10,7 @@ public class Movement : NetworkBehaviour
     private CharacterController controller;
     
     [SerializeField] private Transform camHolder;
+    [SerializeField] private GameObject secondCamHolder;
     [SerializeField] private GameObject cam;
     [SerializeField] private float movementSpeed = 2.0f;
     [SerializeField] public float lookSensitivity = 1.0f;
@@ -54,19 +55,21 @@ public class Movement : NetworkBehaviour
 
         if (!IsOwner)
         {
-            enabled = false;
             cam.SetActive(false);
             camHolder.gameObject.SetActive(false);
+            secondCamHolder.SetActive(false);
             ChangeLayerRecursively(fullBody, 3);
             ChangeLayerRecursively(legs, 2);
             ChangeLayerRecursively(FPShadow, 2);
             ChangeLayerRecursively(Hands, 2);
+            enabled = false;
         }
         else
         {
             transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
             cam.SetActive(true);
             camHolder.gameObject.SetActive(true);
+            secondCamHolder.SetActive(true);
             ChangeLayerRecursively(fullBody, 2);
             ChangeLayerRecursively(legs, 3);
             ChangeLayerRecursively(FPShadow, 3);

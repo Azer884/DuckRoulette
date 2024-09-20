@@ -1,7 +1,5 @@
 using UnityEngine;
 using Unity.Netcode;
-using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
-using Unity.VisualScripting;
 public class Ragdoll : NetworkBehaviour
 {
     private class BoneTransform
@@ -64,6 +62,13 @@ public class Ragdoll : NetworkBehaviour
     private bool _isFacingUp;
     private bool shootingStates;
 
+    public override void OnNetworkSpawn()
+    {
+        if(!IsOwner) enabled = false;
+
+        base.OnNetworkSpawn();
+    }
+
     void Awake()
     {
         _ragdollRigidbodies = parent.GetComponentsInChildren<Rigidbody>();
@@ -84,7 +89,6 @@ public class Ragdoll : NetworkBehaviour
             _faceDownStandUpBoneTransforms[boneIndex] = new BoneTransform();
             _ragdollBoneTransforms[boneIndex] = new BoneTransform();
         }
-        if (!IsOwner) return;
 
         PopulateAnimationStartBoneTransforms(_faceUpStandUpClipNames[0], _faceUpStandUpBoneTransforms);
         PopulateAnimationStartBoneTransforms(_faceDownStandUpClipNames[0], _faceDownStandUpBoneTransforms);
@@ -101,34 +105,13 @@ public class Ragdoll : NetworkBehaviour
         switch (_currentState)
         {
             case PlayerState.Ragdoll:
-                if (IsOwner)
-                {
-                    RagdollBehaviour();
-                }
-                foreach(Transform bone in _bones)
-                {
-                    bone.GetComponent<ClientNetworkTransform>().enabled = true;
-                }
+                RagdollBehaviour();
                 break;
             case PlayerState.StandingUp:
                 StandingUpBehaviour();
-                foreach(Transform bone in _bones)
-                {
-                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
-                }
                 break;
             case PlayerState.ResettingBones:
                 ResettingBonesBehaviour();
-                foreach(Transform bone in _bones)
-                {
-                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
-                }
-                break;
-            case PlayerState.Idle:
-                foreach(Transform bone in _bones)
-                {
-                    bone.GetComponent<ClientNetworkTransform>().enabled = false;
-                }
                 break;
         }
     }
@@ -136,14 +119,13 @@ public class Ragdoll : NetworkBehaviour
     public void TriggerRagdoll()
     {
         EnableRagdoll();
-
-        if(!IsOwner) return;
         _timeToWakeUp = Random.Range(3, 6);
         _currentState = PlayerState.Ragdoll;
     }
 
     private void DisableRagdoll()
     {
+        _characterController.enabled = true;
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
         {
             rigidbody.isKinematic = true;
@@ -154,7 +136,6 @@ public class Ragdoll : NetworkBehaviour
         {
             animator.enabled = true;
         }
-        _characterController.enabled = true;
         movement.enabled = true;
         cam.SetActive(true);
         foots.SetActive(true);
@@ -175,8 +156,6 @@ public class Ragdoll : NetworkBehaviour
     public void EnableRagdoll()
     {
         _characterController.enabled = false;
-        
-        if(!IsOwner) return;
 
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
         {
