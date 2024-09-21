@@ -2746,7 +2746,7 @@ GameObject:
   - component: {fileID: 8482278249284947588}
   m_Layer: 3
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2813,7 +2813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1523355201
+  GlobalObjectIdHash: 2853619967
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3083,11 +3083,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d46eb384090c62c49b3b3c41908dfea0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  otherPlayers: []
-  wallLayer:
+  wallLayerMask:
     serializedVersion: 2
     m_Bits: 1
-  lowPassFilter: {fileID: 0}
+  otherPlayers: []
+  maxDistance: 25
+  headHeight: 0.61
+  chestHeight: -0.63
+  feetHeight: -2.02
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0

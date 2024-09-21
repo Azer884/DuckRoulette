@@ -16,7 +16,7 @@ public class Shooting : NetworkBehaviour
     [SerializeField] private Transform targetAim;
     [SerializeField] private Hands fPHands;
     public GameObject gun;
-    public NetworkVariable<bool> haveGun;
+    public NetworkVariable<bool> haveGun = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private Slap slapScript;
 
     void Awake()

@@ -77,4 +77,10 @@ public class GameManager : NetworkBehaviour
         randomBulletPosition.Value = Random.Range(0, 6);
         isReloaded.Value = true;
     }
+
+    [ClientRpc]
+    public void StunPlayerClientRpc(ulong clientId)
+    {
+        NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).GetComponent<Ragdoll>().TriggerRagdoll();
+    }
 }

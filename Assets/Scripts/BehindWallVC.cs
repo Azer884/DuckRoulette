@@ -1,85 +1,141 @@
-using UnityEngine;
-using UnityEngine.Audio;
 using System.Collections.Generic;
+using UnityEngine;
 using Unity.Netcode;
-
-public class PlayerSound : NetworkBehaviour
+public class VoiceChatRaycast : NetworkBehaviour
 {
-    public List<Transform> otherPlayers; // List of other players in the game
-    public LayerMask wallLayer;    // Layer mask for walls or obstacles
-    public AudioLowPassFilter lowPassFilter;
+    [SerializeField] private LayerMask wallLayerMask;
+    [SerializeField] private List<Transform> otherPlayers = new();  // Keep track of other players
+    [SerializeField] private float maxDistance = 25f;
+    [SerializeField] private float headHeight;
+    [SerializeField] private float chestHeight;
+    [SerializeField] private float feetHeight;
 
-    private readonly float maxDistance = 50f; // Max distance for sound checks
-    private float maxDistanceSquared; // Precompute squared distance for optimization
-    private readonly float checkInterval = 0.5f; // Check every half second
-    private float nextCheckTime = 0f;
-
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        maxDistanceSquared = maxDistance * maxDistance; // Precompute the squared distance
+        if (!IsOwner) enabled = false;
+        base.OnNetworkSpawn();
     }
 
-    void Update()
+    private void Start()
     {
-        if (IsOwner && Time.time >= nextCheckTime)
+        // Automatically add existing players
+        AddExistingPlayers();
+
+        // Subscribe to new players joining
+        NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnPlayerDisconnected;
+    }
+    private void OnDisable()
+    {
+        // Unsubscribe when the object is destroyed
+        if (NetworkManager.Singleton != null)
         {
-            CheckPlayersBehindWalls();
-            nextCheckTime = Time.time + checkInterval; // Schedule next check
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnPlayerConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnPlayerDisconnected;
         }
     }
 
-    void CheckPlayersBehindWalls()
+    private void Update()
     {
         foreach (Transform otherPlayer in otherPlayers)
         {
-            if (otherPlayer != null && otherPlayer != transform)
+            if (otherPlayer == null) continue;
+
+            float distanceToOtherPlayer = Vector3.Distance(transform.position, otherPlayer.position);
+            AudioSource voiceAudio = otherPlayer.GetComponent<AudioSource>();
+
+            if (distanceToOtherPlayer <= maxDistance)
             {
-                // Use squared magnitude for distance checks
-                float distanceSquared = (otherPlayer.position - transform.position).sqrMagnitude;
+                float proximityVolume = 1f - (distanceToOtherPlayer / maxDistance);  // Closer = louder
+                voiceAudio.volume = Mathf.Clamp(proximityVolume, 0f, 1f);
 
-                if (distanceSquared <= maxDistanceSquared)
+                Vector3 rayStartHead = transform.position + Vector3.up * headHeight;
+                Vector3 rayEndHead = otherPlayer.position + Vector3.up * headHeight;
+
+                Vector3 rayStartChest = transform.position + Vector3.up * chestHeight;
+                Vector3 rayEndChest = otherPlayer.position + Vector3.up * chestHeight;
+
+                Vector3 rayStartFeet = transform.position + Vector3.up * feetHeight;
+                Vector3 rayEndFeet = otherPlayer.position + Vector3.up * feetHeight;
+
+                bool wallInTheWay = RayCheck(rayStartHead, rayEndHead) &&
+                                    RayCheck(rayStartChest, rayEndChest) &&
+                                    RayCheck(rayStartFeet, rayEndFeet);
+
+                if (wallInTheWay)
                 {
-                    bool isBehindWall = IsPlayerBehindWall(otherPlayer);
-
-                    if (isBehindWall)
-                    {
-                        EnableLowPassFilter();
-                    }
-                    else
-                    {
-                        DisableLowPassFilter();
-                    }
+                    Debug.Log("Wall detected between players");
+                    voiceAudio.volume *= 0.5f;
+                    ApplyLowPassFilter(true, otherPlayer);
+                }
+                else
+                {
+                    ApplyLowPassFilter(false, otherPlayer);
                 }
             }
-        }
-    }
-
-    bool IsPlayerBehindWall(Transform targetPlayer)
-    {
-        Vector3 direction = targetPlayer.position - transform.position;
-        float distance = Vector3.Distance(transform.position, targetPlayer.position);
-        Vector3 rayOrigin = transform.position + Vector3.up * 1.0f; // Chest level
-
-        // SphereCast instead of multiple raycasts
-        float radius = 0.5f; // Adjust the radius to the size of the gap you expect
-        if (Physics.SphereCast(rayOrigin, radius, direction, out RaycastHit hit, distance, wallLayer))
-        {
-            if (hit.collider.CompareTag("Wall"))
+            else
             {
-                return true; // Behind a wall
+                voiceAudio.volume = 0f;
             }
         }
-
-        return false; // No obstruction
     }
 
-    void EnableLowPassFilter()
+    // Function to check if a ray hits a wall
+    private bool RayCheck(Vector3 startPosition, Vector3 endPosition)
     {
-        lowPassFilter.enabled = true;
+        Vector3 direction = (endPosition - startPosition).normalized;
+        float distance = Vector3.Distance(startPosition, endPosition);
+
+        if (Physics.Raycast(startPosition, direction, out RaycastHit hit, Mathf.Min(distance, maxDistance), wallLayerMask))
+        {
+            Debug.DrawRay(startPosition, direction * distance, Color.red);  // Visualize the ray
+            return true;  // Hit a wall
+        }
+        else
+        {
+            Debug.DrawRay(startPosition, direction * distance, Color.green);  // Visualize the ray
+            return false;  // No wall
+        }
     }
 
-    void DisableLowPassFilter()
+    // Function to apply low-pass filter
+    void ApplyLowPassFilter(bool enable, Transform otherPlayer)
     {
-        lowPassFilter.enabled = false;
+        if (otherPlayer.TryGetComponent<AudioLowPassFilter>(out var filter))
+        {
+            filter.enabled = enable;
+        }
+    }
+
+    // This method is called when a new player connects to the game
+    private void OnPlayerConnected(ulong clientId)
+    {
+        GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).gameObject;
+        if (playerObject != null && playerObject.CompareTag("Player") && playerObject != gameObject)
+        {
+            // Add the new player to the list
+            otherPlayers.Add(playerObject.transform);
+        }
+    }
+    private void OnPlayerDisconnected(ulong clientId)
+    {
+        GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId)?.gameObject;
+        if (playerObject != null && playerObject.CompareTag("Player"))
+        {
+            // Remove the disconnected player from the list
+            otherPlayers.Remove(playerObject.transform);
+        }
+    }
+
+    // Add already existing players to the list on start
+    private void AddExistingPlayers()
+    {
+        foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
+        {
+            if (player != gameObject)
+            {
+                otherPlayers.Add(player.transform);
+            }
+        }
     }
 }
