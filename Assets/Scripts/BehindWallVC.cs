@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using Steamworks;
 public class VoiceChatRaycast : NetworkBehaviour
 {
     [SerializeField] private LayerMask wallLayerMask;
@@ -65,7 +66,7 @@ public class VoiceChatRaycast : NetworkBehaviour
                 if (wallInTheWay)
                 {
                     Debug.Log("Wall detected between players");
-                    voiceAudio.volume *= 0.5f;
+                    voiceAudio.volume *= 0.2f;
                     ApplyLowPassFilter(true, otherPlayer);
                 }
                 else
@@ -104,6 +105,10 @@ public class VoiceChatRaycast : NetworkBehaviour
         if (otherPlayer.TryGetComponent<AudioLowPassFilter>(out var filter))
         {
             filter.enabled = enable;
+        }
+        if (otherPlayer.TryGetComponent<AudioReverbFilter>(out var reverbFilter))
+        {
+            reverbFilter.enabled = enable;
         }
     }
 
