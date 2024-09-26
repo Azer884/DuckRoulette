@@ -83,4 +83,21 @@ public class GameManager : NetworkBehaviour
     {
         NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).GetComponent<Ragdoll>().TriggerRagdoll();
     }
+
+    [ClientRpc]
+    public void SendVoiceClientRpc(byte[] voice, uint bytes, ulong senderId)
+    {
+        // Play the voice on the sender's GameObject (receiver hears the sender's voice)
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (clientId != senderId) // Skip the sender itself
+            {
+                NetworkObject senderNetworkObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(senderId);
+                if (senderNetworkObject.TryGetComponent<VoiceChat>(out var voiceChat))
+                {
+                    voiceChat.DecompressAndPlayVoice(voice, bytes);
+                }
+            }
+        }
+    }
 }

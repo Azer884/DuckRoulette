@@ -66,7 +66,7 @@ public class VoiceChatRaycast : NetworkBehaviour
                 if (wallInTheWay)
                 {
                     Debug.Log("Wall detected between players");
-                    voiceAudio.volume *= 0.2f;
+                    voiceAudio.volume *= 0.5f;
                     ApplyLowPassFilter(true, otherPlayer);
                 }
                 else
