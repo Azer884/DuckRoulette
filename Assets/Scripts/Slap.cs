@@ -18,6 +18,7 @@ public class Slap : NetworkBehaviour
     private Dictionary<GameObject, int> slapCount = new();
     private Dictionary<GameObject, int> slapLimit = new();
     private Dictionary<GameObject, Coroutine> slapCoroutines = new();
+    public AudioSource slapAudio;
 
     public override void OnNetworkSpawn()
     {
@@ -76,6 +77,7 @@ public class Slap : NetworkBehaviour
             GameObject slappedPlayer = slappedPlayers[0].gameObject;
             if (slappedPlayer != gameObject)
             {
+                slapAudio.Play();
                 SlapPlayer(slappedPlayer);
             }
             else
@@ -126,7 +128,7 @@ public class Slap : NetworkBehaviour
 
         // Reset slap count and slap limit
         slapCount[player] = 0;
-        slapLimit[player] = Random.Range(3, 10); // Generate new slap limit
+        slapLimit[player] = 1; // Generate new slap limit
         Debug.Log($"{player.name} is no longer stunned.");
     }
     

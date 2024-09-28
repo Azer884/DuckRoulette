@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net.Configuration;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -81,22 +82,23 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     public void StunPlayerClientRpc(ulong clientId)
     {
-        NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).GetComponent<Ragdoll>().TriggerRagdoll();
+        foreach (ulong id in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (clientId == id)
+            {
+                NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<Ragdoll>().TriggerRagdoll();
+            }
+        }
     }
 
     [ClientRpc]
-    public void SendVoiceClientRpc(byte[] voice, uint bytes, ulong senderId)
+    public void SendVCClientRpc(byte[] voice, uint bytes, ulong senderId)
     {
-        // Play the voice on the sender's GameObject (receiver hears the sender's voice)
-        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            if (clientId != senderId) // Skip the sender itself
+            if (clientId != senderId)
             {
-                NetworkObject senderNetworkObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(senderId);
-                if (senderNetworkObject.TryGetComponent<VoiceChat>(out var voiceChat))
-                {
-                    voiceChat.DecompressAndPlayVoice(voice, bytes);
-                }
+                NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<VoiceSender>();
             }
         }
     }

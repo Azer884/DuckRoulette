@@ -20,7 +20,7 @@ public class Movement : NetworkBehaviour
     private Vector3 velocity;
     public float gravity = -9.81f;
     private bool grounded;
-    private float speedMultiplier = 1.0f;
+    public float speedMultiplier = 1.0f;
     [SerializeField] private float jumpHeight = 1.5f;
     
 
