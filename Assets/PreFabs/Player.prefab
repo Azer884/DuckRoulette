@@ -3708,7 +3708,7 @@ Transform:
   m_GameObject: {fileID: 3007406930311217395}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.043, y: -0.99, z: -0.5540001}
+  m_LocalPosition: {x: 0.043, y: -1.072, z: -0.591}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7504,8 +7504,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepRate: 0.5
   stepCoolDown: 0.25
-  footStep: {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
   movement: {fileID: 7283489907467008536}
+  footstepSource: {fileID: 4521806343263086695}
+  footstepClips:
+  - {fileID: 8300000, guid: ba4a078066d9aae4cbc2362273873cbb, type: 3}
+  - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
 --- !u!1 &6308959954050169383
 GameObject:
   m_ObjectHideFlags: 0

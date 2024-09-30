@@ -7,19 +7,19 @@ using UnityEngine.SceneManagement;
 
 public class GameNetworkManager : MonoBehaviour
 {
-    public static GameNetworkManager instance { get; private set; } = null;
+    public static GameNetworkManager Instance { get; private set; } = null;
 
     private FacepunchTransport transport = null;
 
-    public Lobby? currentLobby { get; private set; } = null;
+    public Lobby? CurrentLobby { get; private set; } = null;
 
     public ulong hostId;
 
     private void Awake()
     {
-        if(instance == null)
+        if(Instance == null)
         {
-            instance = this;
+            Instance = this;
         }
         else
         {
@@ -77,7 +77,7 @@ public class GameNetworkManager : MonoBehaviour
         }
         else
         {
-            currentLobby = _lobby;
+            CurrentLobby = _lobby;
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Lobby");
         }
@@ -114,7 +114,7 @@ public class GameNetworkManager : MonoBehaviour
         {
             return;
         }
-        StartClient(currentLobby.Value.Owner.Id);
+        StartClient(CurrentLobby.Value.Owner.Id);
 
     }
 
@@ -137,7 +137,7 @@ public class GameNetworkManager : MonoBehaviour
         NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
         NetworkManager.Singleton.StartHost();
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        currentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+        CurrentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
     }
 
     public void StartClient(SteamId _sId)
@@ -154,7 +154,7 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Disconnected()
     {
-        currentLobby?.Leave();
+        CurrentLobby?.Leave();
         if(NetworkManager.Singleton == null)
         {
             return;

@@ -1,14 +1,15 @@
 using UnityEngine;
 using System.Collections;
+using Unity.Netcode;
 
-public class FootStepScript : MonoBehaviour {
+public class FootStepScript : NetworkBehaviour {
     public float stepRate = 0.5f;
     public float stepCoolDown;
-    public AudioClip footStep;
     public Movement movement;
-
+	public AudioSource footstepSource;
+	public AudioClip[] footstepClips;
     private Vector3 lastPosition;  // Store the last position of the player
-    private float movementThreshold = 0.1f;  // Minimum distance to register movement
+    private float movementThreshold = 0.05f;  // Minimum distance to register movement
 
     // Start is called before the first frame update
     void Start () {
@@ -31,13 +32,18 @@ public class FootStepScript : MonoBehaviour {
         float movementMagnitude = movementDelta.magnitude;
 
         // Check if the player has moved a significant distance
-        if (movementMagnitude > movementThreshold && stepCoolDown < 0f) {
-            GetComponent<AudioSource>().pitch = 1f + Random.Range(-0.2f, 0.2f);
-            GetComponent<AudioSource>().PlayOneShot(footStep, 0.9f);
+        if ((movementMagnitude > movementThreshold) && IsOwner) {
+            TriggerFootstepServerRpc();
             stepCoolDown = stepRate;
         }
 
         // Update the last position for the next frame
         lastPosition = transform.position;
+    }
+
+	[ServerRpc]
+    private void TriggerFootstepServerRpc()
+    {
+        GameManager.Instance.PlayFootstepClientRpc(OwnerClientId);
     }
 }

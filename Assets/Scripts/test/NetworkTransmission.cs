@@ -55,7 +55,7 @@ public class NetworkTransmission : NetworkBehaviour
     [ClientRpc]
     public void UpdateClientsPlayerInfoClientRPC(ulong _steamId,string _steamName, ulong _clientId)
     {
-        LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
+        _ = LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
     }
 
     [ServerRpc(RequireOwnership = false)]
