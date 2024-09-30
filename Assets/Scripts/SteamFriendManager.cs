@@ -143,18 +143,25 @@ public class SteamFriendsManager : MonoBehaviour
             // Update the text color based on the friend's new status
             if (friend.IsPlayingThisGame)
             {
+                sectionHeaders["In-Game"].gameObject.SetActive(true);
                 friendUI.GetComponentInChildren<TextMeshProUGUI>().color = inGameColor;
                 friendUI.transform.SetSiblingIndex(sectionHeaders["Online"].GetSiblingIndex() - 1);
+                friendUI.transform.GetChild(2).gameObject.SetActive(true);
             }
             else if (friend.IsOnline)
             {
+                sectionHeaders["Online"].gameObject.SetActive(true);
                 friendUI.GetComponentInChildren<TextMeshProUGUI>().color = onlineColor;
                 friendUI.transform.SetSiblingIndex(sectionHeaders["Offline"].GetSiblingIndex() - 1);
+                friendUI.transform.GetChild(2).gameObject.SetActive(false);
+
             }
             else
             {
+                sectionHeaders["Offline"].gameObject.SetActive(true);
                 friendUI.GetComponentInChildren<TextMeshProUGUI>().color = offlineColor;
                 friendUI.transform.SetSiblingIndex(content.childCount - 1);
+                friendUI.transform.GetChild(2).gameObject.SetActive(false);
             }
         }
     }

@@ -32,8 +32,13 @@ public class FootStepScript : NetworkBehaviour {
         float movementMagnitude = movementDelta.magnitude;
 
         // Check if the player has moved a significant distance
-        if ((movementMagnitude > movementThreshold) && IsOwner) {
+        if ((movementMagnitude > movementThreshold) && IsOwner && stepCoolDown < 0) {
             TriggerFootstepServerRpc();
+            footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
+                int index = Random.Range(0, footstepClips.Length);
+                
+                // Play footstep sound
+                footstepSource.PlayOneShot(footstepClips[index], 0.9f);
             stepCoolDown = stepRate;
         }
 
