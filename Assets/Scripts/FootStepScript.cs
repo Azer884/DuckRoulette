@@ -8,13 +8,6 @@ public class FootStepScript : NetworkBehaviour {
     public Movement movement;
 	public AudioSource footstepSource;
 	public AudioClip[] footstepClips;
-    private Vector3 lastPosition;  // Store the last position of the player
-    private float movementThreshold = 0.05f;  // Minimum distance to register movement
-
-    // Start is called before the first frame update
-    void Start () {
-        lastPosition = transform.position;  // Initialize the lastPosition
-    }
 
     // Update is called once per frame
     void Update () {
@@ -27,12 +20,8 @@ public class FootStepScript : NetworkBehaviour {
 
         stepCoolDown -= Time.deltaTime;
 
-        // Calculate the distance traveled since the last frame
-        Vector3 movementDelta = transform.position - lastPosition;
-        float movementMagnitude = movementDelta.magnitude;
-
         // Check if the player has moved a significant distance
-        if ((movementMagnitude > movementThreshold) && IsOwner && stepCoolDown < 0) {
+        if (IsOwner && stepCoolDown < 0) {
             TriggerFootstepServerRpc();
             footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
                 int index = Random.Range(0, footstepClips.Length);
@@ -41,9 +30,6 @@ public class FootStepScript : NetworkBehaviour {
                 footstepSource.PlayOneShot(footstepClips[index], 0.9f);
             stepCoolDown = stepRate;
         }
-
-        // Update the last position for the next frame
-        lastPosition = transform.position;
     }
 
 	[ServerRpc]
