@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Configuration;
+using Steamworks;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -36,6 +38,7 @@ public class GameManager : NetworkBehaviour
     {
         if (hasShot)
         {
+            StartCoroutine(Wait(2f));
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             while (playerWithGun == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
             {
@@ -79,14 +82,22 @@ public class GameManager : NetworkBehaviour
         isReloaded.Value = true;
     }
 
+    private IEnumerator Wait(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime);
+    }
+
     [ClientRpc]
+    [System.Obsolete]
     public void StunPlayerClientRpc(ulong clientId)
     {
-        foreach (ulong id in NetworkManager.Singleton.ConnectedClientsIds)
+        NetworkObject networkPlayer = FindPlayerByClientId(clientId);
+        
+        if (networkPlayer != null)
         {
-            if (clientId == id)
+            if (networkPlayer.TryGetComponent<Ragdoll>(out var ragdoll))
             {
-                NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<Ragdoll>().TriggerRagdoll();
+                ragdoll.TriggerRagdoll();   
             }
         }
     }
@@ -131,5 +142,18 @@ public class GameManager : NetworkBehaviour
         {
             Debug.LogWarning("Player object with clientId not found.");
         }
+    }
+
+    [System.Obsolete]
+    private NetworkObject FindPlayerByClientId(ulong clientId)
+    {
+        foreach (var networkObject in FindObjectsOfType<NetworkObject>())
+        {
+            if (networkObject.OwnerClientId == clientId)
+            {
+                return networkObject;
+            }
+        }
+        return null;
     }
 }
