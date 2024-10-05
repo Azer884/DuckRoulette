@@ -12,6 +12,7 @@ public class Slap : NetworkBehaviour
     [SerializeField] private Animator[] animators;
     [SerializeField] private LayerMask otherPlayers;
     private Collider[] slappedPlayers;
+    private Ragdoll[] players;
     private bool canSlap = true;
 
     // Stun related variables
@@ -72,19 +73,20 @@ public class Slap : NetworkBehaviour
     {
         slappedPlayers = Physics.OverlapSphere(slapArea.position, slapRaduis, otherPlayers);
 
-        if (slappedPlayers != null && slappedPlayers.Length > 1)
+        List<GameObject> validSlappedPlayers = new();
+        foreach (Collider collider in slappedPlayers)
         {
-            GameObject slappedPlayer = slappedPlayers[0].gameObject;
-            if (slappedPlayer != gameObject)
+            // Ensure the collider has a Slap component and is not this player
+            if (collider.TryGetComponent<Slap>(out var slapComponent) && slapComponent != this)
             {
-                slapAudio.Play();
-                SlapPlayer(slappedPlayer);
+                validSlappedPlayers.Add(collider.gameObject);
             }
-            else
-            {
-                slappedPlayer = slappedPlayers[1].gameObject;
-                SlapPlayer(slappedPlayer);
-            }
+        }
+
+        if (validSlappedPlayers != null)
+        {
+            slapAudio.Play();
+            SlapPlayer(validSlappedPlayers[0]);
         }
     }
 
@@ -128,13 +130,26 @@ public class Slap : NetworkBehaviour
 
         // Reset slap count and slap limit
         slapCount[player] = 0;
-        slapLimit[player] = 1; // Generate new slap limit
+        slapLimit[player] = Random.Range(3, 10); // Generate new slap limit
         Debug.Log($"{player.name} is no longer stunned.");
     }
     
     [ServerRpc]
     private void StunPlayerServerRpc(ulong clientId)
     {
-        GameManager.Instance.StunPlayerClientRpc(clientId);
+        StunPlayerClientRpc(clientId);
+    }
+    [ClientRpc]
+    private void StunPlayerClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            // Get the player's object and trigger the ragdoll
+            var playerObject = client.PlayerObject;
+            if (playerObject != null)
+            {
+                playerObject.GetComponent<Ragdoll>()?.TriggerRagdoll();
+            }
+        }
     }
 }

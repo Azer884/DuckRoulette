@@ -2,8 +2,10 @@ using UnityEngine;
 using Steamworks;
 using System.IO;
 using System;
+using Unity.Netcode;
+using System.Linq;
 
-public class VoiceChat : MonoBehaviour
+public class VoiceChat : NetworkBehaviour
 {
     private MemoryStream voiceStream;
     private MemoryStream decompressedStream;
@@ -19,7 +21,7 @@ public class VoiceChat : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKey(KeyCode.V)) // Push-to-Talk example
+        if (IsOwner && Input.GetKey(KeyCode.V)) // Push-to-Talk, and ensure only the owner sends data
         {
             SteamUser.VoiceRecord = true; // Start recording
 
@@ -27,13 +29,12 @@ public class VoiceChat : MonoBehaviour
             {
                 // Clear the stream for new voice data
                 voiceStream.SetLength(0);
-                decompressedStream.SetLength(0);
 
                 // Read voice data into the stream
                 SteamUser.ReadVoiceData(voiceStream);
                 byte[] voiceData = voiceStream.ToArray();
 
-                Decompresser(voiceData);
+                SendVoiceDataToClientsServerRpc(voiceData);
             }
         }
         else
@@ -42,8 +43,36 @@ public class VoiceChat : MonoBehaviour
         }
     }
 
+    // This will be called on the server and forward the voice data to all clients except the sender
+    [ServerRpc]
+    private void SendVoiceDataToClientsServerRpc(byte[] voiceData, ServerRpcParams serverRpcParams = default)
+    {
+        // Get the sender's client ID
+        ulong senderClientId = serverRpcParams.Receive.SenderClientId;
+
+        // Broadcast the voice data to all clients except the sender
+        PlayVoiceOnClientsClientRpc(voiceData, new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
+                    .Where(client => client.ClientId != senderClientId)
+                    .Select(client => client.ClientId).ToArray()
+            }
+        });
+    }
+
+    // This will be executed on all clients to play the received voice data
+    [ClientRpc]
+    private void PlayVoiceOnClientsClientRpc(byte[] voiceData, ClientRpcParams clientRpcParams = default)
+    {
+        Decompresser(voiceData);
+    }
+
     private void Decompresser(byte[] voiceData)
     {
+        decompressedStream.SetLength(0);
+        // Decompress the voice data
         SteamUser.DecompressVoice(voiceData, decompressedStream);
 
         // Convert decompressed data into a byte array

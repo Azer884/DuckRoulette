@@ -87,20 +87,7 @@ public class GameManager : NetworkBehaviour
         yield return new WaitForSeconds(waitTime);
     }
 
-    [ClientRpc]
-    [System.Obsolete]
-    public void StunPlayerClientRpc(ulong clientId)
-    {
-        NetworkObject networkPlayer = FindPlayerByClientId(clientId);
-        
-        if (networkPlayer != null)
-        {
-            if (networkPlayer.TryGetComponent<Ragdoll>(out var ragdoll))
-            {
-                ragdoll.TriggerRagdoll();   
-            }
-        }
-    }
+    
 
     [ClientRpc]
     public void SendVCClientRpc(byte[] voice, uint bytes, ulong senderId)
@@ -142,18 +129,5 @@ public class GameManager : NetworkBehaviour
         {
             Debug.LogWarning("Player object with clientId not found.");
         }
-    }
-
-    [System.Obsolete]
-    private NetworkObject FindPlayerByClientId(ulong clientId)
-    {
-        foreach (var networkObject in FindObjectsOfType<NetworkObject>())
-        {
-            if (networkObject.OwnerClientId == clientId)
-            {
-                return networkObject;
-            }
-        }
-        return null;
     }
 }
