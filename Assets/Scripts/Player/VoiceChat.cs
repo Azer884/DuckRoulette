@@ -17,6 +17,14 @@ public class VoiceChat : NetworkBehaviour
         // Initialize streams
         voiceStream = new MemoryStream();
         decompressedStream = new MemoryStream();
+        try
+            {
+                SteamClient.Init(480, true);
+            }
+            catch (Exception e)
+            {
+                    Debug.LogError(e);
+            }
     }
 
     private void Update()
@@ -30,11 +38,12 @@ public class VoiceChat : NetworkBehaviour
                 // Clear the stream for new voice data
                 voiceStream.SetLength(0);
 
-                // Read voice data into the stream
-                SteamUser.ReadVoiceData(voiceStream);
-                byte[] voiceData = voiceStream.ToArray();
-
-                SendVoiceDataToClientsServerRpc(voiceData);
+                int bytesRead = SteamUser.ReadVoiceData(voiceStream);
+                if (bytesRead > 0)
+                {
+                    byte[] voiceData = voiceStream.ToArray();
+                    SendVoiceDataToClientsServerRpc(voiceData);
+                }
             }
         }
         else
@@ -73,18 +82,18 @@ public class VoiceChat : NetworkBehaviour
     {
         decompressedStream.SetLength(0);
         // Decompress the voice data
-        SteamUser.DecompressVoice(voiceData, decompressedStream);
+        int voiceLength = SteamUser.DecompressVoice(voiceData, decompressedStream);
 
         // Convert decompressed data into a byte array
         byte[] decompressedData = decompressedStream.ToArray();
 
         // Create an AudioClip from the decompressed data
-        AudioClip audioClip = AudioClip.Create("VoiceClip", decompressedData.Length / 2, 1, (int)SteamUser.SampleRate, false);
+        AudioClip audioClip = AudioClip.Create("VoiceClip", voiceLength, 1, (int)SteamUser.SampleRate, false);
         audioClip.SetData(ConvertBytesToFloats(decompressedData), 0);
         
         // Assign and play the audio on the AudioSource
         audioSource.clip = audioClip;
-        audioSource.Play();
+        audioSource.PlayDelayed(.1f);
     }
 
     // Convert byte array (PCM data) to float array

@@ -2816,7 +2816,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1523355201
+  GlobalObjectIdHash: 2853619967
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -3108,7 +3108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19c78db197a96f4590cde6f489e03a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  volumeMultiplier: 5
+  volumeMultiplier: 6
   audioSource: {fileID: 199935326035327325}
 --- !u!82 &199935326035327325
 AudioSource:

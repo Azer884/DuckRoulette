@@ -35,7 +35,7 @@ public class NetworkTransmission : NetworkBehaviour
     public void AddMeToDictionaryServerRPC(ulong _steamId,string _steamName, ulong _clientId)
     {
         LobbyManager.instance.SendMessageToChat($"{_steamName} has joined", _clientId, true);
-        LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
+        _ = LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
         LobbyManager.instance.UpdateClients();
     }
 

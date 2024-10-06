@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using Steamworks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Text.RegularExpressions;
 
 public class SteamFriendsManager : MonoBehaviour
 {
@@ -72,8 +74,6 @@ public class SteamFriendsManager : MonoBehaviour
         // Instantiate friends in order: In-Game -> Online -> Offline
         if (inGameFriends.Count > 0)
         {
-            content.GetChild(0).GetComponent<TextMeshProUGUI>().text = $"IN-GAME({inGameFriends.Count}):";
-
             sectionHeaders["In-Game"] = content.GetChild(0);
 
             foreach (Friend friend in inGameFriends)
@@ -89,8 +89,6 @@ public class SteamFriendsManager : MonoBehaviour
         if (onlineFriends.Count > 0)
         {
             GameObject onlineText = Instantiate(content.GetChild(0).gameObject, content);
-            onlineText.GetComponent<TextMeshProUGUI>().color = onlineColor;
-            onlineText.GetComponent<TextMeshProUGUI>().text = $"ONLINE({onlineFriends.Count}):";
             onlineText.SetActive(true);
 
             sectionHeaders["Online"] = onlineText.transform;
@@ -103,8 +101,6 @@ public class SteamFriendsManager : MonoBehaviour
         if (offlineFriends.Count > 0)
         {
             GameObject offlineText = Instantiate(content.GetChild(0).gameObject, content);
-            offlineText.GetComponent<TextMeshProUGUI>().color = offlineColor;
-            offlineText.GetComponent<TextMeshProUGUI>().text = $"OFFLINE({offlineFriends.Count}):";
             offlineText.SetActive(true);
 
             sectionHeaders["Offline"] = offlineText.transform;
@@ -144,7 +140,7 @@ public class SteamFriendsManager : MonoBehaviour
             if (friend.IsPlayingThisGame)
             {
                 sectionHeaders["In-Game"].gameObject.SetActive(true);
-                friendUI.GetComponentInChildren<TextMeshProUGUI>().color = inGameColor;
+                friendUI.GetComponentInChildren<TextMeshProUGUI>().color = inGameColor; 
                 friendUI.transform.SetSiblingIndex(sectionHeaders["Online"].GetSiblingIndex() - 1);
                 friendUI.transform.GetChild(2).gameObject.SetActive(true);
             }
@@ -166,6 +162,28 @@ public class SteamFriendsManager : MonoBehaviour
         }
     }
 
+    public string IncreaseNumberInString(string input)
+{
+    // Use regex to find a number in the string
+    Match match = Regex.Match(input, @"\d+");
+    
+    if (match.Success)
+    {
+        // Get the number as a string
+        string numberStr = match.Value;
+        
+        // Convert the number string to an integer and increase it by one
+        int number = int.Parse(numberStr);
+        number++;
+
+        // Replace the old number in the input string with the new number
+        string updatedString = Regex.Replace(input, numberStr, number.ToString());
+        return updatedString;
+    }
+
+    // Return the input string unchanged if no number is found
+    return input;
+}
 
     public static async System.Threading.Tasks.Task<Texture2D> GetTextureFromSteamIdAsync(SteamId id)
     {

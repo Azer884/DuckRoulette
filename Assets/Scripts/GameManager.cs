@@ -87,47 +87,4 @@ public class GameManager : NetworkBehaviour
         yield return new WaitForSeconds(waitTime);
     }
 
-    
-
-    [ClientRpc]
-    public void SendVCClientRpc(byte[] voice, uint bytes, ulong senderId)
-    {
-        foreach(ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            if (clientId != senderId)
-            {
-                NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<VoiceSender>();
-            }
-        }
-    }
-
-    [ClientRpc]
-    public void PlayFootstepClientRpc(ulong clientId)
-    {
-        // Fetch the player's object by their clientId
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(clientId, out NetworkObject playerObject))
-        {
-            // Get the FootstepScript from the player's object
-            
-            if (playerObject.TryGetComponent<FootStepScript>(out var footstepScript))
-            {
-                AudioSource footstepSource = footstepScript.footstepSource;
-
-                // Randomize pitch and select footstep sound
-                footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
-                int index = Random.Range(0, footstepScript.footstepClips.Length);
-                
-                // Play footstep sound
-                footstepSource.PlayOneShot(footstepScript.footstepClips[index], 0.9f);
-            }
-            else
-            {
-                Debug.LogWarning("FootStepScript not found on the player object.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Player object with clientId not found.");
-        }
-    }
 }
