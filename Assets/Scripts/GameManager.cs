@@ -1,7 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Net.Configuration;
-using Steamworks;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -38,7 +35,6 @@ public class GameManager : NetworkBehaviour
     {
         if (hasShot)
         {
-            StartCoroutine(Wait(2f));
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             while (playerWithGun == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
             {
@@ -64,6 +60,7 @@ public class GameManager : NetworkBehaviour
 
     private void CheckPlayerGunScript()
     {
+        StartCoroutine(Wait(2f));
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             if ((int)clientId == playerWithGun)

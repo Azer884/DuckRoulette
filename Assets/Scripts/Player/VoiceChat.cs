@@ -7,16 +7,21 @@ using System.Linq;
 
 public class VoiceChat : NetworkBehaviour
 {
-    private MemoryStream voiceStream;
-    private MemoryStream decompressedStream;
-    public float volumeMultiplier = 2.0f;
+    private MemoryStream output;
+    private MemoryStream stream;
+    private MemoryStream input;
+
+    private int optimalRate;
+    private int clipBufferSize;
+    private float[] clipBuffer;
+
+    private int playbackBuffer;
+    private int dataPosition;
+    private int dataReceived;
     public AudioSource audioSource;
 
     private void Start()
     {
-        // Initialize streams
-        voiceStream = new MemoryStream();
-        decompressedStream = new MemoryStream();
         try
             {
                 SteamClient.Init(480, true);
@@ -25,42 +30,46 @@ public class VoiceChat : NetworkBehaviour
             {
                     Debug.LogError(e);
             }
+        // Initialize streams
+        optimalRate = (int)SteamUser.OptimalSampleRate;
+
+        clipBufferSize = optimalRate * 5;
+        clipBuffer = new float[clipBufferSize];
+
+        stream = new MemoryStream();
+        output = new MemoryStream();
+        input = new MemoryStream();
+
+        audioSource.clip = AudioClip.Create("VoiceData", clipBufferSize, 1, optimalRate, true, OnAudioRead, null);
+        audioSource.volume = 2.0f;
+        audioSource.loop = true;
+        audioSource.Play();
     }
 
     private void Update()
     {
-        if (IsOwner && Input.GetKey(KeyCode.V)) // Push-to-Talk, and ensure only the owner sends data
+        if (IsOwner) // Push-to-Talk, and ensure only the owner sends data
         {
-            SteamUser.VoiceRecord = true; // Start recording
+            SteamUser.VoiceRecord = Input.GetKey(KeyCode.V);
 
-            if (SteamUser.HasVoiceData)
-            {
-                // Clear the stream for new voice data
-                voiceStream.SetLength(0);
-
-                int bytesRead = SteamUser.ReadVoiceData(voiceStream);
-                if (bytesRead > 0)
-                {
-                    byte[] voiceData = voiceStream.ToArray();
-                    SendVoiceDataToClientsServerRpc(voiceData);
-                }
-            }
+        if (SteamUser.HasVoiceData)
+        {
+            int compressedWritten = SteamUser.ReadVoiceData(stream);
+            stream.Position = 0;
+            SendVoiceDataToClientsServerRpc(stream.GetBuffer(), compressedWritten);
         }
-        else
-        {
-            SteamUser.VoiceRecord = false; // Stop recording
         }
     }
 
     // This will be called on the server and forward the voice data to all clients except the sender
     [ServerRpc]
-    private void SendVoiceDataToClientsServerRpc(byte[] voiceData, ServerRpcParams serverRpcParams = default)
+    private void SendVoiceDataToClientsServerRpc(byte[] voiceData, int compressedWritten, ServerRpcParams serverRpcParams = default)
     {
         // Get the sender's client ID
         ulong senderClientId = serverRpcParams.Receive.SenderClientId;
 
         // Broadcast the voice data to all clients except the sender
-        PlayVoiceOnClientsClientRpc(voiceData, new ClientRpcParams
+        PlayVoiceOnClientsClientRpc(voiceData, compressedWritten, new ClientRpcParams
         {
             Send = new ClientRpcSendParams
             {
@@ -73,41 +82,60 @@ public class VoiceChat : NetworkBehaviour
 
     // This will be executed on all clients to play the received voice data
     [ClientRpc]
-    private void PlayVoiceOnClientsClientRpc(byte[] voiceData, ClientRpcParams clientRpcParams = default)
+    private void PlayVoiceOnClientsClientRpc(byte[] voiceData, int compressedWritten, ClientRpcParams clientRpcParams = default)
     {
-        Decompresser(voiceData);
+        Decompresser(voiceData, compressedWritten);
     }
 
-    private void Decompresser(byte[] voiceData)
+    private void Decompresser(byte[] voiceData, int compressedWritten)
     {
-        decompressedStream.SetLength(0);
-        // Decompress the voice data
-        int voiceLength = SteamUser.DecompressVoice(voiceData, decompressedStream);
+        input.Write(voiceData, 0, compressedWritten);
+        input.Position = 0;
 
-        // Convert decompressed data into a byte array
-        byte[] decompressedData = decompressedStream.ToArray();
+        int uncompressedWritten = SteamUser.DecompressVoice(input, compressedWritten, output);
+        input.Position = 0;
 
-        // Create an AudioClip from the decompressed data
-        AudioClip audioClip = AudioClip.Create("VoiceClip", voiceLength, 1, (int)SteamUser.SampleRate, false);
-        audioClip.SetData(ConvertBytesToFloats(decompressedData), 0);
-        
-        // Assign and play the audio on the AudioSource
-        audioSource.clip = audioClip;
-        audioSource.PlayDelayed(.1f);
+        byte[] outputBuffer = output.GetBuffer();
+        WriteToClip(outputBuffer, uncompressedWritten);
+        output.Position = 0;
     }
 
-    // Convert byte array (PCM data) to float array
-    private float[] ConvertBytesToFloats(byte[] decompressedData)
+    private void OnAudioRead(float[] data)
     {
-        int length = decompressedData.Length / 2; // 16-bit PCM audio has 2 bytes per sample
-        float[] floatData = new float[length];
-
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < data.Length; ++i)
         {
-            short value = BitConverter.ToInt16(decompressedData, i * 2);
-            floatData[i] = value / 32768f * volumeMultiplier; // Normalize 16-bit PCM to a float range of -1 to 1
+            // start with silence
+            data[i] = 0;
+
+            // do I  have anything to play?
+            if (playbackBuffer > 0)
+            {
+                // current data position playing
+                dataPosition = (dataPosition + 1) % clipBufferSize;
+
+                data[i] = clipBuffer[dataPosition];
+
+                playbackBuffer --;
+            }
         }
 
-        return floatData;
+    }
+
+    private void WriteToClip(byte[] uncompressed, int iSize)
+    {
+        float gain = 2.0f;
+        for (int i = 0; i < iSize; i += 2)
+        {
+            // insert converted float to buffer
+            float converted = (short)(uncompressed[i] | uncompressed[i + 1] << 8) / 32767.0f;
+            converted *= gain;
+
+            clipBuffer[dataReceived] = converted;
+
+            // buffer loop
+            dataReceived = (dataReceived +1) % clipBufferSize;
+
+            playbackBuffer++;
+        }
     }
 }

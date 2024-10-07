@@ -17,12 +17,12 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private GameObject playerFieldBox, playerCardPrefab;
     [SerializeField] private GameObject readyButton, notReadyButton, startButton;
 
-    public Dictionary<ulong, GameObject> playerInfo = new Dictionary<ulong, GameObject>();
+    public Dictionary<ulong, GameObject> playerInfo = new();
 
     [SerializeField]
     private int maxMessages = 20;
 
-    private List<Message> messageList = new List<Message>();
+    private List<Message> messageList = new();
 
     public bool connected;
     public bool inGame;
@@ -80,7 +80,7 @@ public class LobbyManager : MonoBehaviour
             Destroy(messageList[0].textObject.gameObject);
             messageList.Remove(messageList[0]);
         }
-        Message newMessage = new Message();
+        Message newMessage = new();
         string _name = "Server";
 
         if (!_server)
