@@ -85,7 +85,6 @@ public class Slap : NetworkBehaviour
 
         if (validSlappedPlayers != null)
         {
-            slapAudio.Play();
             SlapPlayer(validSlappedPlayers[0]);
         }
     }
@@ -99,6 +98,7 @@ public class Slap : NetworkBehaviour
             slapLimit[player] = Random.Range(3, 10); // Set a random limit between 3 and 10
         }
 
+        slapAudio.Play();
         slapCount[player]++;
         Debug.Log($"Player {player.name} has been slapped {slapCount[player]} times (Limit: {slapLimit[player]})");
 
@@ -116,7 +116,7 @@ public class Slap : NetworkBehaviour
     // Reset slap count after 1 minute if the player hasn't been stunned
     private IEnumerator ResetSlapCountAfterOneMinute(GameObject player)
     {
-        yield return new WaitForSeconds(60f);
+        yield return new WaitForSeconds(120f);
         slapCount[player] = 0; // Reset slap count after 1 minute
         slapLimit[player] = Random.Range(3, 10);
     }
@@ -148,7 +148,7 @@ public class Slap : NetworkBehaviour
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
-                playerObject.GetComponent<Ragdoll>()?.TriggerRagdoll();
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(false);
             }
         }
     }

@@ -60,7 +60,13 @@ public class GameManager : NetworkBehaviour
 
     private void CheckPlayerGunScript()
     {
-        StartCoroutine(Wait(2f));
+        StartCoroutine(SwitchPlayerAfterDelay(2f));
+    }
+
+    private IEnumerator SwitchPlayerAfterDelay(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
+        
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             if ((int)clientId == playerWithGun)
@@ -78,10 +84,4 @@ public class GameManager : NetworkBehaviour
         randomBulletPosition.Value = Random.Range(0, 6);
         isReloaded.Value = true;
     }
-
-    private IEnumerator Wait(float waitTime)
-    {
-        yield return new WaitForSeconds(waitTime);
-    }
-
 }

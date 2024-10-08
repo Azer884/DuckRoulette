@@ -22,14 +22,6 @@ public class VoiceChat : NetworkBehaviour
 
     private void Start()
     {
-        try
-            {
-                SteamClient.Init(480, true);
-            }
-            catch (Exception e)
-            {
-                    Debug.LogError(e);
-            }
         // Initialize streams
         optimalRate = (int)SteamUser.OptimalSampleRate;
 
@@ -123,7 +115,7 @@ public class VoiceChat : NetworkBehaviour
 
     private void WriteToClip(byte[] uncompressed, int iSize)
     {
-        float gain = 2.0f;
+        float gain = 4.0f;
         for (int i = 0; i < iSize; i += 2)
         {
             // insert converted float to buffer

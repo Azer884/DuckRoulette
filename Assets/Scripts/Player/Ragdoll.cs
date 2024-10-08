@@ -98,10 +98,6 @@ public class Ragdoll : NetworkBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            TriggerRagdoll();
-        }
         switch (_currentState)
         {
             case PlayerState.Ragdoll:
@@ -116,11 +112,24 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    public void TriggerRagdoll()
+    public void TriggerRagdoll(bool isDead)
     {
         EnableRagdoll();
-        _timeToWakeUp = Random.Range(3, 6);
-        _currentState = PlayerState.Ragdoll;
+        if (!isDead)
+        {
+            _timeToWakeUp = Random.Range(3, 6);
+            _currentState = PlayerState.Ragdoll;
+        }
+        else
+        {
+            movement.enabled = false;
+            slap.enabled = false;
+            shooting.enabled = false;
+            cam.SetActive(false);
+            hands.SetActive(false);
+            foots.SetActive(false);
+            shadow.SetActive(false);
+        }
     }
 
     private void DisableRagdoll()
