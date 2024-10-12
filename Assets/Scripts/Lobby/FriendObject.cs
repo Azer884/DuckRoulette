@@ -5,12 +5,22 @@ using Steamworks;
 
 public class FriendObject : MonoBehaviour
 {
+    public float inviteCooldown = 5f;
+    private float lastInviteTime = -5f; 
     public SteamId steamid;
 
     public void Invite()
     {
-        GameNetworkManager.Instance.CurrentLobby.Value.InviteFriend(steamid);
-        Debug.Log("Invited " + steamid);
+        if (Time.time >= lastInviteTime + inviteCooldown)
+        {
+            GameNetworkManager.Instance.CurrentLobby.Value.InviteFriend(steamid);
+            Debug.Log("Invited " + steamid);
+            lastInviteTime = Time.time;
+        }
+        else
+        {
+            Debug.Log("Please wait before sending another invite.");
+        }
     }
 
 }

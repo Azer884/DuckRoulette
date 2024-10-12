@@ -275,4 +275,11 @@ public class Ragdoll : NetworkBehaviour
             return _faceDownStandUpStateNames[randomIndex];
         }
     }
+
+    private void OnCollisionEnter(Collision other) {
+        if (IsOwner && other.transform.TryGetComponent(out BulletBehavior bullet))
+        {
+            TriggerRagdoll(true);
+        }
+    }
 }

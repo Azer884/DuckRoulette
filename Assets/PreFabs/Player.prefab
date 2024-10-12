@@ -2484,7 +2484,7 @@ Transform:
   m_GameObject: {fileID: 2005213369316206993}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 0.489}
+  m_LocalPosition: {x: 0, y: -0.5, z: 1.142}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3347,7 +3347,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slapArea: {fileID: 5800746380646867471}
-  slapRaduis: 0.75
+  slapRaduis: 1
   slapCoolDown: 1.5
   animators:
   - {fileID: 5463386286171489986}
@@ -3550,7 +3550,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19c78db197a96f4590cde6f489e03a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  volumeMultiplier: 3
   audioSource: {fileID: 199935326035327325}
 --- !u!82 &199935326035327325
 AudioSource:
@@ -4803,7 +4802,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8128195909415756997
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9892,7 +9891,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7627984216524046821
 RectTransform:
   m_ObjectHideFlags: 0

@@ -9,6 +9,7 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<int> bulletPosition = new();
     public NetworkVariable<int> randomBulletPosition = new();
     public NetworkVariable<bool> isReloaded = new(false);
+    public NetworkVariable<bool> canShoot = new(true);
 
 
     private void Awake()
@@ -65,8 +66,11 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
+        canShoot.Value = false;
+
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
-        
+
+        canShoot.Value = true;
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             if ((int)clientId == playerWithGun)

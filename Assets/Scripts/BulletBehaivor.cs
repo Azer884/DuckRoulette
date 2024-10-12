@@ -1,24 +1,58 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-public class BulletBehaivor : MonoBehaviour
+public class BulletBehavior : NetworkBehaviour
 {
-    private void Awake() 
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+        if (!IsServer) return;
+
         Rigidbody rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        Destroy(gameObject, 5f);
+        StartCoroutine(DestroyAfterDelay());
     }
+
     void OnCollisionEnter(Collision collision)
     {
-        GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-        GetComponent<Rigidbody>().useGravity = true;
+        if (!IsServer) return;
 
-        if (collision.transform.TryGetComponent<Ragdoll>(out var ragdoll))
+        Rigidbody rb = GetComponent<Rigidbody>();
+        rb.linearVelocity = Vector3.zero;
+        rb.useGravity = true;
+        if (collision.transform.TryGetComponent(out Ragdoll ragdoll))
         {
-            Debug.Log("Dead");
-            ragdoll.TriggerRagdoll(true);
+            KillPlayerServerRpc(ragdoll.GetComponent<NetworkObject>().OwnerClientId);
+            Debug.Log("Collision Detected");
+        }
+    
+    }
+
+    private IEnumerator DestroyAfterDelay()
+    {
+        yield return new WaitForSeconds(5);
+        GetComponent<NetworkObject>().Despawn();
+        Destroy(gameObject);
+    }
+
+    [ServerRpc]
+    private void KillPlayerServerRpc(ulong clientId)
+    {
+        KillPlayerClientRpc(clientId);
+    }
+    [ClientRpc]
+    private void KillPlayerClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            // Get the player's object and trigger the ragdoll
+            var playerObject = client.PlayerObject;
+            if (playerObject != null)
+            {
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(true);
+            }
         }
     }
 }

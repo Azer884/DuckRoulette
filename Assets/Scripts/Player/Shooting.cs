@@ -59,7 +59,7 @@ public class Shooting : NetworkBehaviour
 
     private void Reload()
     {
-        if (inputActions.PlayerControls.Reload.triggered && !GameManager.Instance.isReloaded.Value)
+        if (inputActions.PlayerControls.Reload.triggered && !GameManager.Instance.isReloaded.Value && GameManager.Instance.canShoot.Value)
         {
             foreach (Animator animator in animators)
             {
@@ -80,7 +80,7 @@ public class Shooting : NetworkBehaviour
     }
     private void Trigger()
     {
-        if (inputActions.PlayerControls.Trigger.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger)
+        if (inputActions.PlayerControls.Trigger.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger && GameManager.Instance.canShoot.Value)
         {
             isTriggered = true;
             foreach (Animator animator in animators)
@@ -108,8 +108,10 @@ public class Shooting : NetworkBehaviour
                 {
                     animator.Play("Shooting");
                 }
+                
                 // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc();
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+                
             }
             EnableHasShotServerRpc(true);
 
@@ -122,16 +124,16 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void ShootServerRpc()
+    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim)
     {
         // Instantiate and spawn the bullet on the server
         GameManager.Instance.isReloaded.Value = false;
-        bullet = Instantiate(bulletPrefab, spawnPt.position, Quaternion.identity);
+        bullet = Instantiate(bulletPrefab, spawnPoint, rot);
         bullet.GetComponent<NetworkObject>().Spawn();
 
-        if (bullet.TryGetComponent<Rigidbody>(out var bulletRigidbody))
+        if (bullet.TryGetComponent(out Rigidbody bulletRigidbody))
         {
-            Vector3 direction = (targetAim.position - spawnPt.position).normalized;
+            Vector3 direction = (targetAim - spawnPoint).normalized;
             bulletRigidbody.rotation = Quaternion.LookRotation(direction);
             bulletRigidbody.linearVelocity = direction * bulletSpeed;
         }
