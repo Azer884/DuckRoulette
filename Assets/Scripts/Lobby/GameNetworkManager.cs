@@ -14,6 +14,7 @@ public class GameNetworkManager : MonoBehaviour
     public Lobby? CurrentLobby { get; private set; } = null;
 
     public ulong hostId;
+    private int mapIndex = 1;
 
     private void Awake()
     {
@@ -197,6 +198,22 @@ public class GameNetworkManager : MonoBehaviour
     }
     public void StartGame()
     {
-        NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
+        string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
+        string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        Debug.Log(sceneName);
+        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
     }
+    
+    #region MapSelection
+    public void ChooseMap(int index)
+    {
+        mapIndex = index;
+    }
+    public void ChooseRandomMap()
+    {
+        int totalScenes = SceneManager.sceneCountInBuildSettings;
+
+        mapIndex = Random.Range(1, totalScenes);
+    }
+    #endregion
 }

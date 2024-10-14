@@ -109,7 +109,7 @@ public class Movement : NetworkBehaviour
         transform.Rotate(Vector3.up * lookX);
 
         
-        mouseXSmooth = Mathf.Lerp(mouseXSmooth, Input.GetAxis("Mouse X"), 4 * Time.deltaTime);
+        mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x, 4 * Time.deltaTime);
     }
 
     private void DoMovement()

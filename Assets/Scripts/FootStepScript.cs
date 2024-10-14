@@ -7,6 +7,22 @@ public class FootStepScript : NetworkBehaviour {
     public Movement movement;
     public AudioSource footstepSource;
     public AudioClip[] footstepClips;
+    
+    #region Input Things
+    private PlayerInput inputActions;
+    private void Awake()
+    {
+        inputActions = new PlayerInput();
+    }
+    private void OnEnable()
+    {
+        inputActions.Enable();
+    }
+    private void OnDisable()
+    {
+        inputActions.Disable();
+    }
+    #endregion
 
     // NetworkVariable to track the timestamp of the last footstep
     private NetworkVariable<bool> isWalking = new(
@@ -24,7 +40,7 @@ public class FootStepScript : NetworkBehaviour {
         }
 
         stepCoolDown -= Time.deltaTime;
-        isWalking.Value = IsOwner && (Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f);
+        isWalking.Value = IsOwner && (inputActions.PlayerControls.Move.ReadValue<Vector2>().x > 0 || inputActions.PlayerControls.Move.ReadValue<Vector2>().y > 0);
         // Only the owning player can update their own footsteps
         if (isWalking.Value && stepCoolDown < 0f) 
         {

@@ -41,7 +41,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""name"": ""Run"",
                     ""type"": ""Button"",
                     ""id"": ""2ea62a46-ebfc-431d-baa0-ada9ead8fd65"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -95,6 +95,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""name"": ""Jump"",
                     ""type"": ""Button"",
                     ""id"": ""2a99c090-1b73-40d7-993c-8ebaa217a8cc"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Talk"",
+                    ""type"": ""Button"",
+                    ""id"": ""8679029f-c55a-4f39-8ef7-2fd843bfbf76"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -298,6 +307,28 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""4f6abcbf-409c-4c10-86d0-c9eeea4e223e"",
+                    ""path"": ""<Gamepad>/dpad/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Talk"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ff258a65-7575-40f3-83d1-133f0bf9c5a0"",
+                    ""path"": ""<Keyboard>/v"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""FPSControllerInputs"",
+                    ""action"": ""Talk"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""d416a629-7c6d-4b9c-b205-7f8a1de74053"",
                     ""path"": ""<Gamepad>/rightTrigger"",
                     ""interactions"": """",
@@ -421,6 +452,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_PlayerControls_Trigger = m_PlayerControls.FindAction("Trigger", throwIfNotFound: true);
         m_PlayerControls_Reload = m_PlayerControls.FindAction("Reload", throwIfNotFound: true);
         m_PlayerControls_Jump = m_PlayerControls.FindAction("Jump", throwIfNotFound: true);
+        m_PlayerControls_Talk = m_PlayerControls.FindAction("Talk", throwIfNotFound: true);
         m_PlayerControls_Look = m_PlayerControls.FindAction("Look", throwIfNotFound: true);
         m_PlayerControls_PauseMenu = m_PlayerControls.FindAction("PauseMenu", throwIfNotFound: true);
     }
@@ -497,6 +529,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Trigger;
     private readonly InputAction m_PlayerControls_Reload;
     private readonly InputAction m_PlayerControls_Jump;
+    private readonly InputAction m_PlayerControls_Talk;
     private readonly InputAction m_PlayerControls_Look;
     private readonly InputAction m_PlayerControls_PauseMenu;
     public struct PlayerControlsActions
@@ -511,6 +544,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         public InputAction @Trigger => m_Wrapper.m_PlayerControls_Trigger;
         public InputAction @Reload => m_Wrapper.m_PlayerControls_Reload;
         public InputAction @Jump => m_Wrapper.m_PlayerControls_Jump;
+        public InputAction @Talk => m_Wrapper.m_PlayerControls_Talk;
         public InputAction @Look => m_Wrapper.m_PlayerControls_Look;
         public InputAction @PauseMenu => m_Wrapper.m_PlayerControls_PauseMenu;
         public InputActionMap Get() { return m_Wrapper.m_PlayerControls; }
@@ -546,6 +580,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Jump.started += instance.OnJump;
             @Jump.performed += instance.OnJump;
             @Jump.canceled += instance.OnJump;
+            @Talk.started += instance.OnTalk;
+            @Talk.performed += instance.OnTalk;
+            @Talk.canceled += instance.OnTalk;
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
@@ -580,6 +617,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Jump.started -= instance.OnJump;
             @Jump.performed -= instance.OnJump;
             @Jump.canceled -= instance.OnJump;
+            @Talk.started -= instance.OnTalk;
+            @Talk.performed -= instance.OnTalk;
+            @Talk.canceled -= instance.OnTalk;
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
@@ -622,6 +662,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         void OnTrigger(InputAction.CallbackContext context);
         void OnReload(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
+        void OnTalk(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);
         void OnPauseMenu(InputAction.CallbackContext context);
     }

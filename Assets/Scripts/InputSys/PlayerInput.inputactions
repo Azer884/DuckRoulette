@@ -18,7 +18,7 @@
                     "name": "Run",
                     "type": "Button",
                     "id": "2ea62a46-ebfc-431d-baa0-ada9ead8fd65",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -72,6 +72,15 @@
                     "name": "Jump",
                     "type": "Button",
                     "id": "2a99c090-1b73-40d7-993c-8ebaa217a8cc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Talk",
+                    "type": "Button",
+                    "id": "8679029f-c55a-4f39-8ef7-2fd843bfbf76",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -270,6 +279,28 @@
                     "processors": "",
                     "groups": "FPSControllerInputs",
                     "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4f6abcbf-409c-4c10-86d0-c9eeea4e223e",
+                    "path": "<Gamepad>/dpad/down",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Talk",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ff258a65-7575-40f3-83d1-133f0bf9c5a0",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "FPSControllerInputs",
+                    "action": "Talk",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

@@ -15,7 +15,7 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private TMP_InputField inputField;
 
     [SerializeField] private GameObject playerFieldBox, playerCardPrefab;
-    [SerializeField] private GameObject readyButton, notReadyButton, startButton;
+    [SerializeField] private GameObject readyButton, notReadyButton, startButton, mapButton;
 
     public Dictionary<ulong, GameObject> playerInfo = new();
 
@@ -47,7 +47,7 @@ public class LobbyManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                if (inputField.text == " ")
+                if (string.IsNullOrWhiteSpace(inputField.text))
                 {
                     inputField.text = "";
                     inputField.DeactivateInputField();
@@ -206,11 +206,13 @@ public class LobbyManager : MonoBehaviour
             if (!_player.Value.GetComponent<PlayerInfo>().isReady)
             {
                 startButton.SetActive(false);
+                mapButton.SetActive(false);
                 return false;
             }
             else
             {
                 startButton.SetActive(true);
+                mapButton.SetActive(true);
                 _ready = true;
             }
         }

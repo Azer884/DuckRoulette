@@ -20,6 +20,25 @@ public class VoiceChat : NetworkBehaviour
     private int dataReceived;
     public AudioSource audioSource;
 
+    public bool pushToTalk = true, toggleToTalk, openMic;
+    private bool toggleActive;
+
+    #region Input Things
+    private PlayerInput inputActions;
+    private void Awake()
+    {
+        inputActions = new PlayerInput();
+    }
+    private void OnEnable()
+    {
+        inputActions.Enable();
+    }
+    private void OnDisable()
+    {
+        inputActions.Disable();
+    }
+    #endregion
+
     private void Start()
     {
         // Initialize streams
@@ -42,7 +61,11 @@ public class VoiceChat : NetworkBehaviour
     {
         if (IsOwner) // Push-to-Talk, and ensure only the owner sends data
         {
-            SteamUser.VoiceRecord = Input.GetKey(KeyCode.V);
+            if (inputActions.PlayerControls.Talk.triggered)
+            {
+                toggleActive = !toggleActive; // Toggle the state on key press
+            }
+            SteamUser.VoiceRecord = (pushToTalk && inputActions.PlayerControls.Talk.ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
 
         if (SteamUser.HasVoiceData)
         {
