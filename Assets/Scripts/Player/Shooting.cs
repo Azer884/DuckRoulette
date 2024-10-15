@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Shooting : NetworkBehaviour
 {
@@ -8,7 +9,7 @@ public class Shooting : NetworkBehaviour
     public float bulletSpeed = 10f;
     public Transform spawnPt;
     public Transform cam;
-    private PlayerInput inputActions;
+    public InputActionAsset inputActions;
     public Animator[] animators;
     public Animator bulletAnimator;
     public NetworkVariable<bool> hasShot = new(false);
@@ -21,7 +22,6 @@ public class Shooting : NetworkBehaviour
 
     void Awake()
     {
-        inputActions = new PlayerInput();
     }
 
     public override void OnNetworkSpawn()
@@ -32,6 +32,7 @@ public class Shooting : NetworkBehaviour
 
     private void OnEnable()
     {
+        inputActions = RebindSaveLoad.Instance.actions;
         EnableHasShotServerRpc(false);
         inputActions.Enable();
         hasShot.OnValueChanged += OnHasShotChangedServerRpc;
@@ -42,7 +43,6 @@ public class Shooting : NetworkBehaviour
     }
     private void OnDisable()
     {
-        inputActions.Disable();
         hasShot.OnValueChanged -= OnHasShotChangedServerRpc;
         
         HandsState(false);
@@ -59,7 +59,7 @@ public class Shooting : NetworkBehaviour
 
     private void Reload()
     {
-        if (inputActions.PlayerControls.Reload.triggered && !GameManager.Instance.isReloaded.Value && GameManager.Instance.canShoot.Value)
+        if (inputActions.FindAction("Reload").triggered && !GameManager.Instance.isReloaded.Value && GameManager.Instance.canShoot.Value)
         {
             foreach (Animator animator in animators)
             {
@@ -80,7 +80,7 @@ public class Shooting : NetworkBehaviour
     }
     private void Trigger()
     {
-        if (inputActions.PlayerControls.Trigger.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger && GameManager.Instance.canShoot.Value)
+        if (inputActions.FindAction("Trigger").triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger && GameManager.Instance.canShoot.Value)
         {
             isTriggered = true;
             foreach (Animator animator in animators)
@@ -100,7 +100,7 @@ public class Shooting : NetworkBehaviour
 
     private void Shoot()
     {
-        if (inputActions.PlayerControls.Shoot.triggered && canShoot && isTriggered)
+        if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered)
         {
             if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
             {

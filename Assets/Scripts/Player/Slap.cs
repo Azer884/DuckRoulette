@@ -2,10 +2,11 @@ using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 public class Slap : NetworkBehaviour 
 {
-    private PlayerInput inputActions;
+    private InputActionAsset inputActions;
     [SerializeField] private Transform slapArea;
     [SerializeField] private float slapRaduis;
     [SerializeField] private float slapCoolDown = 1f;
@@ -29,22 +30,17 @@ public class Slap : NetworkBehaviour
 
     private void Awake() 
     {
-        inputActions = new PlayerInput();
     }
 
     private void OnEnable() 
     {
+        inputActions = RebindSaveLoad.Instance.actions;
         inputActions.Enable();
-    }
-
-    private void OnDisable() 
-    {
-        inputActions.Disable();
     }
 
     private void Update() 
     {
-        if (inputActions.PlayerControls.Slap.triggered && canSlap)
+        if (inputActions.FindAction("Slap").triggered && canSlap)
         {
             foreach (Animator anim in animators)
             {
@@ -83,7 +79,7 @@ public class Slap : NetworkBehaviour
             }
         }
 
-        if (validSlappedPlayers != null)
+        if (validSlappedPlayers != null && validSlappedPlayers.Count > 0)
         {
             SlapPlayer(validSlappedPlayers[0]);
         }

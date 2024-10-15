@@ -219,7 +219,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TrackerSettings:
     BindingMode: 4
-    PositionDamping: {x: 0.1, y: 0.1, z: 0.3}
+    PositionDamping: {x: 0.1, y: 0.1, z: 0.07}
     AngularDampingMode: 0
     RotationDamping: {x: 0, y: 0, z: 0}
     QuaternionDamping: 0
@@ -2120,6 +2120,8 @@ MonoBehaviour:
     m_InternalValue: 0
   isReloaded:
     m_InternalValue: 0
+  canShoot:
+    m_InternalValue: 1
 --- !u!1 &1740546963033050780
 GameObject:
   m_ObjectHideFlags: 0
@@ -3551,6 +3553,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 199935326035327325}
+  pushToTalk: 1
+  toggleToTalk: 0
+  openMic: 0
 --- !u!82 &199935326035327325
 AudioSource:
   m_ObjectHideFlags: 0

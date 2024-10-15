@@ -1,12 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class Movement : NetworkBehaviour
 {
-    private PlayerInput inputActions;
+    private InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
     private CharacterController controller;
     
     [SerializeField] private Transform camHolder;
@@ -23,35 +22,25 @@ public class Movement : NetworkBehaviour
     public float speedMultiplier = 1.0f;
     [SerializeField] private float jumpHeight = 1.5f;
     
-
     [Header("Crouch Variables"), Space]
     private float initHeight;
     [SerializeField] private float crouchHeight;
-
 
     [SerializeField] private Animator[] animators;
     [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
 
-    
     [SerializeField] private GameObject legs;
     [SerializeField] private GameObject FPShadow;
     [SerializeField] private GameObject Hands;
     [SerializeField] private GameObject fullBody;
-    
+
     float mouseXSmooth = 0f;
-
-
-    private void Awake()
-    {
-        inputActions = new PlayerInput();
-    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-
 
         if (!IsOwner)
         {
@@ -82,10 +71,13 @@ public class Movement : NetworkBehaviour
         controller = GetComponent<CharacterController>();
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
+
+        // Assign inputActions from the RebindSaveLoad script
     }
 
     private void OnEnable()
     {
+        inputActions = RebindSaveLoad.Instance.actions;
         inputActions.Enable();
     }
 
@@ -108,8 +100,8 @@ public class Movement : NetworkBehaviour
         camHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * lookX);
 
-        
-        mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x, 4 * Time.deltaTime);
+        mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x / 20, 4 * Time.deltaTime);
+        mouseXSmooth = Mathf.Clamp(mouseXSmooth, -1, 1);
     }
 
     private void DoMovement()
@@ -121,17 +113,16 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        speedMultiplier = inputActions.PlayerControls.Run.ReadValue<float>() > 0 && movement.y > 0 ? 2.0f : 1.0f;
+        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 ? 2.0f : 1.0f;
 
         Vector3 move = transform.right * movement.x + transform.forward * movement.y;
         controller.Move(move * movementSpeed * speedMultiplier * Time.deltaTime);
 
         // Jumping
-        if (grounded && inputActions.PlayerControls.Jump.triggered)
+        if (grounded && inputActions.FindAction("Jump").triggered)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
-        
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
@@ -153,12 +144,11 @@ public class Movement : NetworkBehaviour
         handAnim.SetFloat("XVelocity", xVelocity);
         handAnim.SetFloat("YVelocity", yVelocity);
         handAnim.SetBool("IsGrounded", grounded);
-
     }
 
     private void DoCrouch()
     {
-        if (inputActions.PlayerControls.Crouch.ReadValue<float>() > 0)
+        if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
         {
             controller.height = crouchHeight;
         }
@@ -178,12 +168,12 @@ public class Movement : NetworkBehaviour
 
     public Vector2 GetPlayerMovement()
     {
-        return inputActions.PlayerControls.Move.ReadValue<Vector2>();
+        return inputActions.FindAction("Move").ReadValue<Vector2>();
     }
 
     public Vector2 GetPlayerLook()
     {
-        return inputActions.PlayerControls.Look.ReadValue<Vector2>();
+        return inputActions.FindAction("Look").ReadValue<Vector2>();
     }
 
     public void ChangeLayerRecursively(GameObject currentGameObject, int newLayer)

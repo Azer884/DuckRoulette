@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.InputSystem;
 
 public class FootStepScript : NetworkBehaviour {
     public float stepRate = 0.5f;
@@ -9,10 +10,10 @@ public class FootStepScript : NetworkBehaviour {
     public AudioClip[] footstepClips;
     
     #region Input Things
-    private PlayerInput inputActions;
+    private InputActionAsset inputActions;
     private void Awake()
     {
-        inputActions = new PlayerInput();
+        inputActions = RebindSaveLoad.Instance.actions;
     }
     private void OnEnable()
     {
@@ -40,7 +41,7 @@ public class FootStepScript : NetworkBehaviour {
         }
 
         stepCoolDown -= Time.deltaTime;
-        isWalking.Value = IsOwner && (inputActions.PlayerControls.Move.ReadValue<Vector2>().x > 0 || inputActions.PlayerControls.Move.ReadValue<Vector2>().y > 0);
+        isWalking.Value = IsOwner && (Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f);
         // Only the owning player can update their own footsteps
         if (isWalking.Value && stepCoolDown < 0f) 
         {

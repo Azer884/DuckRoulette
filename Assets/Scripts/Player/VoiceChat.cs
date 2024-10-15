@@ -4,6 +4,7 @@ using System.IO;
 using System;
 using Unity.Netcode;
 using System.Linq;
+using UnityEngine.InputSystem;
 
 public class VoiceChat : NetworkBehaviour
 {
@@ -24,18 +25,11 @@ public class VoiceChat : NetworkBehaviour
     private bool toggleActive;
 
     #region Input Things
-    private PlayerInput inputActions;
-    private void Awake()
-    {
-        inputActions = new PlayerInput();
-    }
+    private InputActionAsset inputActions;
     private void OnEnable()
     {
+        inputActions = RebindSaveLoad.Instance.actions;
         inputActions.Enable();
-    }
-    private void OnDisable()
-    {
-        inputActions.Disable();
     }
     #endregion
 
@@ -61,11 +55,11 @@ public class VoiceChat : NetworkBehaviour
     {
         if (IsOwner) // Push-to-Talk, and ensure only the owner sends data
         {
-            if (inputActions.PlayerControls.Talk.triggered)
+            if (inputActions.FindAction("Talk").triggered)
             {
                 toggleActive = !toggleActive; // Toggle the state on key press
             }
-            SteamUser.VoiceRecord = (pushToTalk && inputActions.PlayerControls.Talk.ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
+            SteamUser.VoiceRecord = (pushToTalk && inputActions.FindAction("Talk").ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
 
         if (SteamUser.HasVoiceData)
         {

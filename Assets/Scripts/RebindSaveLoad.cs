@@ -3,7 +3,19 @@ using UnityEngine.InputSystem;
 
 public class RebindSaveLoad : MonoBehaviour
 {
+    public static RebindSaveLoad Instance;
     public InputActionAsset actions;
+
+    private void Awake() {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject); // Destroys duplicates if they exist
+        }
+    }
 
     public void OnEnable()
     {
