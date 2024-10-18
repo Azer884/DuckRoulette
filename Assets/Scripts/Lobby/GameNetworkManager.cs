@@ -40,6 +40,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyInvite += SteamMatchmaking_OnLobbyInvite;
         SteamMatchmaking.OnLobbyGameCreated += SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += SteamFriends_OnGameLobbyJoinRequested;
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
     }
 
@@ -52,6 +53,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyInvite -= SteamMatchmaking_OnLobbyInvite;
         SteamMatchmaking.OnLobbyGameCreated -= SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested -= SteamFriends_OnGameLobbyJoinRequested;
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
         if(NetworkManager.Singleton == null)
         {
@@ -195,6 +197,25 @@ public class GameNetworkManager : MonoBehaviour
     {
         Debug.Log("Host started");
         LobbyManager.instance.HostCreated();
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        UpdateRichPresenceStatus(scene.name);
+    }
+
+    public void UpdateRichPresenceStatus(string SceneName)
+    {
+        string richPresenceKey = "steam_display";
+
+        if (SceneName.Equals("GameScene"))
+        {
+            SteamFriends.SetRichPresence(richPresenceKey, "In-Game #Map1");
+        }
+        else if (SceneName.Contains("Lobby"))
+        {
+            SteamFriends.SetRichPresence(richPresenceKey, "In-Lobby");
+        }
     }
     public void StartGame()
     {

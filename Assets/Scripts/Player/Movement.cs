@@ -1,3 +1,4 @@
+using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -36,6 +37,11 @@ public class Movement : NetworkBehaviour
     [SerializeField] private GameObject Hands;
     [SerializeField] private GameObject fullBody;
 
+    private Vector3 lastPosition; // To store the last frame's position
+    [HideInInspector]public float realMovementSpeed;  // To store the calculated speed
+    
+    public CinemachineImpulseSource jumpImpulseSource;
+
     float mouseXSmooth = 0f;
 
     public override void OnNetworkSpawn()
@@ -72,7 +78,7 @@ public class Movement : NetworkBehaviour
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
 
-        // Assign inputActions from the RebindSaveLoad script
+        lastPosition = transform.position;
     }
 
     private void OnEnable()
@@ -86,6 +92,10 @@ public class Movement : NetworkBehaviour
         DoMovement();
         DoCrouch();
         DoLooking();
+        Vector3 currentPos = transform.position;
+        Vector3 deltaPosition = currentPos - lastPosition;
+        realMovementSpeed = deltaPosition.magnitude / Time.deltaTime;
+        lastPosition = currentPos;
     }
 
     private void DoLooking()
@@ -116,19 +126,20 @@ public class Movement : NetworkBehaviour
         speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 ? 2.0f : 1.0f;
 
         Vector3 move = transform.right * movement.x + transform.forward * movement.y;
-        controller.Move(move * movementSpeed * speedMultiplier * Time.deltaTime);
+        controller.Move(movementSpeed * speedMultiplier * Time.deltaTime * move);
 
         // Jumping
         if (grounded && inputActions.FindAction("Jump").triggered)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpImpulseSource.GenerateImpulse();
         }
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        velocityX = Mathf.Lerp(velocityX, movement.x, 10f * Time.deltaTime);
-        velocityZ = Mathf.Lerp(velocityZ, movement.y * speedMultiplier, 10f * Time.deltaTime);
+        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0 , 10f * Time.deltaTime);
+        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
     }
 

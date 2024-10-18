@@ -1,9 +1,11 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class Shooting : NetworkBehaviour
 {
+    public event Action OnGunShot;
     public GameObject bulletPrefab;
     private GameObject bullet;
     public float bulletSpeed = 10f;
@@ -22,6 +24,8 @@ public class Shooting : NetworkBehaviour
 
     void Awake()
     {
+        inputActions = RebindSaveLoad.Instance.actions;
+        inputActions.Enable();
     }
 
     public override void OnNetworkSpawn()
@@ -32,14 +36,12 @@ public class Shooting : NetworkBehaviour
 
     private void OnEnable()
     {
-        inputActions = RebindSaveLoad.Instance.actions;
         EnableHasShotServerRpc(false);
-        inputActions.Enable();
         hasShot.OnValueChanged += OnHasShotChangedServerRpc;
 
         HandsState(true);
         haveGun.Value = true;
-        slapScript.enabled = false;
+        
     }
     private void OnDisable()
     {
@@ -47,7 +49,6 @@ public class Shooting : NetworkBehaviour
         
         HandsState(false);
         haveGun.Value = false;
-        slapScript.enabled = true;
     }
 
     void Update()
@@ -108,6 +109,7 @@ public class Shooting : NetworkBehaviour
                 {
                     animator.Play("Shooting");
                 }
+                OnGunShot?.Invoke();
                 
                 // Notify the server to shoot and update hasShot on all clients
                 ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
@@ -171,6 +173,7 @@ public class Shooting : NetworkBehaviour
             anim.SetBool("HaveAGun", state);
         }
         fPHands.SwitchParent(state);
+        slapScript.enabled = !state;
     }
     
 }

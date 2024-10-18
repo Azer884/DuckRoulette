@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 
 public class Slap : NetworkBehaviour 
 {
+    public event System.Action OnSlap;
+    public event System.Action OnSlapRecived;
     private InputActionAsset inputActions;
     [SerializeField] private Transform slapArea;
     [SerializeField] private float slapRaduis;
@@ -26,10 +28,6 @@ public class Slap : NetworkBehaviour
     {
         if (!IsOwner) enabled = false;
         base.OnNetworkSpawn();
-    }
-
-    private void Awake() 
-    {
     }
 
     private void OnEnable() 
@@ -67,6 +65,7 @@ public class Slap : NetworkBehaviour
 
     private void TryToSlap()
     {
+        OnSlap?.Invoke();
         slappedPlayers = Physics.OverlapSphere(slapArea.position, slapRaduis, otherPlayers);
 
         List<GameObject> validSlappedPlayers = new();
@@ -96,6 +95,9 @@ public class Slap : NetworkBehaviour
 
         slapAudio.Play();
         slapCount[player]++;
+        
+        SlapImpactServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
+
         Debug.Log($"Player {player.name} has been slapped {slapCount[player]} times (Limit: {slapLimit[player]})");
 
         if (slapCount[player] >= slapLimit[player])
@@ -145,6 +147,25 @@ public class Slap : NetworkBehaviour
             if (playerObject != null)
             {
                 playerObject.GetComponent<Ragdoll>().TriggerRagdoll(false);
+            }
+        }
+    }
+
+    [ServerRpc]
+    private void SlapImpactServerRpc(ulong clientId)
+    {
+        SlapImpactClientRpc(clientId);
+    }
+    [ClientRpc]
+    private void SlapImpactClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            // Get the player's object and trigger the ragdoll
+            var playerObject = client.PlayerObject;
+            if (playerObject != null)
+            {
+                OnSlapRecived?.Invoke();
             }
         }
     }

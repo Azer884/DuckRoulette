@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
+using Unity.Cinemachine;
 
 public class FootStepScript : NetworkBehaviour {
     public float stepRate = 0.5f;
@@ -8,24 +9,23 @@ public class FootStepScript : NetworkBehaviour {
     public Movement movement;
     public AudioSource footstepSource;
     public AudioClip[] footstepClips;
-    
+    private CharacterController controller;
+    public CinemachineImpulseSource impulseSource;
+
     #region Input Things
     private InputActionAsset inputActions;
     private void Awake()
     {
         inputActions = RebindSaveLoad.Instance.actions;
+        controller = movement.GetComponent<CharacterController>();
     }
     private void OnEnable()
     {
         inputActions.Enable();
     }
-    private void OnDisable()
-    {
-        inputActions.Disable();
-    }
     #endregion
 
-    // NetworkVariable to track the timestamp of the last footstep
+    // NetworkVariable to track whether the player is walking
     private NetworkVariable<bool> isWalking = new(
         false, 
         NetworkVariableReadPermission.Everyone, 
@@ -40,19 +40,34 @@ public class FootStepScript : NetworkBehaviour {
             stepRate = 0.5f;
         }
 
+        // Calculate movement speed manually by comparing positions
+        
+
         stepCoolDown -= Time.deltaTime;
-        isWalking.Value = IsOwner && (Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f);
-        // Only the owning player can update their own footsteps
+
+        // Determine if the player is walking
+        isWalking.Value = IsOwner 
+            && (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
+            && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
+            && controller.isGrounded;
+
+        // Only the owning player can trigger their own footsteps
         if (isWalking.Value && stepCoolDown < 0f) 
         {
+            impulseSource.GenerateImpulse();
             PlayFootstep();
             stepCoolDown = stepRate;
         }
     }
 
     private void PlayFootstep() {
-        footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
-        int index = Random.Range(0, footstepClips.Length);
-        footstepSource.PlayOneShot(footstepClips[index], 0.9f);
+        if (footstepClips.Length > 0) {
+            footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
+            int index = Random.Range(0, footstepClips.Length);
+            Debug.Log("Playing footstep sound: " + index);
+            footstepSource.PlayOneShot(footstepClips[index], 0.9f);
+        } else {
+            Debug.LogWarning("Footstep clips not assigned.");
+        }
     }
 }
