@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public int playerWithGun;
+    public int playerWithGun = -1;
     public NetworkVariable<int> bulletPosition = new();
     public NetworkVariable<int> randomBulletPosition = new();
     public NetworkVariable<bool> isReloaded = new(false);
@@ -22,6 +22,13 @@ public class GameManager : NetworkBehaviour
         {
             Destroy(gameObject);
         }
+    }
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+        CheckPlayerGunScript();
     }
 
     public void Update()

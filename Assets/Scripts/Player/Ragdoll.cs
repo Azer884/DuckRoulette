@@ -184,6 +184,8 @@ public class Ragdoll : NetworkBehaviour
         hands.SetActive(false);
         foots.SetActive(false);
         shadow.SetActive(false);
+
+        RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
     }
 
     private void RagdollBehaviour()

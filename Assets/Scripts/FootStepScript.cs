@@ -21,7 +21,7 @@ public class FootStepScript : NetworkBehaviour {
     }
     private void OnEnable()
     {
-        inputActions.Enable();
+        
     }
     #endregion
 
@@ -34,27 +34,30 @@ public class FootStepScript : NetworkBehaviour {
 
     void Update () {
         // Adjust step rate based on movement speed
-        if (IsOwner && movement.speedMultiplier > 1) {
-            stepRate = 0.35f;
-        } else {
-            stepRate = 0.5f;
+        if (IsOwner)
+        {
+            if (movement.speedMultiplier > 1) {
+                stepRate = 0.35f;
+            } else {
+                stepRate = 0.5f;
+            }
+    
+            stepCoolDown -= Time.deltaTime;
+    
+            // Determine if the player is walking
+            isWalking.Value =
+                (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
+                && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
+                && controller.isGrounded;
         }
-
-        // Calculate movement speed manually by comparing positions
-        
-
-        stepCoolDown -= Time.deltaTime;
-
-        // Determine if the player is walking
-        isWalking.Value = IsOwner 
-            && (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
-            && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
-            && controller.isGrounded;
 
         // Only the owning player can trigger their own footsteps
         if (isWalking.Value && stepCoolDown < 0f) 
         {
-            impulseSource.GenerateImpulse();
+            if (IsOwner)
+            {
+                impulseSource.GenerateImpulse();
+            }
             PlayFootstep();
             stepCoolDown = stepRate;
         }

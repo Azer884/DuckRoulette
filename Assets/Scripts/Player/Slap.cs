@@ -33,7 +33,6 @@ public class Slap : NetworkBehaviour
     private void OnEnable() 
     {
         inputActions = RebindSaveLoad.Instance.actions;
-        inputActions.Enable();
     }
 
     private void Update() 
@@ -66,6 +65,7 @@ public class Slap : NetworkBehaviour
     private void TryToSlap()
     {
         OnSlap?.Invoke();
+        RebindSaveLoad.Instance.RumbleGamepad(0.5f, .8f, .2f, 0.3f);
         slappedPlayers = Physics.OverlapSphere(slapArea.position, slapRaduis, otherPlayers);
 
         List<GameObject> validSlappedPlayers = new();
@@ -114,7 +114,7 @@ public class Slap : NetworkBehaviour
     // Reset slap count after 1 minute if the player hasn't been stunned
     private IEnumerator ResetSlapCountAfterOneMinute(GameObject player)
     {
-        yield return new WaitForSeconds(120f);
+        yield return new WaitForSeconds(60f);
         slapCount[player] = 0; // Reset slap count after 1 minute
         slapLimit[player] = Random.Range(3, 10);
     }
@@ -166,6 +166,7 @@ public class Slap : NetworkBehaviour
             if (playerObject != null)
             {
                 OnSlapRecived?.Invoke();
+                RebindSaveLoad.Instance.RumbleGamepad(0.25f, .8f, .2f, 0.3f);
             }
         }
     }

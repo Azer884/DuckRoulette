@@ -84,7 +84,7 @@ public class Movement : NetworkBehaviour
     private void OnEnable()
     {
         inputActions = RebindSaveLoad.Instance.actions;
-        inputActions.Enable();
+        
     }
 
     private void Update()

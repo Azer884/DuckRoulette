@@ -2137,7 +2137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efcfbc5099afcda49bd7ba5450bf7f5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerWithGun: 0
+  playerWithGun: -1
   bulletPosition:
     m_InternalValue: 0
   randomBulletPosition:
@@ -3187,6 +3187,7 @@ GameObject:
   - component: {fileID: 7283489907467008536}
   - component: {fileID: 5993872244831146990}
   - component: {fileID: 1816800951425717793}
+  - component: {fileID: 8323436409233549481}
   - component: {fileID: 4858632074287071628}
   - component: {fileID: 499319212786747193}
   - component: {fileID: 4177207364945662841}
@@ -3367,6 +3368,19 @@ MonoBehaviour:
   haveGun:
     m_InternalValue: 0
   slapScript: {fileID: 4858632074287071628}
+--- !u!114 &8323436409233549481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8803da0d9a71a5a45bc08b5e48422b3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gunScript: {fileID: 1816800951425717793}
 --- !u!114 &4858632074287071628
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4011,7 +4025,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00196bfaaa2c63f4197b41cf64b62400, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shootingScript: {fileID: 1816800951425717793}
   virtualCamera: {fileID: 6690049341799254103}
   shootingNoise: {fileID: 11400000, guid: e9ce97b7a206dc64d90931ea044e0c72, type: 2}
 --- !u!1 &2467759632112175086

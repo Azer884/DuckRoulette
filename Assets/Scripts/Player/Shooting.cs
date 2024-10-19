@@ -25,7 +25,7 @@ public class Shooting : NetworkBehaviour
     void Awake()
     {
         inputActions = RebindSaveLoad.Instance.actions;
-        inputActions.Enable();
+        
     }
 
     public override void OnNetworkSpawn()
@@ -109,6 +109,7 @@ public class Shooting : NetworkBehaviour
                 {
                     animator.Play("Shooting");
                 }
+                RebindSaveLoad.Instance.RumbleGamepad(0.8f, 1f, 0f, 0.4f);
                 OnGunShot?.Invoke();
                 
                 // Notify the server to shoot and update hasShot on all clients

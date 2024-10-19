@@ -29,7 +29,7 @@ public class VoiceChat : NetworkBehaviour
     private void OnEnable()
     {
         inputActions = RebindSaveLoad.Instance.actions;
-        inputActions.Enable();
+        
     }
     #endregion
 

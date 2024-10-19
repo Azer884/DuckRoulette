@@ -4928,6 +4928,130 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 580413358}
   m_CullTransparentMesh: 1
+--- !u!1 &616574352
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 616574355}
+  - component: {fileID: 616574354}
+  - component: {fileID: 616574353}
+  m_Layer: 0
+  m_Name: InputManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &616574353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616574352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
+  m_NotificationBehavior: 3
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6e44727f-40d2-41de-9df8-ef9c859bb7f5
+    m_ActionName: 'PlayerControls/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/XInputControllerWindows/leftStick]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2ea62a46-ebfc-431d-baa0-ada9ead8fd65
+    m_ActionName: 'PlayerControls/Run[/XInputControllerWindows/leftTrigger,/Keyboard/leftShift]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: c863efc0-5558-4bfd-9e1f-2f090a5f5683
+    m_ActionName: 'PlayerControls/Crouch[/XInputControllerWindows/leftShoulder,/Keyboard/leftCtrl]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 0ffd7257-70af-4749-99c2-af58117cadb8
+    m_ActionName: 'PlayerControls/Shoot[/XInputControllerWindows/rightTrigger,/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 68d301ce-5653-4a43-a402-253fdaae4589
+    m_ActionName: 'PlayerControls/Slap[/XInputControllerWindows/rightTrigger,/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 94dce328-7d3c-438e-8f36-ba0456ec1e1b
+    m_ActionName: 'PlayerControls/Trigger[/XInputControllerWindows/rightTrigger,/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8b1f9b54-991c-40a2-8968-9c29136351ca
+    m_ActionName: 'PlayerControls/Reload[/XInputControllerWindows/buttonEast,/Keyboard/r]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2a99c090-1b73-40d7-993c-8ebaa217a8cc
+    m_ActionName: 'PlayerControls/Jump[/XInputControllerWindows/buttonSouth,/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8679029f-c55a-4f39-8ef7-2fd843bfbf76
+    m_ActionName: 'PlayerControls/Talk[/XInputControllerWindows/dpad/down,/Keyboard/v]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 7c576b61-dc8e-4a7c-8caa-56b535957cfe
+    m_ActionName: 'PlayerControls/Change Weapon[/XInputControllerWindows/rightShoulder,/Mouse/scroll/up]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5199bef6-c81b-4c89-a767-9d8947696c32
+    m_ActionName: 'PlayerControls/Look[/XInputControllerWindows/rightStick,/Mouse/delta]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: a5ad4849-694e-45e5-818f-a2eb7914c14d
+    m_ActionName: 'PlayerControls/PauseMenu[/XInputControllerWindows/start,/Keyboard/escape]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: 2a8b124d-b40d-4089-9bb1-3e7687c3c29f
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &616574354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616574352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46067bb77c1d744eb3cfd3160d119da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  actions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
+--- !u!4 &616574355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 616574352}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &627871864
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11946,7 +12070,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1928257289}
   - component: {fileID: 1928257290}
-  - component: {fileID: 1928257291}
   m_Layer: 5
   m_Name: CoinManager
   m_TagString: Untagged
@@ -11982,19 +12105,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   amount: 100
---- !u!114 &1928257291
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1928257288}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f46067bb77c1d744eb3cfd3160d119da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  actions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
 --- !u!1001 &1950905592
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12791,3 +12901,4 @@ SceneRoots:
   - {fileID: 1854608101}
   - {fileID: 25697713}
   - {fileID: 1928257289}
+  - {fileID: 616574355}
