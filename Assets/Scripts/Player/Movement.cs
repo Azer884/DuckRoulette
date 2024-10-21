@@ -75,16 +75,11 @@ public class Movement : NetworkBehaviour
     private void Start()
     {
         controller = GetComponent<CharacterController>();
+        inputActions = GetComponent<InputSystem>().inputActions;
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
 
         lastPosition = transform.position;
-    }
-
-    private void OnEnable()
-    {
-        inputActions = RebindSaveLoad.Instance.actions;
-        
     }
 
     private void Update()
@@ -170,11 +165,6 @@ public class Movement : NetworkBehaviour
                 controller.height = initHeight;
             }
         }
-    }
-
-    private void OnDisable()
-    {
-        inputActions.Disable();
     }
 
     public Vector2 GetPlayerMovement()

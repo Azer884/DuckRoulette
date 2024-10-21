@@ -3206,6 +3206,7 @@ GameObject:
   - component: {fileID: 773563083178522455}
   - component: {fileID: 8051052191642501203}
   - component: {fileID: 9210295925041576989}
+  - component: {fileID: 9008643366807559449}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -3351,7 +3352,6 @@ MonoBehaviour:
   bulletSpeed: 100
   spawnPt: {fileID: 6379040414650745114}
   cam: {fileID: 6566756217050747349}
-  inputActions: {fileID: 0}
   animators:
   - {fileID: 5405113477927700091}
   - {fileID: 5463386286171489986}
@@ -4027,6 +4027,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   virtualCamera: {fileID: 6690049341799254103}
   shootingNoise: {fileID: 11400000, guid: e9ce97b7a206dc64d90931ea044e0c72, type: 2}
+--- !u!114 &9008643366807559449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88d8c3d1e1fdd7a44b331337dd3b429e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0

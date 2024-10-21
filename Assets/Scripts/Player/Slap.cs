@@ -15,7 +15,6 @@ public class Slap : NetworkBehaviour
     [SerializeField] private Animator[] animators;
     [SerializeField] private LayerMask otherPlayers;
     private Collider[] slappedPlayers;
-    private Ragdoll[] players;
     private bool canSlap = true;
 
     // Stun related variables
@@ -30,9 +29,8 @@ public class Slap : NetworkBehaviour
         base.OnNetworkSpawn();
     }
 
-    private void OnEnable() 
-    {
-        inputActions = RebindSaveLoad.Instance.actions;
+    private void Awake() {
+        inputActions = GetComponent<InputSystem>().inputActions;
     }
 
     private void Update() 

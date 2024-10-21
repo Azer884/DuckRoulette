@@ -11,21 +11,6 @@ public class RebindSaveLoad : MonoBehaviour
     private string currentControlScheme;
 
 
-    private void Awake() {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject); // Destroys duplicates if they exist
-        }
-    }
-    private void Start() {
-        
-    }
-
     public void OnEnable()
     {
         var rebinds = PlayerPrefs.GetString("rebinds");
@@ -73,5 +58,6 @@ public class RebindSaveLoad : MonoBehaviour
         PlayerPrefs.SetString("rebinds", rebinds);
 
         input.onControlsChanged -= SwitchControls;
+        actions.Disable();
     }
 }

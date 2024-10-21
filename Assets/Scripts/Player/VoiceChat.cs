@@ -26,15 +26,12 @@ public class VoiceChat : NetworkBehaviour
 
     #region Input Things
     private InputActionAsset inputActions;
-    private void OnEnable()
-    {
-        inputActions = RebindSaveLoad.Instance.actions;
-        
-    }
     #endregion
 
     private void Start()
     {
+        inputActions = GetComponent<InputSystem>().inputActions;
+        
         // Initialize streams
         optimalRate = (int)SteamUser.OptimalSampleRate;
 

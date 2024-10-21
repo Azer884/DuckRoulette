@@ -16,12 +16,8 @@ public class FootStepScript : NetworkBehaviour {
     private InputActionAsset inputActions;
     private void Awake()
     {
-        inputActions = RebindSaveLoad.Instance.actions;
         controller = movement.GetComponent<CharacterController>();
-    }
-    private void OnEnable()
-    {
-        
+        inputActions = GetComponent<InputSystem>().inputActions;
     }
     #endregion
 

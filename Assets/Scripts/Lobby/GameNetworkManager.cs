@@ -223,6 +223,7 @@ public class GameNetworkManager : MonoBehaviour
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
         Debug.Log(sceneName);
         NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+        NetworkTransmission.instance.StarGameFeeServerRpc();
     }
     
     #region MapSelection

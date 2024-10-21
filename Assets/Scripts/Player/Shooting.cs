@@ -11,7 +11,7 @@ public class Shooting : NetworkBehaviour
     public float bulletSpeed = 10f;
     public Transform spawnPt;
     public Transform cam;
-    public InputActionAsset inputActions;
+    private InputActionAsset inputActions;
     public Animator[] animators;
     public Animator bulletAnimator;
     public NetworkVariable<bool> hasShot = new(false);
@@ -22,16 +22,14 @@ public class Shooting : NetworkBehaviour
     public NetworkVariable<bool> haveGun = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private Slap slapScript;
 
-    void Awake()
-    {
-        inputActions = RebindSaveLoad.Instance.actions;
-        
-    }
-
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         if (!IsOwner) enabled = false;
+    }
+
+    private void Awake() {
+        inputActions = GetComponent<InputSystem>().inputActions;
     }
 
     private void OnEnable()
@@ -41,7 +39,6 @@ public class Shooting : NetworkBehaviour
 
         HandsState(true);
         haveGun.Value = true;
-        
     }
     private void OnDisable()
     {

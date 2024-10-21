@@ -87,4 +87,16 @@ public class NetworkTransmission : NetworkBehaviour
             }
         }
     }
+
+    [ServerRpc]
+    public void StarGameFeeServerRpc()
+    {
+        StarGameFeeClientRpc();
+    }
+
+    [ClientRpc]
+    public void StarGameFeeClientRpc()
+    {
+        Coin.Instance.UpdateCoinAmount(-5);
+    }
 }
