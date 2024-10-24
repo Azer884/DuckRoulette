@@ -72,6 +72,8 @@ public class NetworkTransmission : NetworkBehaviour
             if(player.Key == _clientId)
             {
                 player.Value.GetComponent<PlayerInfo>().isReady = _ready;
+                player.Value.GetComponent<PlayerInfo>().haveEoughCoins = Coin.Instance.amount >= 5;
+                
                 if (_ready)
                 {
                     player.Value.GetComponent<PlayerInfo>().playerName.color = new Color(0, .5f, 0);
@@ -80,6 +82,8 @@ public class NetworkTransmission : NetworkBehaviour
                 {
                     player.Value.GetComponent<PlayerInfo>().playerName.color = new Color(.5f, 0, 0);
                 }
+
+                
                 if (NetworkManager.Singleton.IsHost)
                 {
                     Debug.Log(LobbyManager.instance.CheckIfPlayersAreReady());

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
@@ -11,6 +9,7 @@ public class PlayerInfo : MonoBehaviour
     public RawImage profilePic;
     public ulong steamId;
     public bool isReady;
+    public bool haveEoughCoins;
 
     private void Start()
     {

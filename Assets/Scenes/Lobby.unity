@@ -2123,7 +2123,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5731734467510696540, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -435.06677
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5731734467510696540, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -5437,6 +5437,7 @@ RectTransform:
   - {fileID: 1756525973}
   - {fileID: 521067349}
   - {fileID: 367611904}
+  - {fileID: 1560901216}
   m_Father: {fileID: 1276153730}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7747,6 +7748,8 @@ MonoBehaviour:
   inGame: 0
   isHost: 0
   myClientId: 0
+  errorMessage: {fileID: 5635556029175532014, guid: 4a57a5db9f2997b42a7e2f76ef268726, type: 3}
+  errorMessageBox: {fileID: 1560901215}
 --- !u!4 &1190420172
 Transform:
   m_ObjectHideFlags: 0
@@ -10339,6 +10342,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1549578346}
   m_CullTransparentMesh: 1
+--- !u!1 &1560901215
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1560901216}
+  m_Layer: 5
+  m_Name: ErrorMessageBox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1560901216
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1560901215}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 766190468}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1565407284
 GameObject:
   m_ObjectHideFlags: 0
@@ -12286,7 +12324,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 690190895482579582, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_Text
-      value: Esc
+      value: R
       objectReference: {fileID: 0}
     - target: {fileID: 4144614242073959112, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_AnchorMax.x

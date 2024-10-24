@@ -30,6 +30,7 @@ public class LobbyManager : MonoBehaviour
     public bool isHost;
     public ulong myClientId;
 
+    [SerializeField] private GameObject errorMessage ,errorMessageBox;
     private void Awake()
     {
         if (instance != null)
@@ -214,10 +215,17 @@ public class LobbyManager : MonoBehaviour
 
         foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
-            if (!_player.Value.GetComponent<PlayerInfo>().isReady)
+            if (!(_player.Value.GetComponent<PlayerInfo>().isReady && _player.Value.GetComponent<PlayerInfo>().haveEoughCoins))
             {
                 startButton.SetActive(false);
                 mapButton.SetActive(false);
+                if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
+                {
+                    GameObject error = Instantiate(errorMessage, errorMessageBox.transform);
+                    error.GetComponent<TextMeshProUGUI>().text = _player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money";
+                    Destroy(error, 3f);
+                    Debug.Log(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money");
+                }
                 return false;
             }
             else
