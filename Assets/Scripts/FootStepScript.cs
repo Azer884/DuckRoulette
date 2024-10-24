@@ -17,7 +17,7 @@ public class FootStepScript : NetworkBehaviour {
     private void Awake()
     {
         controller = movement.GetComponent<CharacterController>();
-        inputActions = GetComponent<InputSystem>().inputActions;
+        inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
     }
     #endregion
 

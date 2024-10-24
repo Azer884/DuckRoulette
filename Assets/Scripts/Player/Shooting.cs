@@ -8,14 +8,14 @@ public class Shooting : NetworkBehaviour
     public event Action OnGunShot;
     public GameObject bulletPrefab;
     private GameObject bullet;
-    public float bulletSpeed = 10f;
+    public float bulletSpeed = 5f;
     public Transform spawnPt;
     public Transform cam;
     private InputActionAsset inputActions;
     public Animator[] animators;
     public Animator bulletAnimator;
     public NetworkVariable<bool> hasShot = new(false);
-    private bool canTrigger, canShoot, isTriggered;
+    public bool canTrigger, canShoot, isTriggered;
     [SerializeField] private Transform targetAim;
     [SerializeField] private Hands fPHands;
     public GameObject gun;
@@ -24,17 +24,20 @@ public class Shooting : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if(!IsOwner) enabled = false;
+
         base.OnNetworkSpawn();
-        if (!IsOwner) enabled = false;
     }
 
     private void Awake() {
         inputActions = GetComponent<InputSystem>().inputActions;
     }
+//buged?
 
     private void OnEnable()
     {
-        EnableHasShotServerRpc(false);
+        hasShot.Value = false;
+
         hasShot.OnValueChanged += OnHasShotChangedServerRpc;
 
         HandsState(true);
@@ -110,10 +113,10 @@ public class Shooting : NetworkBehaviour
                 OnGunShot?.Invoke();
                 
                 // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, OwnerClientId);
                 
             }
-            EnableHasShotServerRpc(true);
+            hasShot.Value = true;
 
             isTriggered = false;
             foreach (Animator animator in animators)
@@ -124,7 +127,7 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim)
+    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, ulong senderId)
     {
         // Instantiate and spawn the bullet on the server
         GameManager.Instance.isReloaded.Value = false;
@@ -137,9 +140,10 @@ public class Shooting : NetworkBehaviour
             bulletRigidbody.rotation = Quaternion.LookRotation(direction);
             bulletRigidbody.linearVelocity = direction * bulletSpeed;
         }
+        bullet.GetComponent<BulletBehavior>().bulletId = senderId;
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void OnHasShotChangedServerRpc(bool oldValue, bool newValue)
     {
         // Call the GameManager function and pass the necessary parameters
@@ -147,12 +151,6 @@ public class Shooting : NetworkBehaviour
         {
             GameManager.Instance.OnClientShotChanged(OwnerClientId, newValue);
         }
-    }
-
-    [ServerRpc]
-    private void EnableHasShotServerRpc(bool newValue)
-    {
-        hasShot.Value = newValue;
     }
 
     [ServerRpc]

@@ -1,25 +1,45 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class PlayerPushObject : MonoBehaviour
+public class PlayerPushObject : NetworkBehaviour
 {
     [SerializeField]
     private float forceMagnitude;
 
+    public override void OnNetworkSpawn()
+    {
+        if(!IsOwner) enabled = false;
+        base.OnNetworkSpawn();
+    }
+
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        var rigidBody = hit.collider.attachedRigidbody;
-
-        if (rigidBody != null)
+        if (hit.collider.attachedRigidbody != null)
         {
-            var forceDirection = hit.gameObject.transform.position - transform.position;
-            forceDirection.y = 0;
-            forceDirection.Normalize();
-            
-            rigidBody.AddForceAtPosition(forceDirection * forceMagnitude, transform.position, ForceMode.Impulse);
+            Vector3 hitPosition = hit.point;
+            Vector3 hitColliderPosition = hit.collider.transform.position;
 
-            
+            ColliderHitServerRpc(transform.position, hitColliderPosition, hitPosition);
+        }
+    }
+
+    [ServerRpc]
+    private void ColliderHitServerRpc(Vector3 playerPosition, Vector3 hitColliderPosition, Vector3 hitPoint)
+    {
+        Collider hitCollider = Physics.OverlapSphere(hitPoint, 0.1f)?[0]; // Get the first collider in the overlap sphere (should be the one hit)
+
+        if (hitCollider != null)
+        {
+            var rigidBody = hitCollider.attachedRigidbody;
+
+            if (rigidBody != null)
+            {
+                var forceDirection = hitColliderPosition - playerPosition;
+                forceDirection.y = 0;
+                forceDirection.Normalize();
+
+                rigidBody.AddForceAtPosition(forceDirection * forceMagnitude, hitPoint, ForceMode.Impulse);
+            }
         }
     }
 }

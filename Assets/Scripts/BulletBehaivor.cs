@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class BulletBehavior : NetworkBehaviour
 {
+    private Rigidbody rb;
+    public ulong bulletId = 10;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         if (!IsServer) return;
 
-        Rigidbody rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         StartCoroutine(DestroyAfterDelay());
@@ -17,17 +19,8 @@ public class BulletBehavior : NetworkBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (!IsServer) return;
-
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb.linearVelocity = Vector3.zero;
         rb.useGravity = true;
-        if (collision.transform.TryGetComponent(out Ragdoll ragdoll))
-        {
-            KillPlayerServerRpc(ragdoll.GetComponent<NetworkObject>().OwnerClientId);
-            Debug.Log("Collision Detected");
-        }
-    
+        if (!IsServer) return;
     }
 
     private IEnumerator DestroyAfterDelay()
@@ -35,24 +28,5 @@ public class BulletBehavior : NetworkBehaviour
         yield return new WaitForSeconds(5);
         GetComponent<NetworkObject>().Despawn();
         Destroy(gameObject);
-    }
-
-    [ServerRpc]
-    private void KillPlayerServerRpc(ulong clientId)
-    {
-        KillPlayerClientRpc(clientId);
-    }
-    [ClientRpc]
-    private void KillPlayerClientRpc(ulong clientId)
-    {
-        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
-        {
-            // Get the player's object and trigger the ragdoll
-            var playerObject = client.PlayerObject;
-            if (playerObject != null)
-            {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(true);
-            }
-        }
     }
 }

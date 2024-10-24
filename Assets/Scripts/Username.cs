@@ -3,43 +3,35 @@ using Steamworks;
 using Unity.Netcode;
 using TMPro;
 using Unity.Collections;
+using System.Collections;
+using Unity.VisualScripting;
 
 public class Username : NetworkBehaviour
 {
-    [SerializeField] private TextMeshProUGUI userName;
-    private Camera mainCamera;
-
     private NetworkVariable<FixedString32Bytes> playerName = new();
+    private bool nameTagSet = false;
+    [SerializeField] private TextMeshProUGUI userName;
 
+    [SerializeField] private Camera mainCamera;
     public override void OnNetworkSpawn()
     {
         if (IsOwner)
         {
-            // Set the player name using Steam name
-            string steamName = SteamClient.Name;
-            playerName.Value = steamName;
-
-            // Hide the name tag for the local player
+            playerName.Value = SteamClient.Name;
             userName.gameObject.SetActive(false);
         }
-        else
-        {
-            // Set the name tag for other players
-            userName.text = playerName.Value.ToString();
-        }
-
-        // Get the main camera
-        mainCamera = Camera.main;
     }
 
-    private void Update()
+    public void SetOverlay()
     {
-        // Make sure the camera and user name are assigned
-        if (mainCamera != null && userName != null && !IsOwner)
+        userName.text = playerName.Value.ToString();
+    }
+
+    private void Update() {
+        if (!nameTagSet && !string.IsNullOrEmpty(playerName.Value.ToString()))
         {
-            // Make the username look at the camera
-            userName.transform.LookAt(mainCamera.transform);
-            userName.transform.Rotate(0, 180, 0); // Adjust rotation so the text is readable
+            SetOverlay();
+            nameTagSet = true;
         }
     }
 }

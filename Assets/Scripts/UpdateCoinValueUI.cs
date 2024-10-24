@@ -12,6 +12,9 @@ public class UpdateCoinValueUI : MonoBehaviour
     {
         Coin.CoinChanged -= UpdateCoinUI;
     }
+    private void Start() {
+        UpdateCoinUI();
+    }
 
     private void UpdateCoinUI()
     {

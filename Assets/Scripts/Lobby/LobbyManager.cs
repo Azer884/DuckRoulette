@@ -10,6 +10,7 @@ public class LobbyManager : MonoBehaviour
     public static LobbyManager instance;
 
     [SerializeField] private GameObject multiMenu, multiLobby;
+    public TextMeshProUGUI lobbyId;
 
     [SerializeField] private GameObject chatPanel, textObject;
     [SerializeField] private TMP_InputField inputField;
@@ -109,6 +110,16 @@ public class LobbyManager : MonoBehaviour
             Destroy(chit);
         }
         Debug.Log("clearing chat");
+    }
+
+    public void CopyId()
+    {
+        TextEditor textEditor = new()
+        {
+            text = lobbyId.text
+        };
+        textEditor.SelectAll();
+        textEditor.Copy();
     }
 
     public void HostCreated()

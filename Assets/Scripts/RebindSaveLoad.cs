@@ -10,13 +10,20 @@ public class RebindSaveLoad : MonoBehaviour
     public Gamepad gamepad;
     private string currentControlScheme;
 
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(this);
+        }
+    }
 
     public void OnEnable()
     {
         var rebinds = PlayerPrefs.GetString("rebinds");
         if (!string.IsNullOrEmpty(rebinds))
             actions.LoadBindingOverridesFromJson(rebinds);
-        actions.Enable();
         gamepad = Gamepad.current;
         input = GetComponent<PlayerInput>();
         input.onControlsChanged += SwitchControls;
@@ -58,6 +65,5 @@ public class RebindSaveLoad : MonoBehaviour
         PlayerPrefs.SetString("rebinds", rebinds);
 
         input.onControlsChanged -= SwitchControls;
-        actions.Disable();
     }
 }

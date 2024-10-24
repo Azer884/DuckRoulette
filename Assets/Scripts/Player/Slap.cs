@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
-
+//buged?
 public class Slap : NetworkBehaviour 
 {
     public event System.Action OnSlap;
@@ -25,7 +25,7 @@ public class Slap : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner) enabled = false;
+        if(!IsOwner) enabled = false;
         base.OnNetworkSpawn();
     }
 

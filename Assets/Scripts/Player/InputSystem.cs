@@ -12,6 +12,6 @@ public class InputSystem : MonoBehaviour
     }
     private void OnDisable() 
     {
-        inputActions.Disable();    
+        inputActions.Disable();
     }
 }

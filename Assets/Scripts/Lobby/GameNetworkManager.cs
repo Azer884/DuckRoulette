@@ -4,6 +4,7 @@ using Steamworks;
 using Steamworks.Data;
 using Netcode.Transports.Facepunch;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -118,7 +119,7 @@ public class GameNetworkManager : MonoBehaviour
             return;
         }
         StartClient(CurrentLobby.Value.Owner.Id);
-
+        LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
     private void SteamMatchmaking_OnLobbyCreated(Result _result, Lobby _lobby)
@@ -133,6 +134,7 @@ public class GameNetworkManager : MonoBehaviour
         _lobby.SetGameServer(_lobby.Owner.Id);
         Debug.Log($"lobby created {SteamClient.Name}");
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, NetworkManager.Singleton.LocalClientId); //
+        LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
     public async void StartHost(int _maxMembers)
@@ -141,6 +143,33 @@ public class GameNetworkManager : MonoBehaviour
         NetworkManager.Singleton.StartHost();
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
         CurrentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+    }
+
+    public async void JoinById(TMP_InputField input)
+    {
+        if (!ulong.TryParse(input.text, out ulong ID))
+            return;
+        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
+        foreach (Lobby lobby in lobbies)
+        {
+            if (lobby.Id == ID)
+            {
+                // Join the lobby
+                RoomEnter joinedLobby = await lobby.Join();
+                
+                if (joinedLobby != RoomEnter.Success)
+                {
+                    Debug.Log("Failed to join lobby.");
+                }
+                else
+                {
+                    CurrentLobby = lobby;
+                    LobbyManager.instance.ConnectedAsClient();
+                    Debug.Log("Joined Lobby");
+                    return;
+                }
+            }
+        }
     }
 
     public void StartClient(SteamId _sId)

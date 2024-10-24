@@ -18,16 +18,16 @@ public class Coin : MonoBehaviour
     {
         CoinData data = SaveSystem.LoadCoin();
 
-    if (data != null) // Check if the save data was loaded successfully
-    {
-        amount = data.coinAmount; // Set the coin amount from the loaded data
-        CoinChanged?.Invoke(); // Notify the UI or other listeners about the change
-    }
-    else
-    {
-        Debug.LogWarning("No coin data found in Steam Cloud, using default amount.");
-        amount = 100; // Default coin amount if no save data is found
-    }
+        if (data != null) // Check if the save data was loaded successfully
+        {
+            amount = data.coinAmount; // Set the coin amount from the loaded data
+            CoinChanged?.Invoke(); // Notify the UI or other listeners about the change
+        }
+        else
+        {
+            Debug.LogWarning("No coin data found in Steam Cloud, using default amount.");
+            amount = 100; // Default coin amount if no save data is found
+        }
     }
 
 

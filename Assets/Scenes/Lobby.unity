@@ -699,11 +699,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -336.87
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 389.665
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6965394917684232714, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_Name
@@ -2123,7 +2123,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5731734467510696540, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -435.06677
       objectReference: {fileID: 0}
     - target: {fileID: 5731734467510696540, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -2191,11 +2191,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8728790925915989526, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8728790925915989526, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8815990632866401673, guid: 158227d855904bd48857c0f511ac4e65, type: 3}
       propertyPath: m_ShowMaskGraphic
@@ -2537,7 +2537,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &367611904
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2554,8 +2554,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -593, y: 218}
-  m_SizeDelta: {x: 613.6, y: 50}
+  m_AnchoredPosition: {x: -1689.3649, y: 537}
+  m_SizeDelta: {x: 420.0604, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &367611905
 MonoBehaviour:
@@ -2607,7 +2607,7 @@ MonoBehaviour:
   m_fontSize: 36
   m_fontSizeBase: 36
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
@@ -3916,7 +3916,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &521067349
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3934,7 +3934,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1757, y: 218}
+  m_AnchoredPosition: {x: 533.2, y: 537}
   m_SizeDelta: {x: 168.6, y: 78}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &521067350
@@ -3981,9 +3981,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: SteamManager, Assembly-CSharp
-        m_MethodName: CopyID
+      - m_Target: {fileID: 1190420171}
+        m_TargetAssemblyTypeName: LobbyManager, Assembly-CSharp
+        m_MethodName: CopyId
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4903,7 +4903,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.41568628, g: 0.41568628, b: 0.41568628, a: 0.31764707}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5090,11 +5090,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -336.87
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 389.665
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7137979194947916134, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_Pivot.x
@@ -7732,6 +7732,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   multiMenu: {fileID: 157999395}
   multiLobby: {fileID: 766190467}
+  lobbyId: {fileID: 367611905}
   chatPanel: {fileID: 335152963}
   textObject: {fileID: 409349174741119442, guid: f4d4411ce757f9b4eb6489e292866e00, type: 3}
   inputField: {fileID: 335152962}
@@ -10609,7 +10610,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1571990283}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 265683272}
+        m_TargetAssemblyTypeName: GameNetworkManager, Assembly-CSharp
+        m_MethodName: JoinById
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 580413359}
+          m_ObjectArgumentAssemblyTypeName: TMPro.TMP_InputField, Unity.TextMeshPro
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1571990283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10623,7 +10636,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.41568628, g: 0.41568628, b: 0.41568628, a: 0.31764707}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

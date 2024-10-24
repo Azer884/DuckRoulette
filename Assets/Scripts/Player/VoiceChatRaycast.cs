@@ -13,7 +13,7 @@ public class VoiceChatRaycast : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner) enabled = false;
+        if(!IsOwner) enabled = false;
         base.OnNetworkSpawn();
     }
 

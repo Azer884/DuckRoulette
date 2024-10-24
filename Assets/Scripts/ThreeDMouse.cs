@@ -9,7 +9,7 @@ public class ThreeDMouse : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner) enabled = false;
+        if(!IsOwner) enabled = false;
     }
     void Update()
     {
