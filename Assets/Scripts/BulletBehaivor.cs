@@ -19,8 +19,8 @@ public class BulletBehavior : NetworkBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        rb.useGravity = true;
         if (!IsServer) return;
+        rb.useGravity = true;
     }
 
     private IEnumerator DestroyAfterDelay()

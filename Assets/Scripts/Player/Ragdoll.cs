@@ -278,10 +278,27 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision other) {
-        if (IsOwner && other.transform.TryGetComponent(out BulletBehavior bullet))
+    private void OnCollisionEnter(Collision other) 
+    {
+        if (IsOwner && other.transform.TryGetComponent(out BulletBehavior bullet) && bullet.bulletId != OwnerClientId)
         {
             TriggerRagdoll(true);
+            UpdateCoinValueServerRpc(bullet.bulletId);
+        }
+    }
+
+    [ServerRpc]
+    private void UpdateCoinValueServerRpc(ulong shooterId)
+    {
+        UpdateCoinValueClientRpc(shooterId);
+    }
+
+    [ClientRpc]
+    private void UpdateCoinValueClientRpc(ulong shooterId)
+    {
+        if (OwnerClientId == shooterId)
+        {
+            Coin.Instance.UpdateCoinAmount(3);
         }
     }
 }

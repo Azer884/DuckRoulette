@@ -10,7 +10,7 @@ public class Username : NetworkBehaviour
     private bool nameTagSet = false;
     [SerializeField] private TextMeshProUGUI userName;
 
-    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Camera ownerCamera;
 
     public override void OnNetworkSpawn()
     {
@@ -38,6 +38,10 @@ public class Username : NetworkBehaviour
             SetOverlay();
             nameTagSet = true;
         }
-        userName.transform.LookAt(userName.transform.position + mainCamera.transform.rotation * Vector3.forward, mainCamera.transform.rotation * Vector3.up);
+        if (ownerCamera != null)
+        {
+            userName.transform.LookAt(ownerCamera.transform);
+            userName.transform.rotation = Quaternion.LookRotation(ownerCamera.transform.forward);
+        }
     }
 }
