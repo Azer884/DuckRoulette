@@ -3,8 +3,6 @@ using Steamworks;
 using Unity.Netcode;
 using TMPro;
 using Unity.Collections;
-using System.Collections;
-using Unity.VisualScripting;
 
 public class Username : NetworkBehaviour
 {
@@ -13,13 +11,20 @@ public class Username : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI userName;
 
     [SerializeField] private Camera mainCamera;
+
     public override void OnNetworkSpawn()
     {
         if (IsOwner)
         {
-            playerName.Value = SteamClient.Name;
+            SetPlayerNameServerRpc(SteamClient.Name);
             userName.gameObject.SetActive(false);
         }
+    }
+
+    [ServerRpc]
+    private void SetPlayerNameServerRpc(string name)
+    {
+        playerName.Value = new FixedString32Bytes(name);
     }
 
     public void SetOverlay()
@@ -33,5 +38,6 @@ public class Username : NetworkBehaviour
             SetOverlay();
             nameTagSet = true;
         }
+        userName.transform.LookAt(userName.transform.position + mainCamera.transform.rotation * Vector3.forward, mainCamera.transform.rotation * Vector3.up);
     }
 }

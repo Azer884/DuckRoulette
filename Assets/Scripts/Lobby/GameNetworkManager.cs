@@ -218,7 +218,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _cliendId);
         LobbyManager.instance.myClientId = _cliendId;
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, _cliendId);
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, _cliendId);
         Debug.Log($"Client has connected : {SteamClient.Name}");
     }
 

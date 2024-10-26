@@ -217,6 +217,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3644472308159696344}
+  - component: {fileID: 4227386642998272996}
   - component: {fileID: 3107472366826229274}
   m_Layer: 5
   m_Name: PlayerCard
@@ -246,6 +247,29 @@ RectTransform:
   m_AnchoredPosition: {x: 0.59368896, y: 29.140198}
   m_SizeDelta: {x: 668.6675, y: 58.2805}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &4227386642998272996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5820299647662144186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 781906214
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &3107472366826229274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,3 +287,5 @@ MonoBehaviour:
   profilePic: {fileID: 3821974481228303065}
   steamId: 0
   isReady: 0
+  haveEoughCoins:
+    m_InternalValue: 0

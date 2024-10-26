@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using TMPro;
 
 public class NetworkTransmission : NetworkBehaviour
 {
@@ -20,15 +21,15 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void IWishToSendAChatServerRPC(string _message, ulong _fromWho)
+    public void IWishToSendAChatServerRPC(string _message, ulong _fromWho, bool isServer)
     {
-        ChatFromServerClientRPC(_message, _fromWho);
+        ChatFromServerClientRPC(_message, _fromWho, isServer);
     }
 
     [ClientRpc]
-    private void ChatFromServerClientRPC(string _message, ulong _fromWho)
+    private void ChatFromServerClientRPC(string _message, ulong _fromWho, bool isServer)
     {
-        LobbyManager.instance.SendMessageToChat(_message, _fromWho, false);
+        LobbyManager.instance.SendMessageToChat(_message, _fromWho, isServer);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -59,20 +60,20 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void IsTheClientReadyServerRPC(bool _ready, ulong _clientId)
+    public void IsTheClientReadyServerRPC(bool _ready, bool haveEoughCoins, ulong _clientId)
     {
-        AClientMightBeReadyClientRPC(_ready, _clientId);
+        AClientMightBeReadyClientRPC(_ready, haveEoughCoins, _clientId);
     }
 
     [ClientRpc]
-    private void AClientMightBeReadyClientRPC(bool _ready, ulong _clientId)
+    private void AClientMightBeReadyClientRPC(bool _ready, bool haveEoughCoins, ulong _clientId)
     {
         foreach(KeyValuePair<ulong,GameObject> player in LobbyManager.instance.playerInfo)
         {
             if(player.Key == _clientId)
             {
                 player.Value.GetComponent<PlayerInfo>().isReady = _ready;
-                player.Value.GetComponent<PlayerInfo>().haveEoughCoins = Coin.Instance.amount >= 5;
+                player.Value.GetComponent<PlayerInfo>().haveEoughCoins = haveEoughCoins;
                 
                 if (_ready)
                 {

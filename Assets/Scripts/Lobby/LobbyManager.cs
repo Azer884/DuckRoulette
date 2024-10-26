@@ -30,7 +30,7 @@ public class LobbyManager : MonoBehaviour
     public bool isHost;
     public ulong myClientId;
 
-    [SerializeField] private GameObject errorMessage ,errorMessageBox;
+    public GameObject errorMessage ,errorMessageBox;
     private void Awake()
     {
         if (instance != null)
@@ -55,7 +55,7 @@ public class LobbyManager : MonoBehaviour
                     inputField.DeactivateInputField();
                     return;
                 }
-                NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId);
+                NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
                 inputField.text = "";
             }
         }
@@ -98,6 +98,10 @@ public class LobbyManager : MonoBehaviour
         GameObject newText = Instantiate(textObject, chatPanel.transform);
         newMessage.textObject = newText.GetComponent<TMP_Text>();
         newMessage.textObject.text = newMessage.text;
+        if (_server)
+        {
+            newMessage.textObject.color = Color.red;
+        }
 
         messageList.Add(newMessage);
     }
@@ -206,7 +210,7 @@ public class LobbyManager : MonoBehaviour
 
     public void ReadyButton(bool _ready)
     {
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, myClientId);
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5, myClientId);
     }
 
     public bool CheckIfPlayersAreReady()
@@ -221,10 +225,7 @@ public class LobbyManager : MonoBehaviour
                 mapButton.SetActive(false);
                 if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
                 {
-                    GameObject error = Instantiate(errorMessage, errorMessageBox.transform);
-                    error.GetComponent<TextMeshProUGUI>().text = _player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money";
-                    Destroy(error, 3f);
-                    Debug.Log(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money");
+                    NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
                 }
                 return false;
             }
