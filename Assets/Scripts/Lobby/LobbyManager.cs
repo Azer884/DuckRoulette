@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using Steamworks;
 using System.Threading.Tasks;
+using UnityEngine.UI;
 
 public class LobbyManager : MonoBehaviour
 {
@@ -17,6 +18,7 @@ public class LobbyManager : MonoBehaviour
 
     [SerializeField] private GameObject playerFieldBox, playerCardPrefab;
     [SerializeField] private GameObject readyButton, notReadyButton, startButton, mapButton;
+    public Toggle publicToggle, privateToggle, friendToggle;
 
     public Dictionary<ulong, GameObject> playerInfo = new();
 

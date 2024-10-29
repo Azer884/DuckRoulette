@@ -30,15 +30,6 @@ public class GameManager : NetworkBehaviour
         playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
         CheckPlayerGunScript();
     }
-
-    public void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            CheckPlayerGunScript();
-        }
-    }
     public void OnClientShotChanged(ulong clientId, bool hasShot)
     {
         if (hasShot)

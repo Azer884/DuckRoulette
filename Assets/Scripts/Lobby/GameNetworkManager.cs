@@ -5,6 +5,7 @@ using Steamworks.Data;
 using Netcode.Transports.Facepunch;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Threading.Tasks;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -129,7 +130,19 @@ public class GameNetworkManager : MonoBehaviour
             Debug.Log("lobby was not created");
             return;
         }
-        _lobby.SetPublic();
+        if (LobbyManager.instance.privateToggle.isOn)
+        {
+            _lobby.SetPrivate();
+        }
+        else if (LobbyManager.instance.friendToggle.isOn)
+        {
+            _lobby.SetFriendsOnly();
+        }
+        else
+        {
+            _lobby.SetPublic();
+
+        }
         _lobby.SetJoinable(true);
         _lobby.SetGameServer(_lobby.Owner.Id);
         Debug.Log($"lobby created {SteamClient.Name}");
@@ -137,12 +150,12 @@ public class GameNetworkManager : MonoBehaviour
         LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
-    public async void StartHost(int _maxMembers)
+    public async void StartHost(TMP_InputField _maxMembers)
     {
         NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
         NetworkManager.Singleton.StartHost();
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        CurrentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+        CurrentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
     }
 
     public async void JoinById(TMP_InputField input)
@@ -267,4 +280,17 @@ public class GameNetworkManager : MonoBehaviour
         mapIndex = Random.Range(1, totalScenes);
     }
     #endregion
+
+
+    public async void LobbiesListAsync()
+    {
+        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
+        foreach (Lobby lobby in lobbies)
+        {
+            if (!string.IsNullOrWhiteSpace(lobby.Owner.Name))
+            {
+                Debug.Log(lobby.Owner.Name + " " + lobby.MemberCount + "/" + lobby.MaxMembers);
+            }
+        }
+    }
 }
