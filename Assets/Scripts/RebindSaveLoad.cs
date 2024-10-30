@@ -1,6 +1,7 @@
 using UnityEngine.InputSystem;
 using System.Collections;
 using UnityEngine;
+using Steamworks; // Add this line
 
 public class RebindSaveLoad : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class RebindSaveLoad : MonoBehaviour
     private PlayerInput input;
     public Gamepad gamepad;
     private string currentControlScheme;
+    private const string rebindFileName = "rebinds.json"; // Cloud file name
 
     private void Awake()
     {
@@ -21,9 +23,28 @@ public class RebindSaveLoad : MonoBehaviour
 
     public void OnEnable()
     {
-        var rebinds = PlayerPrefs.GetString("rebinds");
-        if (!string.IsNullOrEmpty(rebinds))
-            actions.LoadBindingOverridesFromJson(rebinds);
+        // Load rebinds from Steam Cloud if availabl
+        if (SteamClient.IsValid && SteamRemoteStorage.FileExists(rebindFileName))
+        {
+            var rebindBytes = SteamRemoteStorage.FileRead(rebindFileName);
+            var rebinds = System.Text.Encoding.UTF8.GetString(rebindBytes);
+            
+            if (!string.IsNullOrEmpty(rebinds))
+            {
+                actions.LoadBindingOverridesFromJson(rebinds);
+                Debug.Log("Loaded rebinds from Steam Cloud: " + rebinds);
+            }
+        }
+        else
+        {
+            // Fallback to local PlayerPrefs if Steam is not available
+            var rebinds = PlayerPrefs.GetString("rebinds");
+            if (!string.IsNullOrEmpty(rebinds))
+                actions.LoadBindingOverridesFromJson(rebinds);
+
+            Debug.Log("Loaded rebinds from PlayerPrefs: " + rebinds);
+        }
+
         gamepad = Gamepad.current;
         input = GetComponent<PlayerInput>();
         input.onControlsChanged += SwitchControls;
@@ -31,7 +52,7 @@ public class RebindSaveLoad : MonoBehaviour
 
     public void RumbleGamepad(float lowFrequency, float highFrequency, float startDelay, float duration)
     {
-        if(currentControlScheme != "Gamepad")
+        if (currentControlScheme != "Gamepad")
             return;
         gamepad = Gamepad.current;
 
@@ -47,8 +68,7 @@ public class RebindSaveLoad : MonoBehaviour
         Debug.Log(currentControlScheme);
     }
 
-
-    private IEnumerator SetMotorSpeed(float lowFrequency, float highFrequency, float startDelay,float duration)
+    private IEnumerator SetMotorSpeed(float lowFrequency, float highFrequency, float startDelay, float duration)
     {
         yield return new WaitForSeconds(startDelay);
 
@@ -62,8 +82,26 @@ public class RebindSaveLoad : MonoBehaviour
     public void OnDisable()
     {
         var rebinds = actions.SaveBindingOverridesAsJson();
-        PlayerPrefs.SetString("rebinds", rebinds);
+
+        if (SteamClient.IsValid)
+        {
+            // Convert the rebinds string to a byte array for Steam Cloud
+            var rebindBytes = System.Text.Encoding.UTF8.GetBytes(rebinds);
+            
+            // Save to Steam Cloud
+            SteamRemoteStorage.FileWrite(rebindFileName, rebindBytes);
+
+            Debug.Log("Saved rebinds to Steam Cloud: " + rebinds);
+        }
+        else
+        {
+            // Fallback to PlayerPrefs if Steam is not available
+            PlayerPrefs.SetString("rebinds", rebinds);
+
+            Debug.Log("Saved rebinds to PlayerPrefs: " + rebinds);
+        }
 
         input.onControlsChanged -= SwitchControls;
     }
+
 }

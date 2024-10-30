@@ -8,10 +8,7 @@ public class InputSystem : MonoBehaviour
 
     private void OnEnable() 
     {
-        inputActions.Enable();
-    }
-    private void OnDisable() 
-    {
         inputActions.Disable();
+        inputActions.Enable();
     }
 }

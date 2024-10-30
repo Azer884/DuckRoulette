@@ -64,11 +64,11 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
-        canShoot.Value = false;
+        ChangeVarValueServerRpc(canShoot.Value, false);
 
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
 
-        canShoot.Value = true;
+        ChangeVarValueServerRpc(canShoot.Value, true);
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             if ((int)clientId == playerWithGun)
@@ -85,5 +85,11 @@ public class GameManager : NetworkBehaviour
     {
         randomBulletPosition.Value = Random.Range(0, 6);
         isReloaded.Value = true;
+    }
+
+    [ServerRpc]
+    private void ChangeVarValueServerRpc(bool oldValue, bool newValue)
+    {
+        oldValue = newValue;
     }
 }

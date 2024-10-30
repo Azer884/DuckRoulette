@@ -14,7 +14,7 @@ public class Shooting : NetworkBehaviour
     private InputActionAsset inputActions;
     public Animator[] animators;
     public Animator bulletAnimator;
-    public NetworkVariable<bool> hasShot = new(false);
+    public NetworkVariable<bool> hasShot = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public bool canTrigger, canShoot, isTriggered;
     [SerializeField] private Transform targetAim;
     [SerializeField] private Hands fPHands;

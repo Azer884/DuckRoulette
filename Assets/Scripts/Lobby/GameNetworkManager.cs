@@ -6,6 +6,7 @@ using Netcode.Transports.Facepunch;
 using UnityEngine.SceneManagement;
 using TMPro;
 using System.Threading.Tasks;
+using UnityEngine.UI;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -162,26 +163,43 @@ public class GameNetworkManager : MonoBehaviour
     {
         if (!ulong.TryParse(input.text, out ulong ID))
             return;
-        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
-        foreach (Lobby lobby in lobbies)
+        
+        Lobby? lobby = await SteamMatchmaking.JoinLobbyAsync(ID);
+
+        if (!lobby.HasValue)
         {
-            if (lobby.Id == ID)
-            {
-                // Join the lobby
-                RoomEnter joinedLobby = await lobby.Join();
-                
-                if (joinedLobby != RoomEnter.Success)
-                {
-                    Debug.Log("Failed to join lobby.");
-                }
-                else
-                {
-                    CurrentLobby = lobby;
-                    LobbyManager.instance.ConnectedAsClient();
-                    Debug.Log("Joined Lobby");
-                    return;
-                }
-            }
+            Debug.Log("Lobby not found or inaccessible.");
+            return;
+        }
+
+        RoomEnter result = await lobby.Value.Join();
+
+        if (result != RoomEnter.Success)
+        {
+            Debug.Log("Failed to join lobby.");
+        }
+        else
+        {
+            CurrentLobby = lobby;
+            LobbyManager.instance.ConnectedAsClient();
+            Debug.Log("Joined Private Lobby");
+        }
+    }
+
+    private async void JoinLobby(Lobby lobby)
+    {
+        RoomEnter joinedLobby = await lobby.Join();
+
+        if (joinedLobby != RoomEnter.Success)
+        {
+            Debug.Log("Failed to join lobby.");
+        }
+        else
+        {
+            CurrentLobby = lobby;
+            LobbyManager.instance.ConnectedAsClient();
+            Debug.Log("Joined Lobby");
+            return;
         }
     }
 
@@ -284,13 +302,63 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void LobbiesListAsync()
     {
+        foreach (Transform child in LobbyManager.instance.lobbiesBox.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+
         Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
+        Debug.Log($"Found {lobbies.Length} lobbies");
+
         foreach (Lobby lobby in lobbies)
         {
+            Debug.Log($"Lobby Owner: {lobby.Owner.Name}, Members: {lobby.MemberCount}/{lobby.MaxMembers}");
             if (!string.IsNullOrWhiteSpace(lobby.Owner.Name))
             {
-                Debug.Log(lobby.Owner.Name + " " + lobby.MemberCount + "/" + lobby.MaxMembers);
+                lobby.Refresh();
+                GameObject lobbyObj = Instantiate(LobbyManager.instance.lobbiesObj, LobbyManager.instance.lobbiesBox.transform);
+
+                lobbyObj.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = lobby.Owner.Name;
+                lobbyObj.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = lobby.MemberCount + "/" + lobby.MaxMembers;
+                Button joinButton = lobbyObj.transform.GetChild(2).GetComponent<Button>();
+
+                joinButton.onClick.AddListener(() => JoinLobby(lobby));
             }
         }
     }
+
+    public async void RandomJoin()
+    {
+        // Request lobbies with at least one slot available
+        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
+
+        // Filter out lobbies that have no owner name
+        Lobby[] validLobbies = System.Array.FindAll(lobbies, lobby => !string.IsNullOrWhiteSpace(lobby.Owner.Name));
+
+        // Check if there are any valid lobbies available
+        if (validLobbies.Length == 0)
+        {
+            Debug.Log("No available lobbies with an owner name to join.");
+            return;
+        }
+
+        // Select a random lobby index from the filtered list
+        int randomIndex = Random.Range(0, validLobbies.Length);
+
+        // Try to join the randomly selected lobby
+        RoomEnter result = await validLobbies[randomIndex].Join();
+
+        // Check if the join attempt was successful
+        if (result != RoomEnter.Success)
+        {
+            Debug.Log("Failed to join lobby.");
+        }
+        else
+        {
+            LobbyManager.instance.ConnectedAsClient();
+            Debug.Log("Joined Lobby");
+        }
+    }
+
 }

@@ -19,6 +19,7 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private GameObject playerFieldBox, playerCardPrefab;
     [SerializeField] private GameObject readyButton, notReadyButton, startButton, mapButton;
     public Toggle publicToggle, privateToggle, friendToggle;
+    public GameObject lobbiesBox, lobbiesObj;
 
     public Dictionary<ulong, GameObject> playerInfo = new();
 
