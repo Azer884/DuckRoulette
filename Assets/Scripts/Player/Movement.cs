@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
@@ -41,6 +42,8 @@ public class Movement : NetworkBehaviour
     [HideInInspector]public float realMovementSpeed;  // To store the calculated speed
     
     public CinemachineImpulseSource jumpImpulseSource;
+
+    [SerializeField] private List<GameObject> hatsList;
 
     float mouseXSmooth = 0f;
 

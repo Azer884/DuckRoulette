@@ -38,10 +38,9 @@ public class Username : NetworkBehaviour
             SetOverlay();
             nameTagSet = true;
         }
-        if (ownerCamera != null)
+        if (ownerCamera != null && !IsOwner)
         {
             userName.transform.LookAt(ownerCamera.transform);
-            userName.transform.rotation = Quaternion.LookRotation(ownerCamera.transform.forward);
         }
     }
 }

@@ -87,7 +87,7 @@ public class GameManager : NetworkBehaviour
         isReloaded.Value = true;
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void ChangeVarValueServerRpc(bool oldValue, bool newValue)
     {
         oldValue = newValue;
