@@ -43,8 +43,6 @@ public class Movement : NetworkBehaviour
     
     public CinemachineImpulseSource jumpImpulseSource;
 
-    [SerializeField] private List<GameObject> hatsList;
-
     float mouseXSmooth = 0f;
 
     public override void OnNetworkSpawn()
@@ -180,7 +178,7 @@ public class Movement : NetworkBehaviour
         return inputActions.FindAction("Look").ReadValue<Vector2>();
     }
 
-    public void ChangeLayerRecursively(GameObject currentGameObject, int newLayer)
+    public static void ChangeLayerRecursively(GameObject currentGameObject, int newLayer)
     {
         currentGameObject.layer = newLayer;
 

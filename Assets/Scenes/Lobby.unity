@@ -759,11 +759,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -336.87
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 389.665
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6965394917684232714, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_Name
@@ -7520,11 +7520,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -336.87
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6944532548922891280, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 389.665
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7137979194947916134, guid: 00ea80e1361c437409d4f70205655000, type: 3}
       propertyPath: m_Pivot.x
@@ -12032,7 +12032,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 690190895482579582, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_Text
-      value: D-Pad Down
+      value: D-Pad/Down
       objectReference: {fileID: 0}
     - target: {fileID: 4144614242073959112, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_AnchorMax.x

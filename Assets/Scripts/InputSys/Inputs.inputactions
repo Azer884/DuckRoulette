@@ -105,7 +105,7 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "PauseMenu",
+                    "name": "Pause",
                     "type": "Button",
                     "id": "a5ad4849-694e-45e5-818f-a2eb7914c14d",
                     "expectedControlType": "",
@@ -210,7 +210,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
-                    "action": "PauseMenu",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -221,7 +221,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard",
-                    "action": "PauseMenu",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

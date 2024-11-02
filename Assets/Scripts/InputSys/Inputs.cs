@@ -128,7 +128,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""PauseMenu"",
+                    ""name"": ""Pause"",
                     ""type"": ""Button"",
                     ""id"": ""a5ad4849-694e-45e5-818f-a2eb7914c14d"",
                     ""expectedControlType"": """",
@@ -233,7 +233,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
-                    ""action"": ""PauseMenu"",
+                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -244,7 +244,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
-                    ""action"": ""PauseMenu"",
+                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -492,7 +492,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_PlayerControls_Talk = m_PlayerControls.FindAction("Talk", throwIfNotFound: true);
         m_PlayerControls_ChangeWeapon = m_PlayerControls.FindAction("Change Weapon", throwIfNotFound: true);
         m_PlayerControls_Look = m_PlayerControls.FindAction("Look", throwIfNotFound: true);
-        m_PlayerControls_PauseMenu = m_PlayerControls.FindAction("PauseMenu", throwIfNotFound: true);
+        m_PlayerControls_Pause = m_PlayerControls.FindAction("Pause", throwIfNotFound: true);
     }
 
     ~@Inputs()
@@ -570,7 +570,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Talk;
     private readonly InputAction m_PlayerControls_ChangeWeapon;
     private readonly InputAction m_PlayerControls_Look;
-    private readonly InputAction m_PlayerControls_PauseMenu;
+    private readonly InputAction m_PlayerControls_Pause;
     public struct PlayerControlsActions
     {
         private @Inputs m_Wrapper;
@@ -586,7 +586,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         public InputAction @Talk => m_Wrapper.m_PlayerControls_Talk;
         public InputAction @ChangeWeapon => m_Wrapper.m_PlayerControls_ChangeWeapon;
         public InputAction @Look => m_Wrapper.m_PlayerControls_Look;
-        public InputAction @PauseMenu => m_Wrapper.m_PlayerControls_PauseMenu;
+        public InputAction @Pause => m_Wrapper.m_PlayerControls_Pause;
         public InputActionMap Get() { return m_Wrapper.m_PlayerControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -629,9 +629,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
-            @PauseMenu.started += instance.OnPauseMenu;
-            @PauseMenu.performed += instance.OnPauseMenu;
-            @PauseMenu.canceled += instance.OnPauseMenu;
+            @Pause.started += instance.OnPause;
+            @Pause.performed += instance.OnPause;
+            @Pause.canceled += instance.OnPause;
         }
 
         private void UnregisterCallbacks(IPlayerControlsActions instance)
@@ -669,9 +669,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
-            @PauseMenu.started -= instance.OnPauseMenu;
-            @PauseMenu.performed -= instance.OnPauseMenu;
-            @PauseMenu.canceled -= instance.OnPauseMenu;
+            @Pause.started -= instance.OnPause;
+            @Pause.performed -= instance.OnPause;
+            @Pause.canceled -= instance.OnPause;
         }
 
         public void RemoveCallbacks(IPlayerControlsActions instance)
@@ -720,6 +720,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         void OnTalk(InputAction.CallbackContext context);
         void OnChangeWeapon(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);
-        void OnPauseMenu(InputAction.CallbackContext context);
+        void OnPause(InputAction.CallbackContext context);
     }
 }

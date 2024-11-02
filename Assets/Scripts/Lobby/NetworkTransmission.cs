@@ -12,7 +12,7 @@ public class NetworkTransmission : NetworkBehaviour
     {
         if(instance != null)
         {
-            Destroy(this);
+            Destroy(gameObject);
         }
         else
         {

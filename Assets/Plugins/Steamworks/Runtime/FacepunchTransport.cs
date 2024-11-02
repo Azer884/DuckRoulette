@@ -44,7 +44,14 @@ namespace Netcode.Transports.Facepunch
         {
             try
             {
-                SteamClient.Init(steamAppId, false);
+                if (!SteamClient.IsValid)
+                {
+                    SteamClient.Init(steamAppId, false);
+                }
+                else
+                {
+                    Debug.Log("SteamClient is already initialized.");
+                }
             }
             catch (Exception e)
             {

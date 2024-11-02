@@ -19,6 +19,10 @@ public class RebindSaveLoad : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(this);
         }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void OnEnable()

@@ -7,6 +7,8 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.Threading.Tasks;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using System.IO;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -16,8 +18,11 @@ public class GameNetworkManager : MonoBehaviour
 
     public Lobby? CurrentLobby { get; private set; } = null;
 
+    public List<Lobby> Lobbies { get; private set; } = new List<Lobby>(capacity: 100);
+
     public ulong hostId;
     private int mapIndex = 1;
+    private readonly string RandomServerNamePath = Path.Combine(Application.dataPath, "RandomLobbyNames.txt");
 
     private void Awake()
     {
@@ -56,7 +61,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyInvite -= SteamMatchmaking_OnLobbyInvite;
         SteamMatchmaking.OnLobbyGameCreated -= SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested -= SteamFriends_OnGameLobbyJoinRequested;
-        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
 
         if(NetworkManager.Singleton == null)
         {
@@ -93,7 +98,6 @@ public class GameNetworkManager : MonoBehaviour
     {
         Debug.Log("Lobby was created");
         LobbyManager.instance.SendMessageToChat($"Lobby was created", NetworkManager.Singleton.LocalClientId, true);
-
     }
 
     //friend send you an steam invite
@@ -146,6 +150,20 @@ public class GameNetworkManager : MonoBehaviour
         }
         _lobby.SetJoinable(true);
         _lobby.SetGameServer(_lobby.Owner.Id);
+        
+        string randomLine = "";
+        if (File.Exists(RandomServerNamePath))
+        {
+            string[] lines = File.ReadAllLines(RandomServerNamePath);
+
+            if (lines.Length > 0)
+            {
+                int randomIndex = Random.Range(0, lines.Length);
+                randomLine = lines[randomIndex];
+            }
+        } 
+        _lobby.SetData("name", $"{SteamClient.Name}{randomLine}");
+
         Debug.Log($"lobby created {SteamClient.Name}");
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, NetworkManager.Singleton.LocalClientId); //
         LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
@@ -231,8 +249,11 @@ public class GameNetworkManager : MonoBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
         }
         NetworkManager.Singleton.Shutdown(true);
-        LobbyManager.instance.ClearChat();
-        LobbyManager.instance.Disconnected();
+        if (LobbyManager.instance != null)
+        {
+            LobbyManager.instance.ClearChat();
+            LobbyManager.instance.Disconnected(); 
+        }
         Debug.Log("disconnected");
     }
 
@@ -299,55 +320,72 @@ public class GameNetworkManager : MonoBehaviour
     }
     #endregion
 
+    public async Task<bool> RefreshLobbies(int maxResults = 20)
+	{
+		try
+		{
+			Lobbies.Clear();
 
+		var lobbies = await SteamMatchmaking.LobbyList
+        .FilterDistanceClose()
+		.WithMaxResults(maxResults)
+		.RequestAsync();
+
+		if (lobbies != null)
+		{
+			for (int i = 0; i < lobbies.Length; i++)
+            {
+				if (!string.IsNullOrWhiteSpace(lobbies[i].GetData("name")))
+                {
+                    Lobbies.Add(lobbies[i]);
+                }
+            }
+		}
+
+		return true;
+		}
+		catch (System.Exception ex)
+		{
+			Debug.Log("Error fetching lobbies", this);
+			Debug.LogException(ex, this);
+			return false;
+		}
+	}
     public async void LobbiesListAsync()
     {
+        await RefreshLobbies();
         foreach (Transform child in LobbyManager.instance.lobbiesBox.transform)
         {
             Destroy(child.gameObject);
         }
 
-
-        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
-        Debug.Log($"Found {lobbies.Length} lobbies");
-
-        foreach (Lobby lobby in lobbies)
+        foreach (Lobby lobby in Lobbies)
         {
-            Debug.Log($"Lobby Owner: {lobby.Owner.Name}, Members: {lobby.MemberCount}/{lobby.MaxMembers}");
-            if (!string.IsNullOrWhiteSpace(lobby.Owner.Name))
-            {
-                lobby.Refresh();
-                GameObject lobbyObj = Instantiate(LobbyManager.instance.lobbiesObj, LobbyManager.instance.lobbiesBox.transform);
+            lobby.Refresh();
+            GameObject lobbyObj = Instantiate(LobbyManager.instance.lobbiesObj, LobbyManager.instance.lobbiesBox.transform);
 
-                lobbyObj.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = lobby.Owner.Name;
-                lobbyObj.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = lobby.MemberCount + "/" + lobby.MaxMembers;
-                Button joinButton = lobbyObj.transform.GetChild(2).GetComponent<Button>();
+            lobbyObj.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = lobby.GetData("name");
+            lobbyObj.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = lobby.MemberCount + "/" + lobby.MaxMembers;
+            Button joinButton = lobbyObj.transform.GetChild(2).GetComponent<Button>();
 
-                joinButton.onClick.AddListener(() => JoinLobby(lobby));
-            }
+            joinButton.onClick.AddListener(() => JoinLobby(lobby));
         }
     }
 
     public async void RandomJoin()
     {
-        // Request lobbies with at least one slot available
-        Lobby[] lobbies = await SteamMatchmaking.LobbyList.WithSlotsAvailable(1).RequestAsync();
-
-        // Filter out lobbies that have no owner name
-        Lobby[] validLobbies = System.Array.FindAll(lobbies, lobby => !string.IsNullOrWhiteSpace(lobby.Owner.Name));
-
         // Check if there are any valid lobbies available
-        if (validLobbies.Length == 0)
+        if (Lobbies.Count == 0)
         {
             Debug.Log("No available lobbies with an owner name to join.");
             return;
         }
 
         // Select a random lobby index from the filtered list
-        int randomIndex = Random.Range(0, validLobbies.Length);
+        int randomIndex = Random.Range(0, Lobbies.Count);
 
         // Try to join the randomly selected lobby
-        RoomEnter result = await validLobbies[randomIndex].Join();
+        RoomEnter result = await Lobbies[randomIndex].Join();
 
         // Check if the join attempt was successful
         if (result != RoomEnter.Success)

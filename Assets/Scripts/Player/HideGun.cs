@@ -15,7 +15,7 @@ public class HideGun : MonoBehaviour
 
 
     private void Update() {
-        haveGun = (int)GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun && GameManager.Instance.canShoot.Value && gunScript.canTrigger && gunScript.canShoot;
+        haveGun = ((int)GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun) && GameManager.Instance.canShoot.Value && gunScript.canTrigger && gunScript.canShoot;
         if (haveGun)
         {
             if (inputActions.FindAction("Change Weapon").triggered)
