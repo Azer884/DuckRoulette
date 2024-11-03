@@ -7,12 +7,23 @@ using System;
 
 public class PlayerSpawner : NetworkBehaviour
 {
+
+    public static PlayerSpawner Instance;
     [SerializeField]private GameObject player;
     public bool isStarted;
 
     void Start() 
     {
-        DontDestroyOnLoad(gameObject);
+        if(Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     public override void OnNetworkSpawn()

@@ -13,7 +13,7 @@ public class FriendObject : MonoBehaviour
     {
         if (Time.time >= lastInviteTime + inviteCooldown)
         {
-            GameNetworkManager.Instance.CurrentLobby.Value.InviteFriend(steamid);
+            LobbySaver.instance.currentLobby.Value.InviteFriend(steamid);
             Debug.Log("Invited " + steamid);
             lastInviteTime = Time.time;
         }

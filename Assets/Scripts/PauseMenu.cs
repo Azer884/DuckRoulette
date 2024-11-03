@@ -53,11 +53,38 @@ public class PauseMenu : NetworkBehaviour
 
     public void Leave()
     {
-        GameNetworkManager.Instance.CurrentLobby?.Leave();
-        pauseMenu.SetActive(false);
-        menuIsOpen = false;
-        Cursor.lockState = CursorLockMode.Confined;
-        NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+        if (!IsHost)
+        {
+            LeaveGame();
+        }
+        else
+        {
+            KickAllPlayersClientRpc();
+        }
+    }
+
+    private void LeaveGame()
+    {
+        NetworkManager.Singleton.Shutdown();
+    
+        LeaveSteamLobby();
+        PlayerSpawner.Instance.isStarted = false;
+        SceneManager.LoadScene("Lobby");
+    }
+
+    [ClientRpc]
+    private void KickAllPlayersClientRpc()
+    {
+        LeaveGame();
+    }
+
+    private void LeaveSteamLobby()
+    {
+        if (SteamClient.IsValid && LobbySaver.instance.currentLobby != null)
+        {
+            LobbySaver.instance.currentLobby?.Leave();
+            Debug.Log("Left Steam lobby successfully.");
+        }
     }
 
     public void Settings()
@@ -87,5 +114,13 @@ public class PauseMenu : NetworkBehaviour
         pauseMenu.SetActive(true);
         Cursor.lockState = CursorLockMode.Confined;
         menuIsOpen = true;
+    }
+
+    private void OnApplicationQuit() 
+    {
+        if (IsHost)
+        {
+            KickAllPlayersClientRpc();    
+        }
     }
 }

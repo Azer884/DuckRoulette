@@ -16,12 +16,11 @@ public class GameNetworkManager : MonoBehaviour
 
     private FacepunchTransport transport = null;
 
-    public Lobby? CurrentLobby { get; private set; } = null;
 
     public List<Lobby> Lobbies { get; private set; } = new List<Lobby>(capacity: 100);
 
     public ulong hostId;
-    private int mapIndex = 1;
+    private int mapIndex = 2;
     private readonly string RandomServerNamePath = Path.Combine(Application.dataPath, "RandomLobbyNames.txt");
 
     private void Awake()
@@ -88,7 +87,7 @@ public class GameNetworkManager : MonoBehaviour
         }
         else
         {
-            CurrentLobby = _lobby;
+            LobbySaver.instance.currentLobby = _lobby;
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Lobby");
         }
@@ -124,7 +123,7 @@ public class GameNetworkManager : MonoBehaviour
         {
             return;
         }
-        StartClient(CurrentLobby.Value.Owner.Id);
+        StartClient(LobbySaver.instance.currentLobby.Value.Owner.Id);
         LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
@@ -174,7 +173,7 @@ public class GameNetworkManager : MonoBehaviour
         NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
         NetworkManager.Singleton.StartHost();
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        CurrentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
+        LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
     }
 
     public async void JoinById(TMP_InputField input)
@@ -198,7 +197,7 @@ public class GameNetworkManager : MonoBehaviour
         }
         else
         {
-            CurrentLobby = lobby;
+            LobbySaver.instance.currentLobby = lobby;
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Private Lobby");
         }
@@ -214,7 +213,7 @@ public class GameNetworkManager : MonoBehaviour
         }
         else
         {
-            CurrentLobby = lobby;
+            LobbySaver.instance.currentLobby = lobby;
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Lobby");
             return;
@@ -235,7 +234,7 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Disconnected()
     {
-        CurrentLobby?.Leave();
+        LobbySaver.instance.currentLobby?.Leave();
         if(NetworkManager.Singleton == null)
         {
             return;
@@ -302,7 +301,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
-        Debug.Log(sceneName);
+
         NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         NetworkTransmission.instance.StarGameFeeServerRpc();
     }
@@ -316,7 +315,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         int totalScenes = SceneManager.sceneCountInBuildSettings;
 
-        mapIndex = Random.Range(1, totalScenes);
+        mapIndex = Random.Range(2, totalScenes);
     }
     #endregion
 
