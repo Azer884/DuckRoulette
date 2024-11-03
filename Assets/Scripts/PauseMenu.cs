@@ -65,11 +65,11 @@ public class PauseMenu : NetworkBehaviour
 
     private void LeaveGame()
     {
-        NetworkManager.Singleton.Shutdown();
-    
         LeaveSteamLobby();
         PlayerSpawner.Instance.isStarted = false;
         SceneManager.LoadScene("Lobby");
+    
+        NetworkManager.Singleton.Shutdown();
     }
 
     [ClientRpc]

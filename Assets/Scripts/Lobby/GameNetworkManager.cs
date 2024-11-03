@@ -119,11 +119,12 @@ public class GameNetworkManager : MonoBehaviour
 
     private void SteamMatchmaking_OnLobbyEntered(Lobby _lobby)
     {
+        Debug.Log("Client Entered");
         if (NetworkManager.Singleton.IsHost)
         {
             return;
         }
-        StartClient(LobbySaver.instance.currentLobby.Value.Owner.Id);
+        StartClient(_lobby.Owner.Id);
         LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
