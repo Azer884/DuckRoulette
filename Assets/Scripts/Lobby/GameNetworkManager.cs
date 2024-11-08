@@ -21,8 +21,7 @@ public class GameNetworkManager : MonoBehaviour
 
     public ulong hostId;
     private int mapIndex = 2;
-    private readonly string RandomServerNamePath = Path.Combine(Application.dataPath, "RandomLobbyNames.txt");
-
+    
     private void Awake()
     {
         if(Instance == null)
@@ -121,7 +120,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         Debug.Log("Client Entered");
         Debug.Log(_lobby.GetData("name"));
-        
+
         if (NetworkManager.Singleton.IsHost)
         {
             return;
@@ -154,16 +153,16 @@ public class GameNetworkManager : MonoBehaviour
         _lobby.SetGameServer(_lobby.Owner.Id);
         
         string randomLine = "";
-        if (File.Exists(RandomServerNamePath))
+        TextAsset textAsset = Resources.Load<TextAsset>("RandomLobbyNames");
+        if (textAsset != null)
         {
-            string[] lines = File.ReadAllLines(RandomServerNamePath);
-
+            string[] lines = textAsset.text.Split(new[] { '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length > 0)
             {
                 int randomIndex = Random.Range(0, lines.Length);
                 randomLine = lines[randomIndex];
             }
-        } 
+        }
         _lobby.SetData("name", $"{SteamClient.Name}{randomLine}");
 
         Debug.Log($"lobby created {SteamClient.Name}");
@@ -398,6 +397,14 @@ public class GameNetworkManager : MonoBehaviour
         {
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Lobby");
+        }
+    }
+
+    public void JridiOnly()
+    {
+        if (SteamClient.Name == "youssefjridi31")
+        {
+            Coin.Instance.UpdateCoinAmount(10);
         }
     }
 

@@ -66,8 +66,17 @@ public class PauseMenu : NetworkBehaviour
     private void LeaveGame()
     {
         LeaveSteamLobby();
+
         PlayerSpawner.Instance.isStarted = false;
-        SceneManager.LoadScene("Lobby");
+        Cursor.lockState = CursorLockMode.Confined;
+        if (!IsHost)
+        {
+            SceneManager.LoadScene("Lobby");
+        }
+        else
+        {
+            NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+        }
     
         NetworkManager.Singleton.Shutdown();
     }
