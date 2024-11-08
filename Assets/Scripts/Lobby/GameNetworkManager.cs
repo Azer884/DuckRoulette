@@ -38,7 +38,7 @@ public class GameNetworkManager : MonoBehaviour
 
     private void Start()
     {
-        transport = GetComponent<FacepunchTransport>();
+        transport = NetworkManager.Singleton.GetComponent<FacepunchTransport>();
 
         SteamMatchmaking.OnLobbyCreated += SteamMatchmaking_OnLobbyCreated;
         SteamMatchmaking.OnLobbyEntered += SteamMatchmaking_OnLobbyEntered;
@@ -120,6 +120,8 @@ public class GameNetworkManager : MonoBehaviour
     private void SteamMatchmaking_OnLobbyEntered(Lobby _lobby)
     {
         Debug.Log("Client Entered");
+        Debug.Log(_lobby.GetData("name"));
+        
         if (NetworkManager.Singleton.IsHost)
         {
             return;
