@@ -43,7 +43,7 @@ public class GameManager : NetworkBehaviour
         {
             playerStates[clientId] = true;
         }
-        playersKills = new(playerStates.Count);
+        playersKills = new(new int[playerStates.Count]);
         alivePlayersCount.Value = playerStates.Count;
 
         coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;

@@ -68,7 +68,7 @@ public class NetworkTransmission : NetworkBehaviour
     [ClientRpc]
     private void AClientMightBeReadyClientRPC(bool _ready, bool haveEoughCoins, ulong _clientId)
     {
-        foreach(KeyValuePair<ulong,GameObject> player in LobbyManager.instance.playerInfo)
+        foreach(KeyValuePair<ulong,GameObject> player in PlayerData.Instance.playerInfo)
         {
             if(player.Key == _clientId)
             {

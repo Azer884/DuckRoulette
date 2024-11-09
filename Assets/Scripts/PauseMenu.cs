@@ -77,6 +77,8 @@ public class PauseMenu : NetworkBehaviour
         if (SteamClient.IsValid && LobbySaver.instance.currentLobby != null)
         {
             LobbySaver.instance.currentLobby?.Leave();
+
+            PlayerData.Instance.playerInfo.Remove(OwnerClientId);
             Debug.Log("Left Steam lobby successfully.");
         }
     }
