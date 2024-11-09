@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using Steamworks;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -11,6 +13,11 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<bool> isReloaded = new(false);
     public NetworkVariable<bool> canShoot = new(true);
 
+    private NetworkVariable<int> alivePlayersCount = new(0);
+    private Dictionary<ulong, bool> playerStates = new();
+    public List<int> playersKills;
+    private int coinsToWin;
+
 
     private void Awake()
     {
@@ -22,10 +29,24 @@ public class GameManager : NetworkBehaviour
         {
             Destroy(gameObject);
         }
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        NetworkManager.Singleton.OnClientDisconnectCallback += UpdatePlayerState;
     }
+
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            playerStates[clientId] = true;
+        }
+        playersKills = new(playerStates.Count);
+        alivePlayersCount.Value = playerStates.Count;
+
+        coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
 
         playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
         CheckPlayerGunScript();
@@ -91,5 +112,109 @@ public class GameManager : NetworkBehaviour
     private void ChangeVarValueServerRpc(bool oldValue, bool newValue)
     {
         oldValue = newValue;
+    }
+
+    public void UpdatePlayerState(ulong clientId, bool isDead)
+    {
+        if (playerStates.ContainsKey(clientId))
+        {
+            playerStates[clientId] = !isDead;
+
+            // Update alive player count
+            alivePlayersCount.Value = isDead ? alivePlayersCount.Value - 1 : alivePlayersCount.Value + 1;
+
+            if (alivePlayersCount.Value <= 1)
+            {
+                ulong winnerId = 10;
+                foreach (var playerState in playerStates)
+                {
+                    if (playerState.Value) // Player is alive
+                    {
+                        winnerId = playerState.Key;
+                        break;
+                    }
+                }
+                EndGameServerRpc(winnerId);
+            }
+        }
+    }
+
+    public void UpdatePlayerState(ulong clientId)
+    {
+        if (playerStates.ContainsKey(clientId))
+        {
+            playerStates[clientId] = false;
+
+            // Update alive player count
+            alivePlayersCount.Value--;
+
+            if (alivePlayersCount.Value <= 1)
+            {
+                ulong winnerId = 10;
+                foreach (var playerState in playerStates)
+                {
+                    if (playerState.Value) // Player is alive
+                    {
+                        winnerId = playerState.Key;
+                        break;
+                    }
+                }
+                EndGameServerRpc(winnerId);
+            }
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void EndGameServerRpc(ulong winnerId)
+    {
+        EndGameClientRpc(winnerId);
+    }
+
+    [ClientRpc]
+    private void EndGameClientRpc(ulong winnerId)
+    {
+        Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
+        Debug.Log(winnerId);
+
+        if (winnerId == OwnerClientId)
+        {
+            Debug.Log($"Won {coinsToWin}");
+            Coin.Instance.UpdateCoinAmount(coinsToWin);
+        }
+    }
+
+    public string GetPlayerNickname(ulong clientId)
+    {
+        foreach (var playerObject in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (playerObject.ClientId == clientId && playerObject.PlayerObject != null)
+            {
+                if (playerObject.PlayerObject.TryGetComponent<Username>(out var username))
+                {
+                    return username.playerName.Value.ToString();
+                }
+            }
+        }
+
+        // Return a placeholder if the player is not found
+        return "Unknown Player";
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        bool haveTheGun = (int)clientId == playerWithGun;
+        if (haveTheGun && clientId != 0)
+        {
+            playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+            StartCoroutine(SwitchPlayerAfterDelay(.5f));
+        }
+        Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
+    
+    }
+
+    private void OnDisable()
+    {
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerState;
     }
 }

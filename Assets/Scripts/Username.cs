@@ -6,9 +6,9 @@ using Unity.Collections;
 
 public class Username : NetworkBehaviour
 {
-    private NetworkVariable<FixedString32Bytes> playerName = new();
+    public NetworkVariable<FixedString32Bytes> playerName = new();
     private bool nameTagSet = false;
-    [SerializeField] private TextMeshProUGUI userName;
+    public TextMeshProUGUI userName;
 
     [SerializeField] private Camera ownerCamera;
 

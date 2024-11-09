@@ -51,6 +51,7 @@ public class Ragdoll : NetworkBehaviour
     private Movement movement;
     private Slap slap;
     private Shooting shooting;
+    private Username userName;
     public float _timeToWakeUp;
     private Transform _hipsBone;
 
@@ -76,6 +77,7 @@ public class Ragdoll : NetworkBehaviour
         movement = GetComponent<Movement>();
         slap = GetComponent<Slap>();
         shooting = GetComponent<Shooting>();
+        userName = GetComponent<Username>();
         _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
 
         _bones = _hipsBone.GetComponentsInChildren<Transform>();
@@ -129,6 +131,9 @@ public class Ragdoll : NetworkBehaviour
             hands.SetActive(false);
             foots.SetActive(false);
             shadow.SetActive(false);
+
+            DisableServerRpc(OwnerClientId);
+
         }
     }
 
@@ -282,9 +287,32 @@ public class Ragdoll : NetworkBehaviour
     {
         if (IsOwner && other.transform.TryGetComponent(out BulletBehavior bullet) && bullet.bulletId != OwnerClientId)
         {
+            Debug.Log(bullet.bulletId);
+            // Trigger death ragdoll
             TriggerRagdoll(true);
+
+            ulong shooterId = bullet.bulletId;
+            ulong victimId = OwnerClientId;
+
+            // Fetch player names from the Username component
+            string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
+            string victimName = GameManager.Instance.GetPlayerNickname(victimId);
+
+            Debug.Log($"{shooterName} killed {victimName}");
+            GameManager.Instance.playersKills[(int)shooterId]++;
+
+            // Notify GameManager about the death
+            UpdatePlayerDeathServerRpc(bullet.bulletId, OwnerClientId);
+
+            // Award coins to the shooter
             UpdateCoinValueServerRpc(bullet.bulletId);
         }
+    }
+
+    [ServerRpc]
+    private void UpdatePlayerDeathServerRpc(ulong shooterId, ulong victimId)
+    {
+        GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
     }
 
     [ServerRpc]
@@ -298,7 +326,24 @@ public class Ragdoll : NetworkBehaviour
     {
         if (OwnerClientId == shooterId)
         {
+            Debug.Log("Gained 3 Coins");
             Coin.Instance.UpdateCoinAmount(3);
+        }
+    }
+
+    [ServerRpc]
+    private void DisableServerRpc(ulong clientId)
+    {
+        DisableClientRpc(clientId);
+    }
+
+    [ClientRpc]
+    private void DisableClientRpc(ulong clientId)
+    {
+        if (OwnerClientId == clientId)
+        {
+            _characterController.enabled = false;
+            userName.userName.gameObject.SetActive(false);
         }
     }
 }

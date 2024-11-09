@@ -104,4 +104,16 @@ public class NetworkTransmission : NetworkBehaviour
     {
         Coin.Instance.UpdateCoinAmount(-5);
     }
+
+    [ClientRpc]
+    public void KickAllPlayersClientRpc()
+    {
+        NetworkManager.Singleton.Shutdown(true);
+        if (LobbyManager.instance != null)
+        {
+            LobbyManager.instance.ClearChat();
+            LobbyManager.instance.Disconnected(); 
+        }
+        Debug.Log("disconnected");
+    }
 }

@@ -126,15 +126,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
-                },
-                {
-                    ""name"": ""Pause"",
-                    ""type"": ""Button"",
-                    ""id"": ""a5ad4849-694e-45e5-818f-a2eb7914c14d"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": ""Press"",
-                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -223,28 +214,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": ""ScaleVector2(x=2,y=2)"",
                     ""groups"": ""Keyboard"",
                     ""action"": ""Look"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""6776399b-937f-4092-83f0-07621e416be8"",
-                    ""path"": ""<Gamepad>/start"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": ""Gamepad"",
-                    ""action"": ""Pause"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""4e0d6395-4dc0-46bc-8d08-393f5dc28b31"",
-                    ""path"": ""<Keyboard>/escape"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": ""Keyboard"",
-                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -447,6 +416,45 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""UI"",
+            ""id"": ""a129eb92-7766-4de6-9f5a-db63cd95d121"",
+            ""actions"": [
+                {
+                    ""name"": ""Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""1503b12b-6b16-4ffb-8d90-ca811e2a88f3"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Press"",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""bba43a7f-33ac-4f89-9625-43c72c15bc9e"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e4fd159c-dbb3-403d-a170-4f9164458889"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -492,12 +500,15 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_PlayerControls_Talk = m_PlayerControls.FindAction("Talk", throwIfNotFound: true);
         m_PlayerControls_ChangeWeapon = m_PlayerControls.FindAction("Change Weapon", throwIfNotFound: true);
         m_PlayerControls_Look = m_PlayerControls.FindAction("Look", throwIfNotFound: true);
-        m_PlayerControls_Pause = m_PlayerControls.FindAction("Pause", throwIfNotFound: true);
+        // UI
+        m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
+        m_UI_Pause = m_UI.FindAction("Pause", throwIfNotFound: true);
     }
 
     ~@Inputs()
     {
         Debug.Assert(!m_PlayerControls.enabled, "This will cause a leak and performance issues, Inputs.PlayerControls.Disable() has not been called.");
+        Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, Inputs.UI.Disable() has not been called.");
     }
 
     public void Dispose()
@@ -570,7 +581,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Talk;
     private readonly InputAction m_PlayerControls_ChangeWeapon;
     private readonly InputAction m_PlayerControls_Look;
-    private readonly InputAction m_PlayerControls_Pause;
     public struct PlayerControlsActions
     {
         private @Inputs m_Wrapper;
@@ -586,7 +596,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         public InputAction @Talk => m_Wrapper.m_PlayerControls_Talk;
         public InputAction @ChangeWeapon => m_Wrapper.m_PlayerControls_ChangeWeapon;
         public InputAction @Look => m_Wrapper.m_PlayerControls_Look;
-        public InputAction @Pause => m_Wrapper.m_PlayerControls_Pause;
         public InputActionMap Get() { return m_Wrapper.m_PlayerControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -629,9 +638,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
-            @Pause.started += instance.OnPause;
-            @Pause.performed += instance.OnPause;
-            @Pause.canceled += instance.OnPause;
         }
 
         private void UnregisterCallbacks(IPlayerControlsActions instance)
@@ -669,9 +675,6 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
-            @Pause.started -= instance.OnPause;
-            @Pause.performed -= instance.OnPause;
-            @Pause.canceled -= instance.OnPause;
         }
 
         public void RemoveCallbacks(IPlayerControlsActions instance)
@@ -689,6 +692,52 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         }
     }
     public PlayerControlsActions @PlayerControls => new PlayerControlsActions(this);
+
+    // UI
+    private readonly InputActionMap m_UI;
+    private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
+    private readonly InputAction m_UI_Pause;
+    public struct UIActions
+    {
+        private @Inputs m_Wrapper;
+        public UIActions(@Inputs wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Pause => m_Wrapper.m_UI_Pause;
+        public InputActionMap Get() { return m_Wrapper.m_UI; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(UIActions set) { return set.Get(); }
+        public void AddCallbacks(IUIActions instance)
+        {
+            if (instance == null || m_Wrapper.m_UIActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_UIActionsCallbackInterfaces.Add(instance);
+            @Pause.started += instance.OnPause;
+            @Pause.performed += instance.OnPause;
+            @Pause.canceled += instance.OnPause;
+        }
+
+        private void UnregisterCallbacks(IUIActions instance)
+        {
+            @Pause.started -= instance.OnPause;
+            @Pause.performed -= instance.OnPause;
+            @Pause.canceled -= instance.OnPause;
+        }
+
+        public void RemoveCallbacks(IUIActions instance)
+        {
+            if (m_Wrapper.m_UIActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IUIActions instance)
+        {
+            foreach (var item in m_Wrapper.m_UIActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_UIActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public UIActions @UI => new UIActions(this);
     private int m_KeyboardSchemeIndex = -1;
     public InputControlScheme KeyboardScheme
     {
@@ -720,6 +769,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         void OnTalk(InputAction.CallbackContext context);
         void OnChangeWeapon(InputAction.CallbackContext context);
         void OnLook(InputAction.CallbackContext context);
+    }
+    public interface IUIActions
+    {
         void OnPause(InputAction.CallbackContext context);
     }
 }

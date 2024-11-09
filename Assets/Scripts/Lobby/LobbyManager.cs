@@ -213,7 +213,7 @@ public class LobbyManager : MonoBehaviour
 
     public void ReadyButton(bool _ready)
     {
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5, myClientId);
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5 && playerInfo.Count > 1, myClientId);
     }
 
     public bool CheckIfPlayersAreReady()
@@ -228,7 +228,14 @@ public class LobbyManager : MonoBehaviour
                 mapButton.SetActive(false);
                 if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
                 {
-                    NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
+                    if (playerInfo.Count > 1)
+                    {
+                        NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
+                    }
+                    else
+                    {
+                        NetworkTransmission.instance.IWishToSendAChatServerRPC("Not enough players to start the game", 0, true);
+                    }
                 }
                 return false;
             }

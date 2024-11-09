@@ -244,18 +244,20 @@ public class GameNetworkManager : MonoBehaviour
         if (NetworkManager.Singleton.IsHost)
         {
             NetworkManager.Singleton.OnServerStarted -= Singleton_OnServerStarted;
+            NetworkTransmission.instance.KickAllPlayersClientRpc();
         }
         else
         {
             NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+
+            NetworkManager.Singleton.Shutdown(true);
+            if (LobbyManager.instance != null)
+            {
+                LobbyManager.instance.ClearChat();
+                LobbyManager.instance.Disconnected(); 
+            }
+            Debug.Log("disconnected");
         }
-        NetworkManager.Singleton.Shutdown(true);
-        if (LobbyManager.instance != null)
-        {
-            LobbyManager.instance.ClearChat();
-            LobbyManager.instance.Disconnected(); 
-        }
-        Debug.Log("disconnected");
     }
 
     private void Singleton_OnClientDisconnectCallback(ulong _cliendId)

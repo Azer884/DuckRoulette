@@ -5,7 +5,7 @@ using UnityEngine;
 public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
-    public ulong bulletId = 10;
+    public ulong bulletId;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();

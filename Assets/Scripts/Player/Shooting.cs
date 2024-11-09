@@ -29,10 +29,10 @@ public class Shooting : NetworkBehaviour
         base.OnNetworkSpawn();
     }
 
-    private void Awake() {
+    private void Awake() 
+    {
         inputActions = GetComponent<InputSystem>().inputActions;
     }
-//buged?
 
     private void OnEnable()
     {
@@ -136,6 +136,7 @@ public class Shooting : NetworkBehaviour
 
         if (bullet.TryGetComponent(out Rigidbody bulletRigidbody))
         {
+            bulletRigidbody.isKinematic = false;
             Vector3 direction = (targetAim - spawnPoint).normalized;
             bulletRigidbody.rotation = Quaternion.LookRotation(direction);
             bulletRigidbody.linearVelocity = direction * bulletSpeed;

@@ -7,7 +7,7 @@ public class RebindSaveLoad : MonoBehaviour
 {
     public static RebindSaveLoad Instance;
     public InputActionAsset actions;
-    private PlayerInput input;
+    public PlayerInput input;
     public Gamepad gamepad;
     private string currentControlScheme;
     private const string rebindFileName = "rebinds.json"; // Cloud file name
