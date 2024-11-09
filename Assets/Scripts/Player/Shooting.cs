@@ -132,7 +132,7 @@ public class Shooting : NetworkBehaviour
         // Instantiate and spawn the bullet on the server
         GameManager.Instance.isReloaded.Value = false;
         bullet = Instantiate(bulletPrefab, spawnPoint, rot);
-        bullet.GetComponent<NetworkObject>().Spawn();
+        bullet.GetComponent<NetworkObject>().Spawn(true);
 
         if (bullet.TryGetComponent(out Rigidbody bulletRigidbody))
         {

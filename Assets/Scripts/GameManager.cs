@@ -168,11 +168,15 @@ public class GameManager : NetworkBehaviour
     private void EndGameServerRpc(ulong winnerId)
     {
         EndGameClientRpc(winnerId);
+
+        NetworkManager.Singleton.SceneManager.LoadScene("Lobby", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
     [ClientRpc]
     private void EndGameClientRpc(ulong winnerId)
     {
+        Cursor.lockState = CursorLockMode.Confined;
+
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
         Debug.Log(winnerId);
 
