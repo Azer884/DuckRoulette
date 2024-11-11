@@ -47,7 +47,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyGameCreated += SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += SteamFriends_OnGameLobbyJoinRequested;
         SceneManager.sceneLoaded += OnSceneLoaded;
-
+    
     }
 
     private void OnDestroy()
@@ -173,8 +173,8 @@ public class GameNetworkManager : MonoBehaviour
     public async void StartHost(TMP_InputField _maxMembers)
     {
         NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
-        NetworkManager.Singleton.StartHost();
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+        NetworkManager.Singleton.StartHost();
         LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
     }
 
@@ -205,7 +205,7 @@ public class GameNetworkManager : MonoBehaviour
         }
     }
 
-    private async void JoinLobby(Lobby lobby)
+    public async void JoinLobby(Lobby lobby)
     {
         RoomEnter joinedLobby = await lobby.Join();
 
@@ -260,7 +260,7 @@ public class GameNetworkManager : MonoBehaviour
         }
     }
 
-    private void Singleton_OnClientDisconnectCallback(ulong _cliendId)
+    public void Singleton_OnClientDisconnectCallback(ulong _cliendId)
     {
         NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
         if(_cliendId == 0)
@@ -269,7 +269,7 @@ public class GameNetworkManager : MonoBehaviour
         }
     }
 
-    private void Singleton_OnClientConnectedCallback(ulong _cliendId)
+    public void Singleton_OnClientConnectedCallback(ulong _cliendId)
     {
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _cliendId);
         LobbyManager.instance.myClientId = _cliendId;
@@ -277,7 +277,7 @@ public class GameNetworkManager : MonoBehaviour
         Debug.Log($"Client has connected : {SteamClient.Name}");
     }
 
-    private void Singleton_OnServerStarted()
+    public void Singleton_OnServerStarted()
     {
         Debug.Log("Host started");
         LobbyManager.instance.HostCreated();
@@ -303,6 +303,15 @@ public class GameNetworkManager : MonoBehaviour
     }
     public void StartGame()
     {
+        PlayerData.Instance.playerInfo.Clear();
+        foreach (KeyValuePair<ulong, GameObject> info in LobbyManager.instance.playerInfo)
+        {
+            ulong clientId = info.Key;
+            string steamName = info.Value.GetComponent<PlayerInfo>().steamName;
+            ulong steamId = info.Value.GetComponent<PlayerInfo>().steamId;
+
+            PlayerData.Instance.playerInfo.Add(clientId, (steamName, steamId)); 
+        }
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 

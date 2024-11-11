@@ -176,6 +176,7 @@ public class GameManager : NetworkBehaviour
     private void EndGameClientRpc(ulong winnerId)
     {
         Cursor.lockState = CursorLockMode.Confined;
+        PlayerSpawner.Instance.isStarted = false;
 
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
         Debug.Log(winnerId);
@@ -207,7 +208,7 @@ public class GameManager : NetworkBehaviour
     private void OnClientDisconnect(ulong clientId)
     {
         bool haveTheGun = (int)clientId == playerWithGun;
-        if (haveTheGun && clientId != 0)
+        if (haveTheGun && !IsHost)
         {
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             StartCoroutine(SwitchPlayerAfterDelay(.5f));

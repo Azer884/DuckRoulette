@@ -44,5 +44,10 @@ public class PlayerSpawner : NetworkBehaviour
             }
         }
         isStarted = true;
+
+        if (sceneName == "Lobby")
+        {
+            isStarted = false;
+        }
     }
 }

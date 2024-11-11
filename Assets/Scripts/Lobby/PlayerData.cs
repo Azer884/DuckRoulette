@@ -2,14 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Steamworks;
+using Steamworks.Data;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PlayerData : MonoBehaviour 
+public class PlayerData : NetworkBehaviour 
 {
     public static PlayerData Instance { get; private set; }
-    public Dictionary<ulong, GameObject> playerInfo = new();
+
+    public Dictionary<ulong, (string, ulong)> playerInfo = new();
 
     private void Awake()
     {
@@ -33,27 +35,38 @@ public class PlayerData : MonoBehaviour
     private void GoBackToLobby(Scene arg0, LoadSceneMode arg1)
     {
         string sceneName = arg0.name;
-        if (sceneName != "Lobby" || playerInfo.Count == 0 || LobbySaver.instance == null || LobbySaver.instance.currentLobby == null)
+        if (sceneName != "Lobby" || LobbySaver.instance == null || LobbySaver.instance.currentLobby == null)
             return;
 
-        if (LobbyManager.instance == null) return;
-
-        PlayerSpawner.Instance.isStarted = false;
-
-        if (!NetworkManager.Singleton.IsHost)
+        // Clear existing playerInfo in the lobby to avoid duplicates
+        if (LobbyManager.instance != null)
         {
-            LobbyManager.instance.ConnectedAsClient();
+            LobbyManager.instance.ClearPlayerInfo();  // Ensure this method clears out old entries before repopulating
+        }
 
+        foreach (KeyValuePair<ulong, (string, ulong)> info in playerInfo)
+        {
+            _ = LobbyManager.instance.AddPlayerToDictionaryAsync(info.Key, info.Value.Item1, info.Value.Item2);
+        }
+
+        if (IsHost)
+        {
+            LobbyManager.instance.HostCreated();
+            NetworkManager.Singleton.OnServerStarted += GameNetworkManager.Instance.Singleton_OnServerStarted;
+            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+            LobbyManager.instance.UpdateClients();
         }
         else
         {
-            LobbyManager.instance.HostCreated();
+            NetworkManager.Singleton.OnClientConnectedCallback += GameNetworkManager.Instance.Singleton_OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback += GameNetworkManager.Instance.Singleton_OnClientDisconnectCallback;
+            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
 
+            LobbyManager.instance.ConnectedAsClient();
+            LobbyManager.instance.UpdateClients();
         }
 
-        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, NetworkManager.Singleton.LocalClientId);
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, NetworkManager.Singleton.LocalClientId);
         LobbyManager.instance.lobbyId.text = LobbySaver.instance.currentLobby?.Id.ToString();
     }
+
 }

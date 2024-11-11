@@ -21,6 +21,8 @@ public class LobbyManager : MonoBehaviour
     public Toggle publicToggle, privateToggle, friendToggle;
     public GameObject lobbiesBox, lobbiesObj;
 
+    public Dictionary<ulong, GameObject> playerInfo = new();
+
     [SerializeField]
     private int maxMessages = 20;
 
@@ -88,9 +90,9 @@ public class LobbyManager : MonoBehaviour
 
         if (!_server)
         {
-            if (PlayerData.Instance.playerInfo.ContainsKey(_fromwho))
+            if (playerInfo.ContainsKey(_fromwho))
             {
-                _name = PlayerData.Instance.playerInfo[_fromwho].GetComponent<PlayerInfo>().steamName;
+                _name = playerInfo[_fromwho].GetComponent<PlayerInfo>().steamName;
             }
         }
 
@@ -116,6 +118,15 @@ public class LobbyManager : MonoBehaviour
             Destroy(chit);
         }
         Debug.Log("clearing chat");
+    }
+    public void ClearPlayerInfo()
+    {
+        playerInfo.Clear();
+        GameObject[] playerCards = GameObject.FindGameObjectsWithTag("PlayerCard");
+        foreach (GameObject card in playerCards)
+        {
+            Destroy(card);
+        }
     }
 
     public void CopyId()
@@ -146,7 +157,7 @@ public class LobbyManager : MonoBehaviour
 
     public void Disconnected()
     {
-        PlayerData.Instance.playerInfo.Clear();
+        playerInfo.Clear();
         GameObject[] playercards = GameObject.FindGameObjectsWithTag("PlayerCard");
         foreach(GameObject card in playercards)
         {
@@ -163,20 +174,20 @@ public class LobbyManager : MonoBehaviour
 
     public async Task AddPlayerToDictionaryAsync(ulong _cliendId, string _steamName, ulong _steamId)
     {
-        if (!PlayerData.Instance.playerInfo.ContainsKey(_cliendId))
+        if (!playerInfo.ContainsKey(_cliendId))
         {
             PlayerInfo _pi = Instantiate(playerCardPrefab, playerFieldBox.transform).GetComponent<PlayerInfo>();
             _pi.steamId = _steamId;
             _pi.steamName = _steamName;
             var image = await SteamFriends.GetLargeAvatarAsync(_steamId);
             _pi.profilePic.texture = SteamFriendsManager.GetTextureFromImage(image.Value);
-            PlayerData.Instance.playerInfo.Add(_cliendId, _pi.gameObject);
+            playerInfo.Add(_cliendId, _pi.gameObject);
         }
     }
 
     public void UpdateClients()
     {
-        foreach(KeyValuePair<ulong,GameObject> _player in PlayerData.Instance.playerInfo)
+        foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
             ulong _steamId = _player.Value.GetComponent<PlayerInfo>().steamId;
             string _steamName = _player.Value.GetComponent<PlayerInfo>().steamName;
@@ -191,7 +202,7 @@ public class LobbyManager : MonoBehaviour
     {
         GameObject _value = null;
         ulong _key = 100;
-        foreach(KeyValuePair<ulong,GameObject> _player in PlayerData.Instance.playerInfo)
+        foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
             if(_player.Value.GetComponent<PlayerInfo>().steamId == _steamId)
             {
@@ -201,7 +212,7 @@ public class LobbyManager : MonoBehaviour
         }
         if(_key != 100)
         {
-            PlayerData.Instance.playerInfo.Remove(_key);
+            playerInfo.Remove(_key);
         }
         if(_value!= null)
         {
@@ -211,14 +222,14 @@ public class LobbyManager : MonoBehaviour
 
     public void ReadyButton(bool _ready)
     {
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5 && PlayerData.Instance.playerInfo.Count > 1, myClientId);
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5 && playerInfo.Count > 1, myClientId);
     }
 
     public bool CheckIfPlayersAreReady()
     {
         bool _ready = false;
 
-        foreach(KeyValuePair<ulong,GameObject> _player in PlayerData.Instance.playerInfo)
+        foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
             if (!(_player.Value.GetComponent<PlayerInfo>().isReady && _player.Value.GetComponent<PlayerInfo>().haveEoughCoins))
             {
@@ -226,7 +237,7 @@ public class LobbyManager : MonoBehaviour
                 mapButton.SetActive(false);
                 if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
                 {
-                    if (PlayerData.Instance.playerInfo.Count > 1)
+                    if (playerInfo.Count > 1)
                     {
                         NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
                     }

@@ -305,7 +305,7 @@ public class Ragdoll : NetworkBehaviour
             UpdatePlayerDeathServerRpc(bullet.bulletId, OwnerClientId);
 
             // Award coins to the shooter
-            UpdateCoinValueServerRpc(bullet.bulletId);
+            //UpdateCoinValueServerRpc(bullet.bulletId);
         }
     }
 

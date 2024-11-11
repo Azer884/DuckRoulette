@@ -47,6 +47,28 @@ public class PauseMenu : NetworkBehaviour
             KickAllPlayersClientRpc();
         }
     }
+    public void GoBackToLobby()
+    {
+        PlayerSpawner.Instance.isStarted = false;
+        Cursor.lockState = CursorLockMode.Confined;
+
+        if (IsHost)
+        {
+            // Host loads the lobby scene and then notifies clients
+            NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+            NotifyClientsToGoBackToLobbyClientRpc();
+        }
+    }
+
+    [ClientRpc]
+    private void NotifyClientsToGoBackToLobbyClientRpc()
+    {
+        // Clients load the lobby scene
+        if (!IsHost)
+        {
+            SceneManager.LoadScene("Lobby");
+        }
+    }
 
     private void LeaveGame()
     {
@@ -78,7 +100,7 @@ public class PauseMenu : NetworkBehaviour
         {
             LobbySaver.instance.currentLobby?.Leave();
 
-            PlayerData.Instance.playerInfo.Remove(OwnerClientId);
+            LobbyManager.instance.playerInfo.Remove(OwnerClientId);
             Debug.Log("Left Steam lobby successfully.");
         }
     }
