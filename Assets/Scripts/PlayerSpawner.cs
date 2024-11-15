@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
 using System;
+using Steamworks;
 
 public class PlayerSpawner : NetworkBehaviour
 {
@@ -28,8 +29,10 @@ public class PlayerSpawner : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-       NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += SceneLoaded;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += SceneLoaded;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += GoBackToLobby;
     }
+
 
     private void SceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
@@ -49,5 +52,29 @@ public class PlayerSpawner : NetworkBehaviour
         {
             isStarted = false;
         }
+    }
+
+    private void GoBackToLobby(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (sceneName != "Lobby" || LobbySaver.instance == null || LobbySaver.instance.currentLobby == null ||  GameNetworkManager.Instance == null ||  NetworkTransmission.instance == null)
+            return;
+
+        if (IsHost)
+        {
+            LobbyManager.instance.HostCreated();
+            AddPlayersClientRpc();
+        }
+        else
+        {
+            LobbyManager.instance.ConnectedAsClient();
+        }
+    }
+    [ClientRpc]
+    private void AddPlayersClientRpc()
+    {
+        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, OwnerClientId);
+        LobbyManager.instance.lobbyId.text = LobbySaver.instance.currentLobby?.Id.ToString();
+        
+        Cursor.lockState = CursorLockMode.Confined;
     }
 }

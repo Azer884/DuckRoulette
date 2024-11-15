@@ -5,6 +5,7 @@ using System;
 using Unity.Netcode;
 using System.Linq;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class VoiceChat : NetworkBehaviour
 {
@@ -23,6 +24,8 @@ public class VoiceChat : NetworkBehaviour
 
     public bool pushToTalk = true, toggleToTalk, openMic;
     private bool toggleActive;
+
+    [SerializeField] private GameObject micUI;
 
     #region Input Things
     private InputActionAsset inputActions;
@@ -57,6 +60,7 @@ public class VoiceChat : NetworkBehaviour
                 toggleActive = !toggleActive; // Toggle the state on key press
             }
             SteamUser.VoiceRecord = (pushToTalk && inputActions.FindAction("Talk").ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
+            micUI.SetActive(SteamUser.VoiceRecord);
 
         if (SteamUser.HasVoiceData)
         {

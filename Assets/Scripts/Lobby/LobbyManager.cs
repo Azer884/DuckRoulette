@@ -237,7 +237,7 @@ public class LobbyManager : MonoBehaviour
                 mapButton.SetActive(false);
                 if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
                 {
-                    if (playerInfo.Count > 1)
+                    if (LobbySaver.instance.currentLobby?.MemberCount > 1)
                     {
                         NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
                     }

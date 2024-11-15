@@ -303,15 +303,7 @@ public class GameNetworkManager : MonoBehaviour
     }
     public void StartGame()
     {
-        PlayerData.Instance.playerInfo.Clear();
-        foreach (KeyValuePair<ulong, GameObject> info in LobbyManager.instance.playerInfo)
-        {
-            ulong clientId = info.Key;
-            string steamName = info.Value.GetComponent<PlayerInfo>().steamName;
-            ulong steamId = info.Value.GetComponent<PlayerInfo>().steamId;
-
-            PlayerData.Instance.playerInfo.Add(clientId, (steamName, steamId)); 
-        }
+    
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 

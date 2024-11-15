@@ -217,7 +217,7 @@ public class GameManager : NetworkBehaviour
     
     }
 
-    private void OnDisable()
+    public void OnDisable()
     {
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
         NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerState;
