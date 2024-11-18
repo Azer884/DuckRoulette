@@ -25,7 +25,6 @@ public class FootIK : MonoBehaviour {
 	{
 		animator = GetComponent<Animator> ();
 		controller = transform.parent.GetComponent<CharacterController> ();
-		colliderHeight = controller.height;
 		//controllerBoundsBottom = controller.bounds.extents.y;
 	}
 
@@ -89,6 +88,7 @@ public class FootIK : MonoBehaviour {
 
 	private void handleColliderOffset()
 	{
+		colliderHeight = controller.height;
 		//this will change the length of the linecast based on the agents speed
 		StateBasedLegDistance ();
 

@@ -25,8 +25,9 @@ public class Movement : NetworkBehaviour
     [SerializeField] private float jumpHeight = 1.5f;
     
     [Header("Crouch Variables"), Space]
-    private float initHeight;
-    [SerializeField] private float crouchHeight;
+    public float initHeight;
+    public float crouchHeight;
+    public bool isCrouched;
 
     [SerializeField] private Animator[] animators;
     [SerializeField] private Animator handAnim;
@@ -119,7 +120,7 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 ? 2.0f : 1.0f;
+        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && isCrouched ? 2.0f : 1.0f;
 
         Vector3 move = transform.right * movement.x + transform.forward * movement.y;
         controller.Move(movementSpeed * speedMultiplier * Time.deltaTime * move);
@@ -146,6 +147,7 @@ public class Movement : NetworkBehaviour
             animator.SetFloat("XVelocity", xVelocity);
             animator.SetFloat("YVelocity", yVelocity);
             animator.SetBool("IsGrounded", grounded);
+            animator.SetBool("IsCrouched", isCrouched);
             animator.SetFloat("Turning", mouseXSmooth);
         }
         handAnim.SetFloat("XVelocity", xVelocity);
@@ -158,6 +160,7 @@ public class Movement : NetworkBehaviour
         if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
         {
             controller.height = crouchHeight;
+            isCrouched = true;
         }
         else
         {
@@ -165,6 +168,7 @@ public class Movement : NetworkBehaviour
             {
                 controller.height = initHeight;
             }
+            isCrouched = false;
         }
     }
 

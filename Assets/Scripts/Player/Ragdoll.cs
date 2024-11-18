@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 public class Ragdoll : NetworkBehaviour
 {
     private class BoneTransform
@@ -63,6 +64,8 @@ public class Ragdoll : NetworkBehaviour
     private bool _isFacingUp;
     private bool shootingStates;
 
+    [SerializeField] private GameObject dizzy;
+
     public override void OnNetworkSpawn()
     {
         if(!IsOwner) enabled = false;
@@ -121,6 +124,7 @@ public class Ragdoll : NetworkBehaviour
         {
             _timeToWakeUp = Random.Range(3, 6);
             _currentState = PlayerState.Ragdoll;
+            EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2);
         }
         else
         {
@@ -309,13 +313,13 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void UpdatePlayerDeathServerRpc(ulong shooterId, ulong victimId)
     {
         GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void UpdateCoinValueServerRpc(ulong shooterId)
     {
         UpdateCoinValueClientRpc(shooterId);
@@ -331,7 +335,7 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void DisableServerRpc(ulong clientId)
     {
         DisableClientRpc(clientId);
@@ -345,5 +349,29 @@ public class Ragdoll : NetworkBehaviour
             _characterController.enabled = false;
             userName.userName.gameObject.SetActive(false);
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void EnableDizzinessServerRpc(ulong clientId , float waitTime)
+    {
+        EnableDizzinessClientRpc(clientId, waitTime);
+    }
+
+    [ClientRpc]
+    private void EnableDizzinessClientRpc(ulong clientId, float waitTime)
+    {
+        if (OwnerClientId == clientId)
+        {
+            dizzy.SetActive(true);
+
+            StartCoroutine(WaitBeforeDisactivate(waitTime));
+        }
+    }
+
+    private IEnumerator WaitBeforeDisactivate(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime);
+
+        dizzy.SetActive(false);
     }
 }

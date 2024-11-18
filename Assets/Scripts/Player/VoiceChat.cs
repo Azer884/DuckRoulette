@@ -26,6 +26,7 @@ public class VoiceChat : NetworkBehaviour
     private bool toggleActive;
 
     [SerializeField] private GameObject micUI;
+    [SerializeField] private GameObject spit;
 
     #region Input Things
     private InputActionAsset inputActions;
@@ -60,14 +61,14 @@ public class VoiceChat : NetworkBehaviour
                 toggleActive = !toggleActive; // Toggle the state on key press
             }
             SteamUser.VoiceRecord = (pushToTalk && inputActions.FindAction("Talk").ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
-            micUI.SetActive(SteamUser.VoiceRecord);
+            ActivateTalkUIServerRpc(OwnerClientId, SteamUser.VoiceRecord);
 
-        if (SteamUser.HasVoiceData)
-        {
-            int compressedWritten = SteamUser.ReadVoiceData(stream);
-            stream.Position = 0;
-            SendVoiceDataToClientsServerRpc(stream.GetBuffer(), compressedWritten);
-        }
+            if (SteamUser.HasVoiceData)
+            {
+                int compressedWritten = SteamUser.ReadVoiceData(stream);
+                stream.Position = 0;
+                SendVoiceDataToClientsServerRpc(stream.GetBuffer(), compressedWritten);
+            }
         }
     }
 
@@ -146,6 +147,22 @@ public class VoiceChat : NetworkBehaviour
             dataReceived = (dataReceived +1) % clipBufferSize;
 
             playbackBuffer++;
+        }
+    }
+
+    [ServerRpc]
+    private void ActivateTalkUIServerRpc(ulong clientId, bool isTalking)
+    {
+        ActivateTalkUIClientRpc(clientId, isTalking);
+    }
+
+    [ClientRpc]
+    private void ActivateTalkUIClientRpc(ulong clientId, bool isTalking)
+    {
+        if (OwnerClientId == clientId)
+        {
+            micUI.SetActive(isTalking);
+            spit.SetActive(isTalking);
         }
     }
 }

@@ -146,7 +146,7 @@ public class GameManager : NetworkBehaviour
             playerStates[clientId] = false;
 
             // Update alive player count
-            alivePlayersCount.Value--;
+            UpdateAlivePlayerCountServerRpc(-1);
 
             if (alivePlayersCount.Value <= 1)
             {
@@ -162,6 +162,11 @@ public class GameManager : NetworkBehaviour
                 EndGameServerRpc(winnerId);
             }
         }
+    }
+    [ServerRpc(RequireOwnership = false)]
+    public void UpdateAlivePlayerCountServerRpc(int value)
+    {
+        alivePlayersCount.Value += value;
     }
 
     [ServerRpc(RequireOwnership = false)]
