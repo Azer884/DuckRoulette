@@ -3486,6 +3486,7 @@ GameObject:
   - component: {fileID: 9008643366807559449}
   - component: {fileID: 7994633359111961727}
   - component: {fileID: 2362302214951902385}
+  - component: {fileID: 4700632033983403371}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -3630,7 +3631,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 9175873306992830966, guid: 563706a6b67a24a498184f3413f9bec4, type: 3}
-  bulletSpeed: 100
   spawnPt: {fileID: 6379040414650745114}
   cam: {fileID: 6566756217050747349}
   animators:
@@ -3832,7 +3832,7 @@ MonoBehaviour:
   - Getting Up
   _faceDownStandUpStateNames:
   - Getting Up Face Down
-  - Stand Up Faceing Down
+  - Stand Up Facing Down
   _faceUpStandUpClipNames:
   - Zombie Stand Up
   - Kip Up
@@ -4463,6 +4463,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pauseMenu: {fileID: 7321061140706516473}
+--- !u!114 &4700632033983403371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0

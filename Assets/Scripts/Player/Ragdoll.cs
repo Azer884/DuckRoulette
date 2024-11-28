@@ -287,37 +287,6 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision other) 
-    {
-        if (IsOwner && other.transform.TryGetComponent(out BulletBehavior bullet) && bullet.bulletId != OwnerClientId)
-        {
-            Debug.Log(bullet.bulletId);
-            // Trigger death ragdoll
-            TriggerRagdoll(true);
-
-            ulong shooterId = bullet.bulletId;
-            ulong victimId = OwnerClientId;
-
-            // Fetch player names from the Username component
-            string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
-            string victimName = GameManager.Instance.GetPlayerNickname(victimId);
-
-            Debug.Log($"{shooterName} killed {victimName}");
-            GameManager.Instance.playersKills[(int)shooterId]++;
-
-            // Notify GameManager about the death
-            UpdatePlayerDeathServerRpc(bullet.bulletId, OwnerClientId);
-
-            // Award coins to the shooter
-            //UpdateCoinValueServerRpc(bullet.bulletId);
-        }
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void UpdatePlayerDeathServerRpc(ulong shooterId, ulong victimId)
-    {
-        GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
-    }
 
     [ServerRpc(RequireOwnership = false)]
     private void UpdateCoinValueServerRpc(ulong shooterId)

@@ -14,7 +14,7 @@ public class Slap : NetworkBehaviour
     [SerializeField] private float slapCoolDown = 1f;
     [SerializeField] private Animator[] animators;
     [SerializeField] private LayerMask otherPlayers;
-    private Collider[] slappedPlayers;
+    private Collider[] slapResults = new Collider[10];
     private bool canSlap = true;
 
     // Stun related variables
@@ -64,19 +64,20 @@ public class Slap : NetworkBehaviour
     {
         OnSlap?.Invoke();
         RebindSaveLoad.Instance.RumbleGamepad(0.5f, .8f, .2f, 0.3f);
-        slappedPlayers = Physics.OverlapSphere(slapArea.position, slapRaduis, otherPlayers);
+        Debug.Log("Slap!");
+        
+        int numColliders = Physics.OverlapSphereNonAlloc(slapArea.position, slapRaduis, slapResults, otherPlayers);
 
         List<GameObject> validSlappedPlayers = new();
-        foreach (Collider collider in slappedPlayers)
+        for (int i = 0; i < numColliders; i++)
         {
-            // Ensure the collider has a Slap component and is not this player
-            if (collider.TryGetComponent<Slap>(out var slapComponent) && slapComponent != this)
+            if (slapResults[i].TryGetComponent<Slap>(out var slapComponent) && slapComponent != this)
             {
-                validSlappedPlayers.Add(collider.gameObject);
+                validSlappedPlayers.Add(slapResults[i].gameObject);
             }
         }
-
-        if (validSlappedPlayers != null && validSlappedPlayers.Count > 0)
+        Debug.Log($"{validSlappedPlayers?.Count} Players can be slapped");
+        if (validSlappedPlayers?.Count > 0)
         {
             SlapPlayer(validSlappedPlayers[0]);
         }
@@ -144,7 +145,7 @@ public class Slap : NetworkBehaviour
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(false);
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead : false);
             }
         }
     }

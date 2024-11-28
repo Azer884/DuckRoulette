@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -5,28 +6,40 @@ using UnityEngine;
 public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
-    public ulong bulletId;
+    private float speed = 15f;
+    public NetworkVariable<Vector3> initialVelocity;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        if (!IsServer) return;
 
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
+        rb.isKinematic = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        StartCoroutine(DestroyAfterDelay());
+        
+        StartCoroutine(DestroyAfterDelay(5));
+        initialVelocity.OnValueChanged += MoveBullet;
     }
 
-    void OnCollisionEnter(Collision collision)
+    public void DestroyNow()
     {
-        if (!IsServer) return;
-        rb.useGravity = true;
+        StartCoroutine(DestroyAfterDelay(0));
     }
 
-    private IEnumerator DestroyAfterDelay()
+    public IEnumerator DestroyAfterDelay(float waitingTime)
     {
-        yield return new WaitForSeconds(5);
+        yield return new WaitForSeconds(waitingTime);
         GetComponent<NetworkObject>().Despawn();
         Destroy(gameObject);
+    }
+    private void MoveBullet(Vector3 previousValue, Vector3 newValue) 
+    {
+        transform.rotation = Quaternion.LookRotation(newValue);
+        rb.linearVelocity = newValue * speed;
+    }
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        initialVelocity.OnValueChanged -= MoveBullet;
     }
 }

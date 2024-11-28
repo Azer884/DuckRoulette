@@ -8,7 +8,6 @@ public class Shooting : NetworkBehaviour
     public event Action OnGunShot;
     public GameObject bulletPrefab;
     private GameObject bullet;
-    public float bulletSpeed = 5f;
     public Transform spawnPt;
     public Transform cam;
     private InputActionAsset inputActions;
@@ -51,6 +50,7 @@ public class Shooting : NetworkBehaviour
         haveGun.Value = false;
     }
 
+    [Obsolete]
     void Update()
     {
         Reload();
@@ -113,7 +113,7 @@ public class Shooting : NetworkBehaviour
                 OnGunShot?.Invoke();
                 
                 // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, OwnerClientId);
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
                 
             }
             hasShot.Value = true;
@@ -127,21 +127,20 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, ulong senderId)
+    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, ServerRpcParams serverRpcParams = default)
     {
-        // Instantiate and spawn the bullet on the server
         GameManager.Instance.isReloaded.Value = false;
-        bullet = Instantiate(bulletPrefab, spawnPoint, rot);
-        bullet.GetComponent<NetworkObject>().Spawn(true);
 
-        if (bullet.TryGetComponent(out Rigidbody bulletRigidbody))
+        bullet = Instantiate(bulletPrefab, spawnPoint, rot);
+        var bulletNetworkObject = bullet.GetComponent<NetworkObject>();
+        bulletNetworkObject.SpawnWithOwnership(serverRpcParams.Receive.SenderClientId);
+
+        Vector3 direction = (targetAim - spawnPoint).normalized;
+
+        if (bullet.TryGetComponent(out BulletBehavior bulletBehavior))
         {
-            bulletRigidbody.isKinematic = false;
-            Vector3 direction = (targetAim - spawnPoint).normalized;
-            bulletRigidbody.rotation = Quaternion.LookRotation(direction);
-            bulletRigidbody.linearVelocity = direction * bulletSpeed;
+            bulletBehavior.initialVelocity.Value = direction;
         }
-        bullet.GetComponent<BulletBehavior>().bulletId = senderId;
     }
 
     [ServerRpc(RequireOwnership = false)]

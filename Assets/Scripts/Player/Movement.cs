@@ -120,13 +120,13 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && isCrouched ? 2.0f : 1.0f;
+        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched ? 2.0f : 1.0f;
 
         Vector3 move = transform.right * movement.x + transform.forward * movement.y;
         controller.Move(movementSpeed * speedMultiplier * Time.deltaTime * move);
 
         // Jumping
-        if (grounded && inputActions.FindAction("Jump").triggered)
+        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpImpulseSource.GenerateImpulse();
