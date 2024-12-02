@@ -1,11 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Steamworks;
+using TMPro;
+using UnityEngine.UI;
 
 public class FriendObject : MonoBehaviour
 {
-    public float inviteCooldown = 5f;
+    public TextMeshProUGUI playerName;
+    public Image onlineStats;
+    private float inviteCooldown = 5f;
     private float lastInviteTime = -5f; 
     public SteamId steamid;
 

@@ -18,6 +18,6 @@ public class UpdateCoinValueUI : MonoBehaviour
 
     private void UpdateCoinUI()
     {
-        transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = Coin.Instance.amount.ToString();
+        transform.GetComponentInChildren<TextMeshProUGUI>().text = Coin.Instance.amount.ToString();
     }
 }

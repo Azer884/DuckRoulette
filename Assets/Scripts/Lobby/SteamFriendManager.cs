@@ -78,7 +78,7 @@ public class SteamFriendsManager : MonoBehaviour
 
             foreach (Friend friend in inGameFriends)
             {
-                CreateFriendObject(friend, inGameColor, true);
+                CreateFriendObject(friend, true, true);
             }
         }
         else
@@ -95,7 +95,7 @@ public class SteamFriendsManager : MonoBehaviour
 
             foreach (Friend friend in onlineFriends)
             {
-                CreateFriendObject(friend, onlineColor, false);
+                CreateFriendObject(friend, true, false);
             }
         }
         if (offlineFriends.Count > 0)
@@ -107,20 +107,21 @@ public class SteamFriendsManager : MonoBehaviour
 
             foreach (Friend friend in offlineFriends)
             {
-                CreateFriendObject(friend, offlineColor, false);
+                CreateFriendObject(friend, false, false);
             }
         }
     }
 
 // Helper method to create and assign friend objects
-    private void CreateFriendObject(Friend friend, Color statusColor, bool invite)
+    private void CreateFriendObject(Friend friend, bool online, bool inGame)
     {
         GameObject f = Instantiate(friendObj, content);
-        f.GetComponentInChildren<TextMeshProUGUI>().text = friend.Name;
-        f.GetComponent<FriendObject>().steamid = friend.Id;
+        FriendObject friendObject = f.GetComponent<FriendObject>();
+        friendObject.playerName.text = friend.Name;
+        friendObject.steamid = friend.Id;
         AssingFriendImage(f, friend.Id);
-        f.GetComponentInChildren<TextMeshProUGUI>().color = statusColor;
-        f.transform.GetChild(2).gameObject.SetActive(invite);
+        friendObject.GetComponent<Button>().interactable = online;
+        //friendObject.onlineStats.color = statusColor;
 
         friendObjects[friend.Id] = f;
     }
