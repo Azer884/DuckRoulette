@@ -77,11 +77,11 @@ public class NetworkTransmission : NetworkBehaviour
                 
                 if (_ready)
                 {
-                    player.Value.GetComponent<PlayerInfo>().playerName.color = new Color(0, .5f, 0);
+                    player.Value.GetComponent<PlayerInfo>().readyStatus.color = new Color(0.1686275f, 1f, 0.05098039f);
                 }
                 else
                 {
-                    player.Value.GetComponent<PlayerInfo>().playerName.color = new Color(.5f, 0, 0);
+                    player.Value.GetComponent<PlayerInfo>().readyStatus.color = new Color(1f, 0.2588235f, 0.03137255f);
                 }
 
                 

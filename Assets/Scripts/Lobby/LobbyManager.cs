@@ -138,6 +138,28 @@ public class LobbyManager : MonoBehaviour
         textEditor.SelectAll();
         textEditor.Copy();
     }
+    public void PasteId(TMP_InputField joinLobbyInp)
+    {
+        TextEditor textEditor = new()
+        {
+            isMultiline = true
+        };
+
+        if (textEditor.CanPaste())
+        {
+            textEditor.Paste();
+        }
+        if (int.TryParse(textEditor.text, out int pastedNb))
+        {
+            textEditor.text = $"{pastedNb}";
+        }
+        else
+        {
+            textEditor.text = "";
+        }
+
+        joinLobbyInp.text = textEditor.text;
+    }
 
     public void HostCreated()
     {

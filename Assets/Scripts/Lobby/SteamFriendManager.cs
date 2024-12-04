@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Steamworks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Text.RegularExpressions;
 
 public class SteamFriendsManager : MonoBehaviour
 {
@@ -14,8 +14,10 @@ public class SteamFriendsManager : MonoBehaviour
     public Transform content;
     public GameObject friendObj;
     public Color onlineColor, inGameColor, offlineColor;
-    private Dictionary<SteamId, GameObject> friendObjects = new Dictionary<SteamId, GameObject>();
-    private Dictionary<string, Transform> sectionHeaders = new();
+    private Dictionary<Friend, GameObject> inGameFriends = new();
+    private Dictionary<Friend, GameObject> onlineFriends = new();
+    private Dictionary<Friend, GameObject> offlineFriends = new();
+    private bool alphaOrder = false;
 
 
     async void Start()
@@ -48,72 +50,78 @@ public class SteamFriendsManager : MonoBehaviour
 
     public void InitFriendsAsync()
     {
-        friendObjects.Clear();
-        // Lists to hold categorized friends
-        List<Friend> inGameFriends = new();
-        List<Friend> onlineFriends = new();
-        List<Friend> offlineFriends = new();
+        inGameFriends.Clear();
+        onlineFriends.Clear();
+        offlineFriends.Clear();
 
         // Categorize friends
         foreach (var friend in SteamFriends.GetFriends())
         {
-            if (friend.IsPlayingThisGame)
+            if (friend.IsPlayingThisGame && !inGameFriends.ContainsKey(friend))
             {
-                inGameFriends.Add(friend);
+                inGameFriends[friend] = CreateFriendObject(friend, true);
             }
-            else if (friend.IsOnline)
+            else if (friend.IsOnline && !onlineFriends.ContainsKey(friend))
             {
-                onlineFriends.Add(friend);
+                onlineFriends[friend] = CreateFriendObject(friend, true);
             }
-            else
+            else if (!offlineFriends.ContainsKey(friend))
             {
-                offlineFriends.Add(friend);
-            }
-        }
-
-        // Instantiate friends in order: In-Game -> Online -> Offline
-        if (inGameFriends.Count > 0)
-        {
-            sectionHeaders["In-Game"] = content.GetChild(0);
-
-            foreach (Friend friend in inGameFriends)
-            {
-                CreateFriendObject(friend, true, true);
+                offlineFriends[friend] = CreateFriendObject(friend, false);
             }
         }
-        else
+        
+        alphaOrder = true;
+        UpdateFriendUI();
+    }
+    public void UpdateFriendUI()
+    {
+        if (alphaOrder)
         {
-            content.GetChild(0).gameObject.SetActive(false);
-        }
-
-        if (onlineFriends.Count > 0)
-        {
-            GameObject onlineText = Instantiate(content.GetChild(0).gameObject, content);
-            onlineText.SetActive(true);
-
-            sectionHeaders["Online"] = onlineText.transform;
-
-            foreach (Friend friend in onlineFriends)
+            int index = 0;
+    
+            foreach (var friend in inGameFriends.Values)
             {
-                CreateFriendObject(friend, true, false);
+                friend.transform.SetSiblingIndex(index++);
             }
-        }
-        if (offlineFriends.Count > 0)
-        {
-            GameObject offlineText = Instantiate(content.GetChild(0).gameObject, content);
-            offlineText.SetActive(true);
-
-            sectionHeaders["Offline"] = offlineText.transform;
-
-            foreach (Friend friend in offlineFriends)
+    
+            foreach (var friend in onlineFriends.Values)
             {
-                CreateFriendObject(friend, false, false);
+                friend.transform.SetSiblingIndex(index++);
             }
+    
+            foreach (var friend in offlineFriends.Values)
+            {
+                friend.transform.SetSiblingIndex(index++);
+            }
+            alphaOrder = false;
         }
     }
 
-// Helper method to create and assign friend objects
-    private void CreateFriendObject(Friend friend, bool online, bool inGame)
+    public void SortFriendsAlphabetically()
+    {
+        if (!alphaOrder)
+        {
+            // Combine all friends into a single list for sorting
+            var allFriends = new List<(Friend friend, GameObject obj)>();
+            allFriends.AddRange(inGameFriends.Select(kvp => (kvp.Key, kvp.Value)));
+            allFriends.AddRange(onlineFriends.Select(kvp => (kvp.Key, kvp.Value)));
+            allFriends.AddRange(offlineFriends.Select(kvp => (kvp.Key, kvp.Value)));
+    
+            // Sort friends alphabetically by their name
+            allFriends.Sort((a, b) => string.Compare(a.friend.Name, b.friend.Name, StringComparison.OrdinalIgnoreCase));
+    
+            // Rearrange the UI
+            int index = 0;
+            foreach (var (_, obj) in allFriends)
+            {
+                obj.transform.SetSiblingIndex(index++);
+            }
+            alphaOrder = true;
+        }
+    }
+    
+    private GameObject CreateFriendObject(Friend friend, bool online)
     {
         GameObject f = Instantiate(friendObj, content);
         FriendObject friendObject = f.GetComponent<FriendObject>();
@@ -123,7 +131,7 @@ public class SteamFriendsManager : MonoBehaviour
         friendObject.GetComponent<Button>().interactable = online;
         //friendObject.onlineStats.color = statusColor;
 
-        friendObjects[friend.Id] = f;
+        return f;
     }
 
 
@@ -134,74 +142,34 @@ public class SteamFriendsManager : MonoBehaviour
     }
     private void OnFriendStateChange(Friend friend)
     {
-        // Check if this friend is already in the dictionary
-        if (friendObjects.TryGetValue(friend.Id, out GameObject friendUI))
-        {
             // Update the text color based on the friend's new status
             if (friend.IsPlayingThisGame)
             {
-                sectionHeaders["In-Game"].gameObject.SetActive(true);
-                friendUI.GetComponentInChildren<TextMeshProUGUI>().color = inGameColor; 
-                friendUI.transform.SetSiblingIndex(sectionHeaders["Online"].GetSiblingIndex() - 1);
-                friendUI.transform.GetChild(2).gameObject.SetActive(true);
+                inGameFriends[friend].GetComponent<Button>().interactable = true;
+                if (!alphaOrder)
+                {
+                    inGameFriends[friend].transform.SetAsFirstSibling();
+                }
+                //friendUI.GetComponent<FriendObject>().onlineStats.color = inGameColor;
             }
             else if (friend.IsOnline)
             {
-                sectionHeaders["Online"].gameObject.SetActive(true);
-                friendUI.GetComponentInChildren<TextMeshProUGUI>().color = onlineColor;
-                friendUI.transform.SetSiblingIndex(sectionHeaders["Offline"].GetSiblingIndex() - 1);
-                friendUI.transform.GetChild(2).gameObject.SetActive(false);
-
+                onlineFriends[friend].GetComponent<Button>().interactable = true;
+                if (!alphaOrder)
+                {
+                    onlineFriends[friend].transform.SetAsFirstSibling();
+                }
+                //friendUI.GetComponent<FriendObject>().onlineStats.color = onlineColor;
             }
             else
             {
-                sectionHeaders["Offline"].gameObject.SetActive(true);
-                friendUI.GetComponentInChildren<TextMeshProUGUI>().color = offlineColor;
-                friendUI.transform.SetSiblingIndex(content.childCount - 1);
-                friendUI.transform.GetChild(2).gameObject.SetActive(false);
+                //friendUI.GetComponent<FriendObject>().onlineStats.color = offlineColor;
+                offlineFriends[friend].GetComponent<Button>().interactable = false;
+                if (!alphaOrder)
+                {
+                    offlineFriends[friend].transform.SetAsFirstSibling();
+                }
             }
-        }
-    }
-
-    public string IncreaseNumberInString(string input)
-{
-    // Use regex to find a number in the string
-    Match match = Regex.Match(input, @"\d+");
-    
-    if (match.Success)
-    {
-        // Get the number as a string
-        string numberStr = match.Value;
-        
-        // Convert the number string to an integer and increase it by one
-        int number = int.Parse(numberStr);
-        number++;
-
-        // Replace the old number in the input string with the new number
-        string updatedString = Regex.Replace(input, numberStr, number.ToString());
-        return updatedString;
-    }
-
-    // Return the input string unchanged if no number is found
-    return input;
-}
-
-    public static async System.Threading.Tasks.Task<Texture2D> GetTextureFromSteamIdAsync(SteamId id)
-    {
-        var img = await SteamFriends.GetLargeAvatarAsync(SteamClient.SteamId);
-        Steamworks.Data.Image image = img.Value;
-        Texture2D texture = new((int)image.Width, (int)image.Height);
-
-        for (int x = 0; x < image.Width; x++)
-        {
-            for (int y = 0; y < image.Height; y++)
-            {
-                var p = image.GetPixel(x, y);
-                texture.SetPixel(x, (int)image.Height - y, new Color(p.r / 255.0f, p.g / 255.0f, p.b / 255.0f, p.a / 255.0f));
-            }
-        }
-        texture.Apply();
-        return texture;
     }
     
     private void OnDestroy() {

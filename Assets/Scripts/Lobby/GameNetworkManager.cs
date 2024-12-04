@@ -177,6 +177,13 @@ public class GameNetworkManager : MonoBehaviour
         NetworkManager.Singleton.StartHost();
         LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
     }
+    public async void StartHost(int _maxMembers)
+    {
+        NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
+        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+        NetworkManager.Singleton.StartHost();
+        LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+    }
 
     public async void JoinById(TMP_InputField input)
     {
@@ -237,6 +244,8 @@ public class GameNetworkManager : MonoBehaviour
     public void Disconnected()
     {
         LobbySaver.instance.currentLobby?.Leave();
+        LobbySaver.instance.currentLobby = null;
+
         if(NetworkManager.Singleton == null)
         {
             return;
@@ -370,7 +379,7 @@ public class GameNetworkManager : MonoBehaviour
 
             lobbyObj.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = lobby.GetData("name");
             lobbyObj.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = lobby.MemberCount + "/" + lobby.MaxMembers;
-            Button joinButton = lobbyObj.transform.GetChild(2).GetComponent<Button>();
+            Button joinButton = lobbyObj.transform.GetComponent<Button>();
 
             joinButton.onClick.AddListener(() => JoinLobby(lobby));
         }

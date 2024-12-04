@@ -2,6 +2,7 @@ using UnityEngine;
 using Steamworks;
 using TMPro;
 using UnityEngine.UI;
+using Unity.Netcode;
 
 public class FriendObject : MonoBehaviour
 {
@@ -13,7 +14,34 @@ public class FriendObject : MonoBehaviour
 
     public void Invite()
     {
-        if (Time.time >= lastInviteTime + inviteCooldown)
+        // Check for an existing lobby, create if none exists
+        if (LobbySaver.instance.currentLobby == null)
+        {
+            Debug.Log("No lobby found. Creating a new one...");
+            GameNetworkManager.Instance.StartHost(6);
+            
+            // Wait for the lobby to initialize
+            StartCoroutine(WaitForLobbyCreationAndInvite());
+        }
+        else
+        {
+            SendInvite(false);
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForLobbyCreationAndInvite()
+    {
+        while (LobbySaver.instance.currentLobby == null)
+        {
+            yield return null; // Wait until the lobby is initialized
+        }
+
+        SendInvite(true);
+    }
+
+    private void SendInvite(bool isHosting)
+    {
+        if (Time.time >= lastInviteTime + inviteCooldown || isHosting)
         {
             LobbySaver.instance.currentLobby.Value.InviteFriend(steamid);
             Debug.Log("Invited " + steamid);
@@ -24,5 +52,4 @@ public class FriendObject : MonoBehaviour
             Debug.Log("Please wait before sending another invite.");
         }
     }
-
 }
