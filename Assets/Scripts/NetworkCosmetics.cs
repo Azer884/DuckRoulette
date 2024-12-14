@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using Steamworks;
 using Unity.Netcode;
-using System.Collections;
-using NUnit.Framework;
 
 public class NetworkCosmetics : NetworkBehaviour
 {

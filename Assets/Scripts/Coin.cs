@@ -1,3 +1,4 @@
+using Steamworks;
 using UnityEngine;
 
 public class Coin : MonoBehaviour 
@@ -23,10 +24,14 @@ public class Coin : MonoBehaviour
             amount = data.coinAmount; // Set the coin amount from the loaded data
             CoinChanged?.Invoke(); // Notify the UI or other listeners about the change
         }
+        else if (SteamClient.IsValid)
+        {
+            Debug.LogWarning("using default amount.");
+            amount = 100; // Default coin amount if no save data is found
+        }
         else
         {
-            Debug.LogWarning("No coin data found in Steam Cloud, using default amount.");
-            amount = 100; // Default coin amount if no save data is found
+            Debug.LogWarning("Open Steam!");
         }
     }
 

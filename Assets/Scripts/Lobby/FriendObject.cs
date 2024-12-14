@@ -14,6 +14,9 @@ public class FriendObject : MonoBehaviour
 
     public void Invite()
     {
+        Animator settingsAnim = GameObject.FindGameObjectWithTag("SettingsBar").GetComponent<Animator>();
+        settingsAnim.Play("Settings");
+        
         // Check for an existing lobby, create if none exists
         if (LobbySaver.instance.currentLobby == null)
         {

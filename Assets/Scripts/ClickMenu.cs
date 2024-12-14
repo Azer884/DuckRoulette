@@ -22,11 +22,7 @@ public class ClickMenu : MonoBehaviour
         }
         gameObject.SetActive(false);
     }
-
-    private void OnEnable() {
-        kickButton.SetActive(LobbyManager.instance.isHost);
-    }
-
+    
     public bool IsPointerOverUIObject(GameObject clickObj)
     {
         // Get all objects under the cursor

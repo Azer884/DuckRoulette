@@ -20,6 +20,8 @@ public class GameNetworkManager : MonoBehaviour
     public List<Lobby> Lobbies { get; private set; } = new List<Lobby>(capacity: 100);
 
     public ulong hostId;
+    public NetworkObject playerObj;
+    public Transform characters;
     private int mapIndex = 2;
     
     private void Awake()
@@ -210,6 +212,9 @@ public class GameNetworkManager : MonoBehaviour
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Private Lobby");
         }
+
+        LobbyManager.instance.friendList.gameObject.SetActive(true);
+        LobbyManager.instance.friendList.Play("FriendListOtherWay");
     }
 
     public async void JoinLobby(Lobby lobby)
@@ -227,6 +232,9 @@ public class GameNetworkManager : MonoBehaviour
             Debug.Log("Joined Lobby");
             return;
         }
+        
+        LobbyManager.instance.friendList.gameObject.SetActive(true);
+        LobbyManager.instance.friendList.Play("FriendListOtherWay");
     }
 
     public void StartClient(SteamId _sId)
@@ -237,6 +245,7 @@ public class GameNetworkManager : MonoBehaviour
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
         if (NetworkManager.Singleton.StartClient())
         {
+            NetworkTransmission.instance.SpawnCharactersServerRpc();
             Debug.Log("Client has started");
         }
     }
@@ -410,6 +419,9 @@ public class GameNetworkManager : MonoBehaviour
             LobbyManager.instance.ConnectedAsClient();
             Debug.Log("Joined Lobby");
         }
+        
+        LobbyManager.instance.friendList.gameObject.SetActive(true);
+        LobbyManager.instance.friendList.Play("FriendListOtherWay");
     }
 
     public void JridiOnly()

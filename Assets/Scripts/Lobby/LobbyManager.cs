@@ -10,7 +10,7 @@ public class LobbyManager : MonoBehaviour
 {
     public static LobbyManager instance;
 
-    [SerializeField] private GameObject multiMenu, multiLobby;
+    [SerializeField] private GameObject multiMenu, multiLobby, joinMenu;
     public TextMeshProUGUI lobbyId;
 
     [SerializeField] private GameObject chatPanel, textObject;
@@ -33,7 +33,7 @@ public class LobbyManager : MonoBehaviour
     public bool isHost;
     public ulong myClientId;
 
-    public GameObject errorMessage ,errorMessageBox;
+    public Animator friendList;
     private void Awake()
     {
         if (instance != null)
@@ -52,14 +52,7 @@ public class LobbyManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                if (string.IsNullOrWhiteSpace(inputField.text))
-                {
-                    inputField.text = "";
-                    inputField.DeactivateInputField();
-                    return;
-                }
-                NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
-                inputField.text = "";
+                SendToChat();
             }
         }
         else
@@ -70,6 +63,18 @@ public class LobbyManager : MonoBehaviour
                 inputField.text = " ";
             }
         }
+    }
+
+    public void SendToChat()
+    {
+        if (string.IsNullOrWhiteSpace(inputField.text))
+        {
+            inputField.text = "";
+            inputField.DeactivateInputField();
+            return;
+        }
+        NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
+        inputField.text = "";
     }
 
     public class Message
@@ -138,40 +143,23 @@ public class LobbyManager : MonoBehaviour
         textEditor.SelectAll();
         textEditor.Copy();
     }
-    public void PasteId(TMP_InputField joinLobbyInp)
-    {
-        TextEditor textEditor = new()
-        {
-            isMultiline = true
-        };
-
-        if (textEditor.CanPaste())
-        {
-            textEditor.Paste();
-        }
-        if (int.TryParse(textEditor.text, out int pastedNb))
-        {
-            textEditor.text = $"{pastedNb}";
-        }
-        else
-        {
-            textEditor.text = "";
-        }
-
-        joinLobbyInp.text = textEditor.text;
-    }
 
     public void HostCreated()
     {
         multiMenu.SetActive(false);
+        joinMenu.SetActive(false);
         multiLobby.SetActive(true);
         isHost = true;
         connected = true;
+
+        friendList.gameObject.SetActive(true);
+        friendList.Play("FriendListOtherWay");
     }
 
     public void ConnectedAsClient()
     {
         multiMenu.SetActive(false);
+        joinMenu.SetActive(false);
         multiLobby.SetActive(true);
         isHost = false;
         connected = true;
@@ -192,6 +180,9 @@ public class LobbyManager : MonoBehaviour
         notReadyButton.SetActive(false);
         isHost = false;
         connected = false;
+        
+        friendList.gameObject.SetActive(true);
+        friendList.Play("FriendList");
     }
 
     public async Task AddPlayerToDictionaryAsync(ulong _cliendId, string _steamName, ulong _steamId)
