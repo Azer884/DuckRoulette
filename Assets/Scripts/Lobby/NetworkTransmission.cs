@@ -116,13 +116,4 @@ public class NetworkTransmission : NetworkBehaviour
         }
         Debug.Log("disconnected");
     }
-
-    [ServerRpc]
-    public void SpawnCharactersServerRpc(ServerRpcParams serverRpcParams = default)
-    {
-        Debug.Log("Spawning...");
-        NetworkObject spawnedPlayer = NetworkManager.Singleton.SpawnManager.InstantiateAndSpawn(GameNetworkManager.Instance.playerObj, serverRpcParams.Receive.SenderClientId, true);
-        spawnedPlayer.transform.SetParent(GameNetworkManager.Instance.characters.GetChild(5));
-        Debug.Log(spawnedPlayer);
-    }
 }

@@ -245,7 +245,6 @@ public class GameNetworkManager : MonoBehaviour
         LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
         if (NetworkManager.Singleton.StartClient())
         {
-            NetworkTransmission.instance.SpawnCharactersServerRpc();
             Debug.Log("Client has started");
         }
     }

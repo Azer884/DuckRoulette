@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using Steamworks;
 
 public class LoadNextScene : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class LoadNextScene : MonoBehaviour
     IEnumerator LoadMainScene()
     {
         yield return new WaitUntil(() => NetworkManager.Singleton != null);
-        SceneManager.LoadScene("Lobby"); 
+        if(SteamClient.IsValid) SceneManager.LoadScene("Lobby"); 
+        else SceneManager.LoadScene("Error");
     }
 }

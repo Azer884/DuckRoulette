@@ -72,6 +72,11 @@ public class VoiceChat : NetworkBehaviour
         }
     }
 
+    private void OnAudioFilterRead(float[] data, int channels) 
+    {
+        
+    }
+
     // This will be called on the server and forward the voice data to all clients except the sender
     [ServerRpc]
     private void SendVoiceDataToClientsServerRpc(byte[] voiceData, int compressedWritten, ServerRpcParams serverRpcParams = default)

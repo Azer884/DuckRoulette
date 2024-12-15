@@ -22,6 +22,7 @@ public class LobbyManager : MonoBehaviour
     public GameObject lobbiesBox, lobbiesObj;
 
     public Dictionary<ulong, GameObject> playerInfo = new();
+    public Transform playerObjContainer;
 
     [SerializeField]
     private int maxMessages = 20;
@@ -32,8 +33,8 @@ public class LobbyManager : MonoBehaviour
     public bool inGame;
     public bool isHost;
     public ulong myClientId;
-
     public Animator friendList;
+    public GameObject offlinePlayerBox, offlinePlayer;
     private void Awake()
     {
         if (instance != null)
@@ -152,6 +153,11 @@ public class LobbyManager : MonoBehaviour
         isHost = true;
         connected = true;
 
+        foreach (Transform child in offlinePlayerBox.transform)
+        {
+            if(child.childCount > 0) Destroy(child.GetChild(0).gameObject);
+        }
+
         friendList.gameObject.SetActive(true);
         friendList.Play("FriendListOtherWay");
     }
@@ -163,6 +169,12 @@ public class LobbyManager : MonoBehaviour
         multiLobby.SetActive(true);
         isHost = false;
         connected = true;
+
+        foreach (Transform child in offlinePlayerBox.transform)
+        {
+            if(child.childCount > 0) Destroy(child.GetChild(0).gameObject);
+        }
+
     }
 
     public void Disconnected()
@@ -180,6 +192,13 @@ public class LobbyManager : MonoBehaviour
         notReadyButton.SetActive(false);
         isHost = false;
         connected = false;
+        
+        foreach (Transform child in offlinePlayerBox.transform)
+        {
+            if(child.childCount > 0) Destroy(child.GetChild(0).gameObject);
+        }
+
+        Instantiate(offlinePlayer, offlinePlayerBox.transform.GetChild(0));
         
         friendList.gameObject.SetActive(true);
         friendList.Play("FriendList");

@@ -311,7 +311,7 @@ AnimationClip:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1e-45
+        value: 0
         inSlope: Infinity
         outSlope: Infinity
         tangentMode: 103
@@ -322,7 +322,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_Type
-    path: 
+    path: Viewport
     classID: 114
     script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
     flags: 1
@@ -333,6 +333,15 @@ AnimationClip:
       value: {fileID: 21300000, guid: df047cdcb73b4b94b8d279a6d54bb895, type: 3}
     attribute: m_Sprite
     path: 
+    classID: 114
+    script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+    flags: 2
+  - serializedVersion: 2
+    curve:
+    - time: 0
+      value: {fileID: 21300000, guid: df047cdcb73b4b94b8d279a6d54bb895, type: 3}
+    attribute: m_Sprite
+    path: Viewport
     classID: 114
     script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
     flags: 2
@@ -434,7 +443,16 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     - serializedVersion: 2
-      path: 0
+      path: 2572881144
+      attribute: 2015549526
+      script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+      typeID: 114
+      customType: 0
+      isPPtrCurve: 1
+      isIntCurve: 0
+      isSerializeReferenceCurve: 0
+    - serializedVersion: 2
+      path: 2572881144
       attribute: 2990785078
       script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
       typeID: 114
@@ -443,6 +461,7 @@ AnimationClip:
       isIntCurve: 1
       isSerializeReferenceCurve: 0
     pptrCurveMapping:
+    - {fileID: 21300000, guid: df047cdcb73b4b94b8d279a6d54bb895, type: 3}
     - {fileID: 21300000, guid: df047cdcb73b4b94b8d279a6d54bb895, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
@@ -759,7 +778,7 @@ AnimationClip:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1e-45
+        value: 0
         inSlope: Infinity
         outSlope: Infinity
         tangentMode: 103
@@ -770,7 +789,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_Type
-    path: 
+    path: Viewport
     classID: 114
     script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
     flags: 1

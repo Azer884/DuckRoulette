@@ -4,6 +4,7 @@ using System.Linq;
 using Steamworks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class SteamFriendsManager : MonoBehaviour
@@ -129,6 +130,22 @@ public class SteamFriendsManager : MonoBehaviour
         friendObject.steamid = friend.Id;
         AssingFriendImage(f, friend.Id);
         friendObject.GetComponent<Button>().interactable = online;
+        EventTrigger eventTrigger = f.GetComponent<EventTrigger>();
+        if (eventTrigger == null)
+        {
+            eventTrigger = f.AddComponent<EventTrigger>();
+        }
+
+        EventTrigger.Entry entry = new()
+        {
+            eventID = EventTriggerType.Select
+        };
+        entry.callback.AddListener((eventData) =>
+        {
+            // Scroll to the selected object
+            content.parent.parent.GetComponent<ScrollToSelected>().ScrollTo(f.GetComponent<RectTransform>());
+        });
+        eventTrigger.triggers.Add(entry);
         //friendObject.onlineStats.color = statusColor;
 
         return f;
