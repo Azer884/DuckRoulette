@@ -104,12 +104,6 @@ public class PauseMenu : NetworkBehaviour
             Debug.Log("Left Steam lobby successfully.");
         }
     }
-
-    public void Settings()
-    {
-
-    }
-
     public void Resume()
     {
         RebindSaveLoad.Instance.input.enabled = true;
