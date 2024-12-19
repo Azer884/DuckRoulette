@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -50,6 +51,7 @@ public class SelectionManager : MonoBehaviour
         if (selected != null && registeredButtons.Contains(selected))
         {
             lastSelected = selected;
+            Debug.Log($"Last Selected Updated: {lastSelected.name}");
         }
     }
 
@@ -57,12 +59,21 @@ public class SelectionManager : MonoBehaviour
     {
         foreach (Transform child in parent)
         {
-            // Check if the child has a Button component and EventTrigger
-            if (child.TryGetComponent(out Button button) && child.GetComponent<EventTrigger>() != null)
+            // Check if the child has a Button component
+            if (child.TryGetComponent(out Button button))
             {
                 RegisterButton(button.gameObject);
             }
-
+            // Register toggles
+            else if (child.TryGetComponent(out Toggle toggle))
+            {
+                RegisterButton(toggle.gameObject);
+            }
+            // Register TMP_Dropdown
+            else if (child.TryGetComponent(out TMP_Dropdown dropdown))
+            {
+                RegisterButton(dropdown.gameObject);
+            }
             // Recursively check child objects
             RegisterChildButtons(child);
         }
@@ -72,26 +83,15 @@ public class SelectionManager : MonoBehaviour
     {
         if (button != null && registeredButtons.Add(button)) // Only add if not already registered
         {
-            // Listen to existing EventTrigger if available
-            EventTrigger trigger = button.GetComponent<EventTrigger>();
-            if (trigger != null)
+            if (button.TryGetComponent(out EventTrigger trigger))
             {
-                foreach (var existingEntry in trigger.triggers) // Renamed "entry" to "existingEntry"
-                {
-                    if (existingEntry.eventID == EventTriggerType.Select)
-                    {
-                        // Event already handled; no need to add again
-                        return;
-                    }
-                }
-
                 // Add a Select event to update the last selected button
-                EventTrigger.Entry newEntry = new EventTrigger.Entry // Renamed "entry" to "newEntry"
+                EventTrigger.Entry selectEntry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.Select
                 };
-                newEntry.callback.AddListener((eventData) => UpdateLastSelected(button));
-                trigger.triggers.Add(newEntry);
+                selectEntry.callback.AddListener((eventData) => UpdateLastSelected(button));
+                trigger.triggers.Add(selectEntry);
             }
         }
     }

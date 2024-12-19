@@ -59,7 +59,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -195,7 +195,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -286,6 +286,7 @@ GameObject:
   - component: {fileID: 6903728338885325540}
   - component: {fileID: 5106167342033006395}
   - component: {fileID: 7781348066964708791}
+  - component: {fileID: 4184507844971624589}
   m_Layer: 5
   m_Name: Lobby
   m_TagString: Untagged
@@ -451,5 +452,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 057fd8a73caa0a64d974247bd1422832, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  selectedScale: 1.03
+  animationDuration: 0.2
+--- !u!114 &4184507844971624589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5333831420508912711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cd037c663bb17b45b208dc3b7799417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

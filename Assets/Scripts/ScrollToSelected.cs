@@ -1,36 +1,72 @@
+using System;
+using Steamworks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class ScrollToSelected : MonoBehaviour
 {
-    public ScrollRect scrollRect; // Reference to the ScrollRect component
-    public RectTransform content; // Reference to the content of the ScrollRect
+    [SerializeField] private RectTransform content; // Reference to the scrollable content
+    [SerializeField] private InputActionReference rightStickInput; // Input action for the right stick
+    [SerializeField] private float scrollSpeed = 750; // Speed multiplier for scrolling
+    [SerializeField] private float deadZone = 0.2f; // Dead zone threshold for stick drift
+    [SerializeField] private bool vertical;
 
-    public void ScrollTo(RectTransform target)
+    private Vector2 rightStickValue; // Stores the current right stick input
+
+    private void OnEnable()
     {
-        // Get the viewport of the ScrollRect
-        RectTransform viewport = scrollRect.viewport;
+        // Enable the action and subscribe to the events
+        rightStickInput.action.Enable();
+        rightStickInput.action.performed += OnRightStickMoved;
+        rightStickInput.action.canceled += OnRightStickReleased;
+    }
 
-        // Calculate the world position of the target relative to the viewport
-        Vector3[] targetCorners = new Vector3[4];
-        target.GetWorldCorners(targetCorners);
+    private void OnDisable()
+    {
+        // Unsubscribe from the events and disable the action
+        rightStickInput.action.performed -= OnRightStickMoved;
+        rightStickInput.action.canceled -= OnRightStickReleased;
+        rightStickInput.action.Disable();
+    }
 
-        Vector3[] viewportCorners = new Vector3[4];
-        viewport.GetWorldCorners(viewportCorners);
+    private void OnRightStickMoved(InputAction.CallbackContext context)
+    {
+        // Store the current right stick value
+        rightStickValue = context.ReadValue<Vector2>();
+    }
 
-        float viewportHeight = viewportCorners[2].y - viewportCorners[0].y;
-        float targetCenterY = (targetCorners[1].y + targetCorners[0].y) / 2f;
+    private void OnRightStickReleased(InputAction.CallbackContext context)
+    {
+        // Reset the right stick value when input is released
+        rightStickValue = Vector2.zero;
+    }
 
-        float viewportCenterY = (viewportCorners[1].y + viewportCorners[0].y) / 2f;
+    private void Update()
+    {
+        // Apply a dead zone to the stick input
+        if (Mathf.Abs(rightStickValue.y) > deadZone && IsChildSelected() && vertical)
+        {
+            // Scroll the content based on the Y value of the right stick
+            content.anchoredPosition += Vector2.down * rightStickValue.y * scrollSpeed * Time.deltaTime;
+        }
+        else if (Mathf.Abs(rightStickValue.x) > deadZone && IsChildSelected() && !vertical)
+        {
+            // Scroll the content based on the Y value of the right stick
+            content.anchoredPosition += Vector2.left * rightStickValue.x * scrollSpeed * Time.deltaTime;
+        }
+    }
 
-        float offsetY = targetCenterY - viewportCenterY;
+    // Checks if any child of 'content' is currently selected
+    private bool IsChildSelected()
+    {
+        GameObject currentSelected = EventSystem.current.currentSelectedGameObject;
 
-        // Calculate normalized scroll position
-        float contentHeight = content.rect.height - viewportHeight;
-        float normalizedPosition = 1 - Mathf.Clamp01((scrollRect.content.anchoredPosition.y + offsetY) / contentHeight);
+        if (currentSelected == null) return false;
 
-        // Set the normalized vertical position
-        scrollRect.verticalNormalizedPosition = normalizedPosition;
+        // Check if the currently selected object is a child of the content
+        return currentSelected.transform.IsChildOf(content);
     }
 }

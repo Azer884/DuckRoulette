@@ -314,6 +314,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 057fd8a73caa0a64d974247bd1422832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  selectedScale: 1.1
+  animationDuration: 0.2
 --- !u!1 &2267321192448642431
 GameObject:
   m_ObjectHideFlags: 0
@@ -505,6 +507,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 057fd8a73caa0a64d974247bd1422832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  selectedScale: 1.1
+  animationDuration: 0.2
 --- !u!1 &2416174338314636280
 GameObject:
   m_ObjectHideFlags: 0

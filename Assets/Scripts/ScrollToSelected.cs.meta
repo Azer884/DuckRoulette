@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: 5a1f987dcf1413f40a8b6f3d74746a0d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - content: {instanceID: 0}
+  - rightStickInput: {fileID: -3457839664528606991, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -292,6 +292,15 @@ public class GameNetworkManager : MonoBehaviour
         LobbyManager.instance.myClientId = _cliendId;
         NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, _cliendId);
         Debug.Log($"Client has connected : {SteamClient.Name}");
+
+        if (LobbySaver.instance.currentLobby?.MemberCount >= 6)
+        {
+            LobbyManager.instance.friendList.Play("HideFriendList");
+        }
+        else
+        {
+            LobbyManager.instance.friendList.SetTrigger("Hide");
+        }
     }
 
     public void Singleton_OnServerStarted()
