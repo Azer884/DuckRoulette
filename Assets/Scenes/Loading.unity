@@ -236,7 +236,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 265683273}
-    PlayerPrefab: {fileID: 9105551202633619655, guid: f7bc998da0594b04cb0aec0fb43aeeed, type: 3}
+    PlayerPrefab: {fileID: 0}
     Prefabs:
       NetworkPrefabsLists:
       - {fileID: 11400000, guid: b60811c35a8753548a93b9ad87da06c5, type: 2}
@@ -432,6 +432,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   actions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
   input: {fileID: 0}
+  currentControlScheme: 
 --- !u!4 &616574355
 Transform:
   m_ObjectHideFlags: 0

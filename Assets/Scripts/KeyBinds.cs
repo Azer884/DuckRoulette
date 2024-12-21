@@ -8,6 +8,8 @@ public class KeyBinds : MonoBehaviour
     [SerializeField] private Slider sliderSens;
     [SerializeField] private TMP_InputField sliderSensInp;
 
+    private bool isUpdating = false; // Flag to prevent recursive updates
+
     private void OnEnable() {
         sliderSens.onValueChanged.AddListener(OnSliderValueChange);
         sliderSensInp.onEndEdit.AddListener(OnInpValueChange);
@@ -18,6 +20,9 @@ public class KeyBinds : MonoBehaviour
 
     private void OnInpValueChange(string value)
     {
+        if (isUpdating) return; // Prevent recursive calls
+        isUpdating = true;
+
         // Replace multiple leading zeros with a single zero
         value = value.TrimStart('0'); 
         if (string.IsNullOrEmpty(value) || value == ".") value = "0"; 
@@ -37,7 +42,7 @@ public class KeyBinds : MonoBehaviour
 
             // Format the value to ensure proper display
             value = number.ToString("F2");
-            sliderSens.value = number;
+            sliderSens.value = number; // Update slider value
         }
         else
         {
@@ -47,10 +52,15 @@ public class KeyBinds : MonoBehaviour
 
         // Update the input field
         sliderSensInp.text = value;
+
+        isUpdating = false;
     }
 
     private void OnSliderValueChange(float value)
     {
+        if (isUpdating) return; // Prevent recursive calls
+        isUpdating = true;
+
         // Clamp the slider value between 0 and 1
         value = Mathf.Clamp(value, 0f, 1f);
 
@@ -61,11 +71,12 @@ public class KeyBinds : MonoBehaviour
         // Update the input field and format the value
         sliderSensInp.text = value.ToString("F2");
         sliderSens.value = value;
-    }
 
+        isUpdating = false;
+    }
 
     private void OnDisable() {
         sliderSens.onValueChanged.RemoveListener(OnSliderValueChange);
-        sliderSensInp.onValueChanged.RemoveListener(OnInpValueChange);
+        sliderSensInp.onEndEdit.RemoveListener(OnInpValueChange);
     }
 }

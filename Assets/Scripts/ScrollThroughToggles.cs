@@ -10,10 +10,12 @@ public class ScrollThroughToggles : MonoBehaviour
     [SerializeField] private InputActionReference scrollInput;
     private int index;
 
+    private void Awake() {
+        scrollInput.action.Enable();
+    }
+
     private void OnEnable()
     {
-        // Enable the action and subscribe to the events
-        scrollInput.action.Enable();
         scrollInput.action.performed += OnClick;
     }
 
@@ -22,7 +24,6 @@ public class ScrollThroughToggles : MonoBehaviour
     {
         // Unsubscribe from the events and disable the action
         scrollInput.action.performed -= OnClick;
-        scrollInput.action.Disable();
     }
     private void OnClick(InputAction.CallbackContext context)
     {

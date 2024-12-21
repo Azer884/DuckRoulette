@@ -6,12 +6,15 @@ using UnityEngine.InputSystem;
 public class ClickByInput : MonoBehaviour
 {
     [SerializeField] private InputActionReference scrollInput; // Input action reference
-    [SerializeField] private UnityEvent onClickEvent;          // Event to assign functions via Inspector
+    [SerializeField] private UnityEvent onClickEvent;
+
+    private void Awake() {
+        scrollInput.action.Enable();
+    }
 
     private void OnEnable()
     {
         // Enable the action and subscribe to the events
-        scrollInput.action.Enable();
         scrollInput.action.performed += OnClick;
     }
 
@@ -25,6 +28,5 @@ public class ClickByInput : MonoBehaviour
     {
         // Unsubscribe from the events and disable the action
         scrollInput.action.performed -= OnClick;
-        scrollInput.action.Disable();
     }
 }

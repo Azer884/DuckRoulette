@@ -13,11 +13,10 @@ public class CustomSliderControl : MonoBehaviour
     void Awake()
     {
         targetSlider = GetComponent<Slider>();
+        if (rightStickInput != null) rightStickInput.action.Enable();
     }
     private void OnEnable()
     {
-        // Enable input actions
-        if (rightStickInput != null) rightStickInput.action.Enable();
 
         rightStickInput.action.performed += OnRightStickMoved;
         rightStickInput.action.canceled += OnRightStickReleased;
@@ -25,9 +24,6 @@ public class CustomSliderControl : MonoBehaviour
 
     private void OnDisable()
     {
-        // Disable input actions
-        if (rightStickInput != null) rightStickInput.action.Disable();
-
         rightStickInput.action.performed -= OnRightStickMoved;
         rightStickInput.action.canceled -= OnRightStickReleased;
     }
@@ -48,12 +44,14 @@ public class CustomSliderControl : MonoBehaviour
     {
         if (targetSlider == null) return;
 
-
         if (Mathf.Abs(rightStickValue.x) > 0.1f && EventSystem.current.currentSelectedGameObject == gameObject) // Deadzone threshold
         {
             // Modify the slider value based on right stick input
-            targetSlider.value += rightStickValue.x * sliderSensitivity * Time.deltaTime;
-            targetSlider.value = Mathf.Clamp01(targetSlider.value);
+            float newValue = targetSlider.value + rightStickValue.x * sliderSensitivity * Time.deltaTime;
+
+            // Clamp the new value between 0 and 1 and assign it back to the slider
+            targetSlider.value = Mathf.Clamp01(newValue);
         }
     }
+
 }

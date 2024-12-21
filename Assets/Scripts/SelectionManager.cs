@@ -109,7 +109,14 @@ public class SelectionManager : MonoBehaviour
         if (EventSystem.current.currentSelectedGameObject == null && lastSelected != null)
         {
             // Reselect the last selected object if none is currently selected
-            SelectButton(lastSelected);
+            if (lastSelected.activeSelf)
+            {
+                SelectButton(lastSelected);
+            }
+            else
+            {
+                SelectButton(firstSelected.gameObject);
+            }
         }
     }
 }

@@ -460,6 +460,42 @@
                     "processors": "",
                     "interactions": "Press",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Options",
+                    "type": "Button",
+                    "id": "9308f255-529e-4ac9-96ca-a0788c2cedd8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Press",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Interact",
+                    "type": "Button",
+                    "id": "2b9a8fa0-9224-40ab-95c0-1129cb317f82",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Quick Join",
+                    "type": "Button",
+                    "id": "82fc98b0-0e77-4140-bc79-5d5cc62a7f62",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "TopButton",
+                    "type": "Button",
+                    "id": "17dee6e8-86ab-441b-8c0d-d3d4e11e5660",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -531,6 +567,17 @@
                 },
                 {
                     "name": "",
+                    "id": "d0e6831e-5d1a-4351-aadb-291146063fd0",
+                    "path": "<Gamepad>/select",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Options",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "c8858148-8c4a-47dc-bdf5-0e95853f36d0",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",
@@ -585,7 +632,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "Right",
+                    "name": "Left",
                     "id": "ba28f256-980e-4a56-83de-a21da1bf505f",
                     "path": "<Gamepad>/leftTrigger",
                     "interactions": "",
@@ -596,7 +643,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "Left",
+                    "name": "Right",
                     "id": "a7a02f41-535c-4370-95da-48d7083694df",
                     "path": "<Gamepad>/rightTrigger",
                     "interactions": "",
@@ -605,6 +652,39 @@
                     "action": "TriggerScroll",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "8cf77ad3-2fd1-4a29-a39c-9e03c33c72d9",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b753d809-6454-488e-925b-8186bf20d187",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Quick Join",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "81ff16a2-14af-4823-b3e5-51619621c7ff",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "TopButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

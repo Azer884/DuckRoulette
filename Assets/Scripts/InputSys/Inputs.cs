@@ -483,6 +483,42 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": ""Press"",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Options"",
+                    ""type"": ""Button"",
+                    ""id"": ""9308f255-529e-4ac9-96ca-a0788c2cedd8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Press"",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Interact"",
+                    ""type"": ""Button"",
+                    ""id"": ""2b9a8fa0-9224-40ab-95c0-1129cb317f82"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Quick Join"",
+                    ""type"": ""Button"",
+                    ""id"": ""82fc98b0-0e77-4140-bc79-5d5cc62a7f62"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""TopButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""17dee6e8-86ab-441b-8c0d-d3d4e11e5660"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -554,6 +590,17 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""d0e6831e-5d1a-4351-aadb-291146063fd0"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Options"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""c8858148-8c4a-47dc-bdf5-0e95853f36d0"",
                     ""path"": ""<Gamepad>/rightStick"",
                     ""interactions"": """",
@@ -608,7 +655,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": ""Right"",
+                    ""name"": ""Left"",
                     ""id"": ""ba28f256-980e-4a56-83de-a21da1bf505f"",
                     ""path"": ""<Gamepad>/leftTrigger"",
                     ""interactions"": """",
@@ -619,7 +666,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
-                    ""name"": ""Left"",
+                    ""name"": ""Right"",
                     ""id"": ""a7a02f41-535c-4370-95da-48d7083694df"",
                     ""path"": ""<Gamepad>/rightTrigger"",
                     ""interactions"": """",
@@ -628,6 +675,39 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""action"": ""TriggerScroll"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8cf77ad3-2fd1-4a29-a39c-9e03c33c72d9"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b753d809-6454-488e-925b-8186bf20d187"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""Quick Join"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""81ff16a2-14af-4823-b3e5-51619621c7ff"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""TopButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -684,6 +764,10 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_UI_Up = m_UI.FindAction("Up", throwIfNotFound: true);
         m_UI_Down = m_UI.FindAction("Down", throwIfNotFound: true);
         m_UI_Return = m_UI.FindAction("Return", throwIfNotFound: true);
+        m_UI_Options = m_UI.FindAction("Options", throwIfNotFound: true);
+        m_UI_Interact = m_UI.FindAction("Interact", throwIfNotFound: true);
+        m_UI_QuickJoin = m_UI.FindAction("Quick Join", throwIfNotFound: true);
+        m_UI_TopButton = m_UI.FindAction("TopButton", throwIfNotFound: true);
     }
 
     ~@Inputs()
@@ -884,6 +968,10 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Up;
     private readonly InputAction m_UI_Down;
     private readonly InputAction m_UI_Return;
+    private readonly InputAction m_UI_Options;
+    private readonly InputAction m_UI_Interact;
+    private readonly InputAction m_UI_QuickJoin;
+    private readonly InputAction m_UI_TopButton;
     public struct UIActions
     {
         private @Inputs m_Wrapper;
@@ -895,6 +983,10 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         public InputAction @Up => m_Wrapper.m_UI_Up;
         public InputAction @Down => m_Wrapper.m_UI_Down;
         public InputAction @Return => m_Wrapper.m_UI_Return;
+        public InputAction @Options => m_Wrapper.m_UI_Options;
+        public InputAction @Interact => m_Wrapper.m_UI_Interact;
+        public InputAction @QuickJoin => m_Wrapper.m_UI_QuickJoin;
+        public InputAction @TopButton => m_Wrapper.m_UI_TopButton;
         public InputActionMap Get() { return m_Wrapper.m_UI; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -925,6 +1017,18 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Return.started += instance.OnReturn;
             @Return.performed += instance.OnReturn;
             @Return.canceled += instance.OnReturn;
+            @Options.started += instance.OnOptions;
+            @Options.performed += instance.OnOptions;
+            @Options.canceled += instance.OnOptions;
+            @Interact.started += instance.OnInteract;
+            @Interact.performed += instance.OnInteract;
+            @Interact.canceled += instance.OnInteract;
+            @QuickJoin.started += instance.OnQuickJoin;
+            @QuickJoin.performed += instance.OnQuickJoin;
+            @QuickJoin.canceled += instance.OnQuickJoin;
+            @TopButton.started += instance.OnTopButton;
+            @TopButton.performed += instance.OnTopButton;
+            @TopButton.canceled += instance.OnTopButton;
         }
 
         private void UnregisterCallbacks(IUIActions instance)
@@ -950,6 +1054,18 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Return.started -= instance.OnReturn;
             @Return.performed -= instance.OnReturn;
             @Return.canceled -= instance.OnReturn;
+            @Options.started -= instance.OnOptions;
+            @Options.performed -= instance.OnOptions;
+            @Options.canceled -= instance.OnOptions;
+            @Interact.started -= instance.OnInteract;
+            @Interact.performed -= instance.OnInteract;
+            @Interact.canceled -= instance.OnInteract;
+            @QuickJoin.started -= instance.OnQuickJoin;
+            @QuickJoin.performed -= instance.OnQuickJoin;
+            @QuickJoin.canceled -= instance.OnQuickJoin;
+            @TopButton.started -= instance.OnTopButton;
+            @TopButton.performed -= instance.OnTopButton;
+            @TopButton.canceled -= instance.OnTopButton;
         }
 
         public void RemoveCallbacks(IUIActions instance)
@@ -1008,5 +1124,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         void OnUp(InputAction.CallbackContext context);
         void OnDown(InputAction.CallbackContext context);
         void OnReturn(InputAction.CallbackContext context);
+        void OnOptions(InputAction.CallbackContext context);
+        void OnInteract(InputAction.CallbackContext context);
+        void OnQuickJoin(InputAction.CallbackContext context);
+        void OnTopButton(InputAction.CallbackContext context);
     }
 }

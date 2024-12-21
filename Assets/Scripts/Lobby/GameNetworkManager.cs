@@ -122,6 +122,7 @@ public class GameNetworkManager : MonoBehaviour
     {
         Debug.Log("Client Entered");
         Debug.Log(_lobby.GetData("name"));
+        
 
         if (NetworkManager.Singleton.IsHost)
         {

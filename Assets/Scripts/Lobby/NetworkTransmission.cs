@@ -38,6 +38,9 @@ public class NetworkTransmission : NetworkBehaviour
         LobbyManager.instance.SendMessageToChat($"{_steamName} has joined", _clientId, true);
         _ = LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
         LobbyManager.instance.UpdateClients();
+        GameObject player0 = Instantiate(GameNetworkManager.Instance.playerObj.gameObject);
+        player0.GetComponent<NetworkObject>().SpawnAsPlayerObject(_clientId , true);
+        GridManager.Instance.characters.Add(player0.transform);
     }
 
     [ServerRpc(RequireOwnership = false)]

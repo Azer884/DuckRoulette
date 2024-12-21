@@ -3,43 +3,53 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    private void Update() {
-        ReassignChildrenToPrioritizedSlots();
+    public List<Transform> characters = new List<Transform>(); // List of characters to position
+    public static GridManager Instance;
+
+    private void Awake()
+    {
+        if(Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
-    public void ReassignChildrenToPrioritizedSlots()
+    private void Update()
     {
-        int firstEmptySlot = -1; // Track the first available empty slot
-        
-        // Iterate through the slots in order
+        ReassignCharactersToPrioritizedSlots();
+    }
+
+    public void ReassignCharactersToPrioritizedSlots()
+    {
+        int characterIndex = 0; // Track which character is being assigned
+
+        // Iterate through all slots in order
         for (int i = 0; i < transform.childCount; i++)
         {
             Transform slot = transform.GetChild(i);
 
-            if (slot.childCount > 0) // Slot has a child
+            if (characterIndex < characters.Count)
             {
-                // Ensure the child is properly aligned
-                Transform child = slot.GetChild(0);
-                child.localPosition = Vector3.zero;
-                child.localRotation = Quaternion.identity;
-            }
-            else
-            {
-                // Found an empty slot
-                if (firstEmptySlot == -1) firstEmptySlot = i;
-            }
+                // Make the character follow the slot's position and rotation
+                if (characters[characterIndex] != null)
+                {
+                    Transform character = characters[characterIndex];
 
-            // Move children from lower-priority slots to fill the firstEmptySlot
-            if (firstEmptySlot != -1 && i > firstEmptySlot && slot.childCount > 0)
-            {
-                Transform childToMove = slot.GetChild(0);
-                childToMove.SetParent(transform.GetChild(firstEmptySlot));
-                childToMove.localPosition = Vector3.zero;
-                childToMove.localRotation = Quaternion.identity;
-
-                firstEmptySlot++; // Advance to the next empty slot
+                    character.position = slot.position;
+                    character.rotation = slot.rotation;
+    
+                    characterIndex++; // Move to the next character
+                }
+                else
+                {
+                    characters.Remove(characters[characterIndex]);
+                }
             }
         }
     }
 }
-
