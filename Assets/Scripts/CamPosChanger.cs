@@ -5,7 +5,6 @@ using System.Collections;
 public class CamPosChanger : MonoBehaviour
 {
     [SerializeField] private GameObject mainMenu;
-    [SerializeField] private Transform players;
     [SerializeField] private float delayDuration = 0.2f; // Duration of the delay in seconds
 
     private bool isSwitchingCameras = false;
@@ -38,7 +37,7 @@ public class CamPosChanger : MonoBehaviour
     private int PriorityValue(int childIndex, int activeValue, int inactiveValue)
     {
         return mainMenu.activeSelf
-            ? players.GetChild(childIndex).childCount > 0
+            ? GridManager.Instance.characters.Count > childIndex
                 ? activeValue
                 : inactiveValue
             : 0;

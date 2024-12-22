@@ -33,14 +33,20 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void AddMeToDictionaryServerRPC(ulong _steamId,string _steamName, ulong _clientId)
+    public void AddMeToDictionaryServerRPC(ulong _steamId, string _steamName, ulong _clientId)
     {
         LobbyManager.instance.SendMessageToChat($"{_steamName} has joined", _clientId, true);
         _ = LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
         LobbyManager.instance.UpdateClients();
-        GameObject player0 = Instantiate(GameNetworkManager.Instance.playerObj.gameObject);
-        player0.GetComponent<NetworkObject>().SpawnAsPlayerObject(_clientId , true);
-        GridManager.Instance.characters.Add(player0.transform);
+
+        GameObject playerObj = Instantiate(GameNetworkManager.Instance.playerObj.gameObject);
+
+        // Add the player's transform to the synchronized list
+        if (playerObj.TryGetComponent(out NetworkObject networkObject))
+        {
+            networkObject.SpawnAsPlayerObject(_clientId, true);
+            GridManager.Instance.AddCharacter(networkObject);
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -108,15 +114,21 @@ public class NetworkTransmission : NetworkBehaviour
         Coin.Instance.UpdateCoinAmount(-5);
     }
 
-    [ClientRpc]
-    public void KickAllPlayersClientRpc()
+    [ServerRpc(RequireOwnership = false)]
+    public void ChangeObjectPosServerRpc(ulong characterIndex, Vector3 pos, Quaternion rot)
     {
-        NetworkManager.Singleton.Shutdown(true);
-        if (LobbyManager.instance != null)
+        ChangeObjectPosClientRpc(characterIndex, pos, rot);
+    }
+
+    [ClientRpc]
+    public void ChangeObjectPosClientRpc(ulong characterIndex, Vector3 pos, Quaternion rot)
+    {
+        NetworkObject character = NetworkManager.Singleton.SpawnManager.SpawnedObjects[characterIndex];
+        
+        if (character != null)
         {
-            LobbyManager.instance.ClearChat();
-            LobbyManager.instance.Disconnected(); 
+            character.transform.position = pos;
+            character.transform.rotation = rot;
         }
-        Debug.Log("disconnected");
     }
 }

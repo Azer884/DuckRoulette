@@ -10,7 +10,8 @@ public class LobbyManager : MonoBehaviour
 {
     public static LobbyManager instance;
 
-    [SerializeField] private GameObject multiMenu, multiLobby, joinMenu;
+    [SerializeField] private GameObject multiMenu, multiLobby;
+    public GameObject joinMenu;
     public TextMeshProUGUI lobbyId;
 
     [SerializeField] private GameObject chatPanel, textObject;
@@ -228,6 +229,7 @@ public class LobbyManager : MonoBehaviour
             NetworkTransmission.instance.UpdateClientsPlayerInfoClientRPC(_steamId, _steamName, _clientId);
 
         }
+        CheckIfPlayersAreReady();
     }
 
     public void RemovePlayerFromDictionary(ulong _steamId)

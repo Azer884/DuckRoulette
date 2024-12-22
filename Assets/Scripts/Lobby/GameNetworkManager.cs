@@ -8,7 +8,6 @@ using TMPro;
 using System.Threading.Tasks;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using System.IO;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -16,17 +15,18 @@ public class GameNetworkManager : MonoBehaviour
 
     private FacepunchTransport transport = null;
 
-
     public List<Lobby> Lobbies { get; private set; } = new List<Lobby>(capacity: 100);
 
     public ulong hostId;
     public NetworkObject playerObj;
     public Transform characters;
     private int mapIndex = 2;
-    
+
+    private bool actionInProgress = false;
+
     private void Awake()
     {
-        if(Instance == null)
+        if (Instance == null)
         {
             Instance = this;
         }
@@ -49,7 +49,6 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyGameCreated += SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += SteamFriends_OnGameLobbyJoinRequested;
         SceneManager.sceneLoaded += OnSceneLoaded;
-    
     }
 
     private void OnDestroy()
@@ -63,14 +62,14 @@ public class GameNetworkManager : MonoBehaviour
         SteamFriends.OnGameLobbyJoinRequested -= SteamFriends_OnGameLobbyJoinRequested;
         SceneManager.sceneLoaded -= OnSceneLoaded;
 
-        if(NetworkManager.Singleton == null)
+        if (NetworkManager.Singleton == null)
         {
             return;
         }
+
         NetworkManager.Singleton.OnServerStarted -= Singleton_OnServerStarted;
         NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
         NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
-
     }
 
     private void OnApplicationQuit()
@@ -78,29 +77,30 @@ public class GameNetworkManager : MonoBehaviour
         Disconnected();
     }
 
-    //when you accept the invite or Join on a friend
     private async void SteamFriends_OnGameLobbyJoinRequested(Lobby _lobby, SteamId _steamId)
     {
-        RoomEnter joinedLobby = await _lobby.Join();
-        if(joinedLobby != RoomEnter.Success)
+        await PerformActionWithLock(async () =>
         {
-            Debug.Log("Failed to create lobby");
-        }
-        else
-        {
-            LobbySaver.instance.currentLobby = _lobby;
-            LobbyManager.instance.ConnectedAsClient();
-            Debug.Log("Joined Lobby");
-        }
+            RoomEnter joinedLobby = await _lobby.Join();
+            if (joinedLobby != RoomEnter.Success)
+            {
+                Debug.Log("Failed to join lobby.");
+            }
+            else
+            {
+                LobbySaver.instance.currentLobby = _lobby;
+                LobbyManager.instance.ConnectedAsClient();
+                Debug.Log("Joined Lobby.");
+            }
+        });
     }
 
     private void SteamMatchmaking_OnLobbyGameCreated(Lobby _lobby, uint _ip, ushort _port, SteamId _steamId)
     {
-        Debug.Log("Lobby was created");
-        LobbyManager.instance.SendMessageToChat($"Lobby was created", NetworkManager.Singleton.LocalClientId, true);
+        Debug.Log("Lobby was created.");
+        LobbyManager.instance.SendMessageToChat("Lobby was created", NetworkManager.Singleton.LocalClientId, true);
     }
 
-    //friend send you an steam invite
     private void SteamMatchmaking_OnLobbyInvite(Friend _steamId, Lobby _lobby)
     {
         Debug.Log($"Invite from {_steamId.Name}");
@@ -108,21 +108,20 @@ public class GameNetworkManager : MonoBehaviour
 
     private void SteamMatchmaking_OnLobbyMemberLeave(Lobby _lobby, Friend _steamId)
     {
-        Debug.Log("member leave");
+        Debug.Log("Member left.");
         LobbyManager.instance.SendMessageToChat($"{_steamId.Name} has left", _steamId.Id, true);
         NetworkTransmission.instance.RemoveMeFromDictionaryServerRPC(_steamId.Id);
     }
 
     private void SteamMatchmaking_OnLobbyMemberJoined(Lobby _lobby, Friend _steamId)
     {
-        Debug.Log("member join");
+        Debug.Log("Member joined.");
     }
 
     private void SteamMatchmaking_OnLobbyEntered(Lobby _lobby)
     {
-        Debug.Log("Client Entered");
+        Debug.Log("Client entered.");
         Debug.Log(_lobby.GetData("name"));
-        
 
         if (NetworkManager.Singleton.IsHost)
         {
@@ -134,11 +133,12 @@ public class GameNetworkManager : MonoBehaviour
 
     private void SteamMatchmaking_OnLobbyCreated(Result _result, Lobby _lobby)
     {
-        if(_result != Result.OK)
+        if (_result != Result.OK)
         {
-            Debug.Log("lobby was not created");
+            Debug.Log("Lobby was not created.");
             return;
         }
+
         if (LobbyManager.instance.privateToggle.isOn)
         {
             _lobby.SetPrivate();
@@ -150,11 +150,11 @@ public class GameNetworkManager : MonoBehaviour
         else
         {
             _lobby.SetPublic();
-
         }
+
         _lobby.SetJoinable(true);
         _lobby.SetGameServer(_lobby.Owner.Id);
-        
+
         string randomLine = "";
         TextAsset textAsset = Resources.Load<TextAsset>("RandomLobbyNames");
         if (textAsset != null)
@@ -168,131 +168,172 @@ public class GameNetworkManager : MonoBehaviour
         }
         _lobby.SetData("name", $"{SteamClient.Name}{randomLine}");
 
-        Debug.Log($"lobby created {SteamClient.Name}");
-        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, NetworkManager.Singleton.LocalClientId); //
+        Debug.Log($"Lobby created: {SteamClient.Name}");
+        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, NetworkManager.Singleton.LocalClientId);
         LobbyManager.instance.lobbyId.text = _lobby.Id.ToString();
     }
 
     public async void StartHost(TMP_InputField _maxMembers)
     {
-        NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
-        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        NetworkManager.Singleton.StartHost();
-        LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
+        await PerformActionWithLock(async () =>
+        {
+            NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
+            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+            NetworkManager.Singleton.StartHost();
+            LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
+        });
     }
+
     public async void StartHost(int _maxMembers)
     {
-        NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
-        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        NetworkManager.Singleton.StartHost();
-        LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+        await PerformActionWithLock(async () =>
+        {
+            NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
+            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+            NetworkManager.Singleton.StartHost();
+            LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
+        });
     }
 
     public async void JoinById(TMP_InputField input)
     {
-        if (!ulong.TryParse(input.text, out ulong ID))
-            return;
-        
-        Lobby? lobby = await SteamMatchmaking.JoinLobbyAsync(ID);
-
-        if (!lobby.HasValue)
-        {
-            Debug.Log("Lobby not found or inaccessible.");
-            return;
-        }
-
-        RoomEnter result = await lobby.Value.Join();
-
-        if (result != RoomEnter.Success)
-        {
-            Debug.Log("Failed to join lobby.");
-        }
-        else
-        {
-            LobbySaver.instance.currentLobby = lobby;
-            LobbyManager.instance.ConnectedAsClient();
-            Debug.Log("Joined Private Lobby");
-        }
-
+        LobbyManager.instance.joinMenu.SetActive(false);
         LobbyManager.instance.friendList.gameObject.SetActive(true);
-        LobbyManager.instance.friendList.Play("FriendListOtherWay");
+        await PerformActionWithLock(async () =>
+        {
+            if (!ulong.TryParse(input.text, out ulong ID) || string.IsNullOrEmpty(input.text))
+                return;
+
+            Lobby? lobby = await SteamMatchmaking.JoinLobbyAsync(ID);
+
+            if (!lobby.HasValue)
+            {
+                Debug.Log("Lobby not found or inaccessible.");
+                return;
+            }
+
+            RoomEnter result = await lobby.Value.Join();
+
+            if (result != RoomEnter.Success)
+            {
+                Debug.Log("Failed to join lobby.");
+            }
+            else
+            {
+                LobbySaver.instance.currentLobby = lobby;
+                LobbyManager.instance.ConnectedAsClient();
+                Debug.Log("Joined Private Lobby.");
+            }
+        });
     }
 
     public async void JoinLobby(Lobby lobby)
     {
-        RoomEnter joinedLobby = await lobby.Join();
+        await PerformActionWithLock(async () =>
+        {
+            RoomEnter joinedLobby = await lobby.Join();
 
-        if (joinedLobby != RoomEnter.Success)
-        {
-            Debug.Log("Failed to join lobby.");
-        }
-        else
-        {
-            LobbySaver.instance.currentLobby = lobby;
-            LobbyManager.instance.ConnectedAsClient();
-            Debug.Log("Joined Lobby");
-            return;
-        }
-        
-        LobbyManager.instance.friendList.gameObject.SetActive(true);
-        LobbyManager.instance.friendList.Play("FriendListOtherWay");
+            if (joinedLobby != RoomEnter.Success)
+            {
+                Debug.Log("Failed to join lobby.");
+            }
+            else
+            {
+                LobbySaver.instance.currentLobby = lobby;
+                LobbyManager.instance.ConnectedAsClient();
+                Debug.Log("Joined Lobby.");
+            }
+        });
     }
 
     public void StartClient(SteamId _sId)
     {
-        NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
-        NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
-        transport.targetSteamId = _sId;
-        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
-        if (NetworkManager.Singleton.StartClient())
+        PerformActionWithLock(() =>
         {
-            Debug.Log("Client has started");
-        }
+            NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
+            transport.targetSteamId = _sId;
+            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
+
+            if (NetworkManager.Singleton.StartClient())
+            {
+                Debug.Log("Client has started.");
+            }
+        });
     }
 
     public void Disconnected()
     {
-        LobbySaver.instance.currentLobby?.Leave();
-        LobbySaver.instance.currentLobby = null;
+        PerformActionWithLock(() =>
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown(true);
+                if (NetworkManager.Singleton.IsHost)
+                {
+                    NetworkManager.Singleton.OnServerStarted -= Singleton_OnServerStarted;
+                }
 
-        if(NetworkManager.Singleton == null)
-        {
-            return;
-        }
-        if (NetworkManager.Singleton.IsHost)
-        {
-            NetworkManager.Singleton.OnServerStarted -= Singleton_OnServerStarted;
-            NetworkTransmission.instance.KickAllPlayersClientRpc();
-        }
-        else
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+                NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+            }
 
-            NetworkManager.Singleton.Shutdown(true);
             if (LobbyManager.instance != null)
             {
                 LobbyManager.instance.ClearChat();
-                LobbyManager.instance.Disconnected(); 
+                LobbyManager.instance.Disconnected();
             }
-            Debug.Log("disconnected");
+            Debug.Log("Disconnected.");
+
+            LobbySaver.instance.currentLobby?.Leave();
+            LobbySaver.instance.currentLobby = null;
+        });
+    }
+
+    private async Task PerformActionWithLock(System.Func<Task> action)
+    {
+        if (actionInProgress) return;
+
+        actionInProgress = true;
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            actionInProgress = false;
         }
     }
 
-    public void Singleton_OnClientDisconnectCallback(ulong _cliendId)
+    private void PerformActionWithLock(System.Action action)
+    {
+        if (actionInProgress) return;
+
+        actionInProgress = true;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            actionInProgress = false;
+        }
+    }
+
+    public void Singleton_OnClientDisconnectCallback(ulong _clientId)
     {
         NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
-        if(_cliendId == 0)
+        if (_clientId == 0)
         {
             Disconnected();
         }
     }
 
-    public void Singleton_OnClientConnectedCallback(ulong _cliendId)
+    public void Singleton_OnClientConnectedCallback(ulong _clientId)
     {
-        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _cliendId);
-        LobbyManager.instance.myClientId = _cliendId;
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, _cliendId);
-        Debug.Log($"Client has connected : {SteamClient.Name}");
+        NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _clientId);
+        LobbyManager.instance.myClientId = _clientId;
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, _clientId);
+        Debug.Log($"Client has connected: {SteamClient.Name}");
 
         if (LobbySaver.instance.currentLobby?.MemberCount >= 6)
         {
@@ -306,7 +347,7 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Singleton_OnServerStarted()
     {
-        Debug.Log("Host started");
+        Debug.Log("Host started.");
         LobbyManager.instance.HostCreated();
     }
 
@@ -314,7 +355,6 @@ public class GameNetworkManager : MonoBehaviour
     {
         UpdateRichPresenceStatus(scene.name);
     }
-
     public void UpdateRichPresenceStatus(string SceneName)
     {
         string richPresenceKey = "steam_display";
@@ -405,40 +445,26 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void RandomJoin()
     {
-        // Check if there are any valid lobbies available
-        if (Lobbies.Count == 0)
+        await PerformActionWithLock(async () =>
         {
-            Debug.Log("No available lobbies with an owner name to join.");
-            return;
-        }
+            if (Lobbies.Count == 0)
+            {
+                Debug.Log("No available lobbies to join.");
+                return;
+            }
 
-        // Select a random lobby index from the filtered list
-        int randomIndex = Random.Range(0, Lobbies.Count);
+            int randomIndex = Random.Range(0, Lobbies.Count);
+            RoomEnter result = await Lobbies[randomIndex].Join();
 
-        // Try to join the randomly selected lobby
-        RoomEnter result = await Lobbies[randomIndex].Join();
-
-        // Check if the join attempt was successful
-        if (result != RoomEnter.Success)
-        {
-            Debug.Log("Failed to join lobby.");
-        }
-        else
-        {
-            LobbyManager.instance.ConnectedAsClient();
-            Debug.Log("Joined Lobby");
-        }
-        
-        LobbyManager.instance.friendList.gameObject.SetActive(true);
-        LobbyManager.instance.friendList.Play("FriendListOtherWay");
+            if (result != RoomEnter.Success)
+            {
+                Debug.Log("Failed to join random lobby.");
+            }
+            else
+            {
+                LobbyManager.instance.ConnectedAsClient();
+                Debug.Log("Joined Random Lobby");
+            }
+        });
     }
-
-    public void JridiOnly()
-    {
-        if (SteamClient.Name == "youssefjridi31")
-        {
-            Coin.Instance.UpdateCoinAmount(10);
-        }
-    }
-
 }

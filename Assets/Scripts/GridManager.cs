@@ -1,16 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
-public class GridManager : MonoBehaviour
+public class GridManager : NetworkBehaviour
 {
-    public List<Transform> characters = new List<Transform>(); // List of characters to position
-    public static GridManager Instance;
+    public List<Transform> characters = new List<Transform>();
+    public NetworkList<NetworkObjectReference> NetworkCharacters { get; private set; } = new NetworkList<NetworkObjectReference>();
+
+    public static GridManager Instance { get; private set; }
 
     private void Awake()
     {
-        if(Instance == null)
+        if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject); // Optional if GridManager persists across scenes.
         }
         else
         {
@@ -19,37 +23,80 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void Update()
+    public override void OnNetworkSpawn()
     {
+        if (IsServer)
+        {
+            NetworkCharacters.Clear();
+            NetworkCharacters.OnListChanged += OnCharactersListChanged;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (IsServer)
+        {
+            NetworkCharacters.OnListChanged -= OnCharactersListChanged;
+        }
+    }
+
+    public void AddCharacter(NetworkObject networkObject)
+    {
+        if (IsServer && networkObject != null)
+        {
+            var reference = new NetworkObjectReference(networkObject);
+            if (!NetworkCharacters.Contains(reference))
+            {
+                NetworkCharacters.Add(reference);
+            }
+        }
+    }
+
+    private void OnCharactersListChanged(NetworkListEvent<NetworkObjectReference> changeEvent)
+    {
+        Debug.Log($"NetworkList changed. Event type: {changeEvent.Type}");
+
+        characters.Clear();
+
+        foreach (var netObjRef in NetworkCharacters)
+        {
+            if (netObjRef.TryGet(out NetworkObject networkObject))
+            {
+                characters.Add(networkObject.transform);
+                Debug.Log($"Character added: {networkObject.name}");
+            }
+            else
+            {
+                Debug.LogWarning("Failed to resolve NetworkObjectReference.");
+            }
+        }
+
         ReassignCharactersToPrioritizedSlots();
     }
 
     public void ReassignCharactersToPrioritizedSlots()
     {
-        int characterIndex = 0; // Track which character is being assigned
+        int characterIndex = 0;
 
-        // Iterate through all slots in order
         for (int i = 0; i < transform.childCount; i++)
         {
             Transform slot = transform.GetChild(i);
 
             if (characterIndex < characters.Count)
             {
-                // Make the character follow the slot's position and rotation
-                if (characters[characterIndex] != null)
+                Transform character = characters[characterIndex];
+                if (character != null)
                 {
-                    Transform character = characters[characterIndex];
-
-                    character.position = slot.position;
-                    character.rotation = slot.rotation;
-    
-                    characterIndex++; // Move to the next character
-                }
-                else
-                {
-                    characters.Remove(characters[characterIndex]);
+                    // Call the RPC to update the character's position and rotation
+                    NetworkTransmission.instance.ChangeObjectPosServerRpc(character.GetComponent<NetworkObject>().NetworkObjectId, slot.position, slot.rotation);
+                    characterIndex++;
                 }
             }
         }
+
+        // Remove any null references that might still be in the list
+        characters.RemoveAll(item => item == null);
     }
+
+
 }
