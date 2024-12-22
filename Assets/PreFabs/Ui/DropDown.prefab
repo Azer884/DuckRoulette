@@ -372,6 +372,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selectedScale: 1.1
   animationDuration: 0.2
+  isSlider: 0
 --- !u!1 &4131183517428653693
 GameObject:
   m_ObjectHideFlags: 0
@@ -576,6 +577,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selectedScale: 1.1
   animationDuration: 0.2
+  isSlider: 0
 --- !u!1 &4336647590388057831
 GameObject:
   m_ObjectHideFlags: 0
@@ -603,7 +605,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4336647590388057831}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

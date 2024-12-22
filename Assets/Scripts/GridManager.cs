@@ -14,7 +14,6 @@ public class GridManager : NetworkBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Optional if GridManager persists across scenes.
         }
         else
         {

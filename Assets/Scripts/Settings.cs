@@ -49,7 +49,7 @@ public class Settings : MonoBehaviour
             friends.GetComponent<Animator>().Play("FriendListOtherWay");
         }
         
-        if (menus[0].activeSelf)
+        else if (menus[0].activeSelf)
         {
             animator.Play("SettingsAndOthers");
         }
