@@ -9,16 +9,19 @@ using UnityEngine.UI;
 
 public class SteamFriendsManager : MonoBehaviour
 {
+    public TMP_InputField searchInput; // Assign this in the inspector.
     public RawImage pp;
     public TextMeshProUGUI playername;
 
     public Transform content;
     public GameObject friendObj;
     public Color onlineColor, inGameColor, offlineColor;
+    private Dictionary<Friend, GameObject> allFriends = new();
     private Dictionary<Friend, GameObject> inGameFriends = new();
     private Dictionary<Friend, GameObject> onlineFriends = new();
     private Dictionary<Friend, GameObject> offlineFriends = new();
     private bool alphaOrder = false;
+
 
 
     async void Start()
@@ -27,11 +30,15 @@ public class SteamFriendsManager : MonoBehaviour
 
         playername.text = SteamClient.Name;
         InitFriendsAsync();
+
+        searchInput.onValueChanged.AddListener(SearchFriends);
+
         var img = await SteamFriends.GetLargeAvatarAsync(SteamClient.SteamId);
         pp.texture = GetTextureFromImage(img.Value);
 
         SteamFriends.OnPersonaStateChange += OnFriendStateChange;
     }
+
 
     public static Texture2D GetTextureFromImage(Steamworks.Data.Image image)
     {
@@ -54,27 +61,35 @@ public class SteamFriendsManager : MonoBehaviour
         inGameFriends.Clear();
         onlineFriends.Clear();
         offlineFriends.Clear();
+        allFriends.Clear();
 
         // Categorize friends
         foreach (var friend in SteamFriends.GetFriends())
         {
-            if (friend.IsPlayingThisGame && !inGameFriends.ContainsKey(friend))
+            if (!allFriends.ContainsKey(friend))
             {
-                inGameFriends[friend] = CreateFriendObject(friend, true);
-            }
-            else if (friend.IsOnline && !onlineFriends.ContainsKey(friend))
-            {
-                onlineFriends[friend] = CreateFriendObject(friend, true);
-            }
-            else if (!offlineFriends.ContainsKey(friend))
-            {
-                offlineFriends[friend] = CreateFriendObject(friend, false);
+                GameObject friendObject = CreateFriendObject(friend, friend.IsOnline);
+                allFriends[friend] = friendObject;
+
+                if (friend.IsPlayingThisGame)
+                {
+                    inGameFriends[friend] = friendObject;
+                }
+                else if (friend.IsOnline)
+                {
+                    onlineFriends[friend] = friendObject;
+                }
+                else
+                {
+                    offlineFriends[friend] = friendObject;
+                }
             }
         }
-        
+
         alphaOrder = true;
         UpdateFriendUI();
     }
+
     public void UpdateFriendUI()
     {
         if (alphaOrder)
@@ -130,22 +145,6 @@ public class SteamFriendsManager : MonoBehaviour
         friendObject.steamid = friend.Id;
         AssingFriendImage(f, friend.Id);
         friendObject.GetComponent<Button>().interactable = online;
-        // EventTrigger eventTrigger = f.GetComponent<EventTrigger>();
-        // if (eventTrigger == null)
-        // {
-        //     eventTrigger = f.AddComponent<EventTrigger>();
-        // }
-
-        // EventTrigger.Entry entry = new()
-        // {
-        //     eventID = EventTriggerType.Select
-        // };
-        // entry.callback.AddListener((eventData) =>
-        // {
-        //     // Scroll to the selected object
-        //     content.parent.parent.GetComponent<ScrollToSelected>().ScrollTo(f.GetComponent<RectTransform>());
-        // });
-        // eventTrigger.triggers.Add(entry);
         //friendObject.onlineStats.color = statusColor;
 
         return f;
@@ -159,35 +158,50 @@ public class SteamFriendsManager : MonoBehaviour
     }
     private void OnFriendStateChange(Friend friend)
     {
-            // Update the text color based on the friend's new status
-            if (friend.IsPlayingThisGame)
+        // Update the text color based on the friend's new status
+        if (friend.IsPlayingThisGame)
+        {
+            inGameFriends[friend].GetComponent<Button>().interactable = true;
+            if (!alphaOrder)
             {
-                inGameFriends[friend].GetComponent<Button>().interactable = true;
-                if (!alphaOrder)
-                {
-                    inGameFriends[friend].transform.SetAsFirstSibling();
-                }
-                //friendUI.GetComponent<FriendObject>().onlineStats.color = inGameColor;
+                inGameFriends[friend].transform.SetAsFirstSibling();
             }
-            else if (friend.IsOnline)
+            //friendUI.GetComponent<FriendObject>().onlineStats.color = inGameColor;
+        }
+        else if (friend.IsOnline)
+        {
+            onlineFriends[friend].GetComponent<Button>().interactable = true;
+            if (!alphaOrder)
             {
-                onlineFriends[friend].GetComponent<Button>().interactable = true;
-                if (!alphaOrder)
-                {
-                    onlineFriends[friend].transform.SetAsFirstSibling();
-                }
-                //friendUI.GetComponent<FriendObject>().onlineStats.color = onlineColor;
+                onlineFriends[friend].transform.SetAsFirstSibling();
             }
-            else
+            //friendUI.GetComponent<FriendObject>().onlineStats.color = onlineColor;
+        }
+        else
+        {
+            //friendUI.GetComponent<FriendObject>().onlineStats.color = offlineColor;
+            offlineFriends[friend].GetComponent<Button>().interactable = false;
+            if (!alphaOrder)
             {
-                //friendUI.GetComponent<FriendObject>().onlineStats.color = offlineColor;
-                offlineFriends[friend].GetComponent<Button>().interactable = false;
-                if (!alphaOrder)
-                {
-                    offlineFriends[friend].transform.SetAsFirstSibling();
-                }
+                offlineFriends[friend].transform.SetAsFirstSibling();
             }
+        }
     }
+
+    public void SearchFriends(string query)
+    {
+        query = query.ToLower();
+
+        foreach (var kvp in allFriends)
+        {
+            string friendName = kvp.Key.Name.ToLower();
+            GameObject friendObject = kvp.Value;
+
+            // Show or hide the friend based on the search query
+            friendObject.SetActive(string.IsNullOrWhiteSpace(query) || friendName.Contains(query));
+        }
+    }
+
     
     private void OnDestroy() {
         SteamFriends.OnPersonaStateChange -= OnFriendStateChange;

@@ -201,7 +201,7 @@ public class GameNetworkManager : MonoBehaviour
         LobbyManager.instance.friendList.gameObject.SetActive(true);
         await PerformActionWithLock(async () =>
         {
-            if (!ulong.TryParse(input.text, out ulong ID) || string.IsNullOrEmpty(input.text))
+            if (!ulong.TryParse(input.text, out ulong ID) || string.IsNullOrWhiteSpace(input.text))
                 return;
 
             Lobby? lobby = await SteamMatchmaking.JoinLobbyAsync(ID);

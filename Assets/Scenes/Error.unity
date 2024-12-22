@@ -250,6 +250,8 @@ MonoBehaviour:
   isHost: 0
   myClientId: 0
   friendList: {fileID: 0}
+  offlinePlayerBox: {fileID: 0}
+  offlinePlayer: {fileID: 0}
 --- !u!4 &264801778
 Transform:
   m_ObjectHideFlags: 0
@@ -1552,6 +1554,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 809d79c658390eb4b8a91c32e013c801, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characters: []
 --- !u!1 &1276153726
 GameObject:
   m_ObjectHideFlags: 0
