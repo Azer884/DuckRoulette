@@ -1147,7 +1147,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 571801913845038342}
-  - component: {fileID: 6967926180547624923}
   m_Layer: 3
   m_Name: Rig
   m_TagString: Untagged
@@ -1172,66 +1171,6 @@ Transform:
   - {fileID: 1291999381194879992}
   m_Father: {fileID: 9116950771515985727}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6967926180547624923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2971736586790971572}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boneShape: 1
-  drawBones: 1
-  drawTripods: 0
-  boneSize: 1
-  tripodSize: 1
-  boneColor: {r: 0, g: 0, b: 1, a: 0.5}
-  m_Transforms:
-  - {fileID: 6130528665537277833}
-  - {fileID: 8089541777102439837}
-  - {fileID: 8194943160740419294}
-  - {fileID: 3258947052661714316}
-  - {fileID: 8062384695690699307}
-  - {fileID: 6954841021267730154}
-  - {fileID: 617587485305030855}
-  - {fileID: 3975567393804279553}
-  - {fileID: 8862400371906274855}
-  - {fileID: 6470645521673223825}
-  - {fileID: 6772703972068240953}
-  - {fileID: 6337269342580504386}
-  - {fileID: 3704910938109791254}
-  - {fileID: 5464426395539038538}
-  - {fileID: 8750262593397582404}
-  - {fileID: 4124148703696891340}
-  - {fileID: 7237461909203235789}
-  - {fileID: 1484166894151766508}
-  - {fileID: 8261930741254158708}
-  - {fileID: 5263251067154504825}
-  - {fileID: 6645293642275366481}
-  - {fileID: 451493958239095119}
-  - {fileID: 4541779797355833215}
-  - {fileID: 6802701197232509791}
-  - {fileID: 6684374083661790204}
-  - {fileID: 4965359566947496013}
-  - {fileID: 2403955371004930427}
-  - {fileID: 1824144475627631644}
-  - {fileID: 6724523093104097218}
-  - {fileID: 6301821076055046520}
-  - {fileID: 3923788602053163070}
-  - {fileID: 2938496346451895541}
-  - {fileID: 59428673915943219}
-  - {fileID: 8868269487088824492}
-  - {fileID: 8904768823813591006}
-  - {fileID: 3925677697928177279}
-  - {fileID: 6549776747663577519}
-  - {fileID: 1124731029329323343}
-  - {fileID: 2824084415641281032}
-  - {fileID: 4591969890904216505}
-  - {fileID: 9019624483272381495}
 --- !u!1 &3092764857259786743
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,7 @@
 using System.IO;
 using IniParser;
 using IniParser.Model;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,9 +10,22 @@ public class SettingsManager : MonoBehaviour
     private static string settingsFilePath;
     private FileIniDataParser parser;
     private IniData data;
+    public static SettingsManager Instance { get; private set; }
 
     void Awake()
     {
+        // Implement Singleton Pattern
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // Persist across scenes
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
         parser = new FileIniDataParser();
         LoadSettings();
@@ -27,7 +41,7 @@ public class SettingsManager : MonoBehaviour
         {
             // Create default settings if the file does not exist
             data = new IniData();
-            ResetDefautSettings();
+            ResetDefaultSettings();
         }
     }
 
@@ -61,9 +75,11 @@ public class SettingsManager : MonoBehaviour
         SetSetting("Audio", "EffectsVolume", "0.8");
         SetSetting("Audio", "VoiceChatVolume", "1.0");
         SetSetting("Audio", "VoiceChatMode", "0");
+
+        // Add other default settings as needed
     }
 
-    public void ResetDefautSettings()
+    public void ResetDefaultSettings()
     {
         SetDefaultSettings();
         SaveSettings();
@@ -71,35 +87,64 @@ public class SettingsManager : MonoBehaviour
 
     public void SaveSlider(Slider slider, string section, string key)
     {
-        data[section][key] = slider.value.ToString();
+        SetSetting(section, key, slider.value.ToString());
         SaveSettings();
     }
 
-    public void SaveDropdown(Dropdown dropdown, string section, string key)
+    public void SaveDropdown(TMP_Dropdown dropdown, string section, string key)
     {
-        data[section][key] = dropdown.value.ToString();
+        SetSetting(section, key, dropdown.value.ToString());
         SaveSettings();
     }
 
     public void SaveToggle(Toggle toggle, string section, string key)
     {
-        data[section][key] = toggle.isOn ? "true" : "false";
+        SetSetting(section, key, toggle.isOn ? "true" : "false");
         SaveSettings();
     }
 
-
     public void LoadSlider(Slider slider, string section, string key)
     {
-        slider.value = float.Parse(data[section][key]);
+        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        {
+            if (float.TryParse(data[section][key], out float value))
+            {
+                slider.value = value;
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid float value for {section}.{key} in Settings.ini. Using slider's default value.");
+            }
+        }
     }
 
-    public void LoadDropdown(Dropdown dropdown, string section, string key)
+    public void LoadDropdown(TMP_Dropdown dropdown, string section, string key)
     {
-        dropdown.value = int.Parse(data[section][key]);
+        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        {
+            if (int.TryParse(data[section][key], out int value))
+            {
+                dropdown.value = value;
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid int value for {section}.{key} in Settings.ini. Using dropdown's default value.");
+            }
+        }
     }
 
     public void LoadToggle(Toggle toggle, string section, string key)
     {
-        toggle.isOn = bool.Parse(data[section][key]);
+        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        {
+            if (bool.TryParse(data[section][key], out bool isOn))
+            {
+                toggle.isOn = isOn;
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid bool value for {section}.{key} in Settings.ini. Using toggle's default value.");
+            }
+        }
     }
 }

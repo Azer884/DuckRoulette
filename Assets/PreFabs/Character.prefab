@@ -2701,7 +2701,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2163256065022818395}
-  - component: {fileID: 7939272962550887604}
   m_Layer: 3
   m_Name: Rig
   m_TagString: Untagged
@@ -2726,66 +2725,6 @@ Transform:
   - {fileID: 9019806937683040551}
   m_Father: {fileID: 1364339382071669717}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7939272962550887604
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5018488267140543161}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boneShape: 1
-  drawBones: 1
-  drawTripods: 0
-  boneSize: 1
-  tripodSize: 1
-  boneColor: {r: 0, g: 0, b: 1, a: 0.5}
-  m_Transforms:
-  - {fileID: 1293658298138700032}
-  - {fileID: 6869594130416074397}
-  - {fileID: 9186056012061942301}
-  - {fileID: 7229038291092093275}
-  - {fileID: 4230023840007660821}
-  - {fileID: 8018165421304410554}
-  - {fileID: 5072727384158570392}
-  - {fileID: 4620013949296692337}
-  - {fileID: 3036677216005357223}
-  - {fileID: 4990788104330471711}
-  - {fileID: 3599312935520556859}
-  - {fileID: 7294470690406259417}
-  - {fileID: 2484282302901655571}
-  - {fileID: 6800371331533353194}
-  - {fileID: 2478725091773732148}
-  - {fileID: 3936817588493561256}
-  - {fileID: 5632798217350875682}
-  - {fileID: 2212240517866014360}
-  - {fileID: 302650914598926591}
-  - {fileID: 5066246678571839221}
-  - {fileID: 8882681795306167480}
-  - {fileID: 2440700175875979101}
-  - {fileID: 1688535090805305584}
-  - {fileID: 3409419898465675455}
-  - {fileID: 3648738263044955877}
-  - {fileID: 3231109429757238049}
-  - {fileID: 7205172773548776978}
-  - {fileID: 6716288368733526357}
-  - {fileID: 4494372858610661218}
-  - {fileID: 8167253090887404751}
-  - {fileID: 7817436422971591734}
-  - {fileID: 2493661213282793072}
-  - {fileID: 1811668603054420017}
-  - {fileID: 9196875036517823011}
-  - {fileID: 4325615920847985930}
-  - {fileID: 1194735863545735233}
-  - {fileID: 2481772548455339983}
-  - {fileID: 5074130219768414445}
-  - {fileID: 6164962073274123741}
-  - {fileID: 6598699541764008828}
-  - {fileID: 6033670729746515634}
 --- !u!1 &5096841812488737095
 GameObject:
   m_ObjectHideFlags: 0
@@ -4494,7 +4433,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2669858147
+  GlobalObjectIdHash: 2646966306
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1

@@ -9,7 +9,7 @@ public class DeathTrigger : NetworkBehaviour
         Debug.Log("hit smt");
         if (!IsServer) return; 
 
-        Debug.Log("server working");
+        Debug.Log(other.name);
         if (other.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != GetComponent<NetworkObject>().OwnerClientId)
         {
             Debug.Log("hit a player");
@@ -32,8 +32,7 @@ public class DeathTrigger : NetworkBehaviour
 
             // Award coins to the shooter
             //UpdateCoinValueServerRpc(bullet.bulletId);
-
+            bullet.DestroyNow();
         }
-        bullet.DestroyNow();
     }
 }
