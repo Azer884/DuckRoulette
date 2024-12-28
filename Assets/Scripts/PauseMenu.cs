@@ -10,7 +10,7 @@ public class PauseMenu : NetworkBehaviour
 {
 
     private InputActionAsset inputActions;
-    [SerializeField] private GameObject pauseMenu;
+    [SerializeField] private GameObject pauseMenu, crosshair;
     private bool menuIsOpen = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
@@ -109,6 +109,7 @@ public class PauseMenu : NetworkBehaviour
         RebindSaveLoad.Instance.input.enabled = true;
 
         pauseMenu.SetActive(false);
+        crosshair.SetActive(true);
         Cursor.lockState = CursorLockMode.Locked;
         menuIsOpen = false;
 
@@ -119,6 +120,7 @@ public class PauseMenu : NetworkBehaviour
         RebindSaveLoad.Instance.input.enabled = false;
 
         pauseMenu.SetActive(true);
+        crosshair.SetActive(false);
         Cursor.lockState = CursorLockMode.Confined;
         menuIsOpen = true;
     }

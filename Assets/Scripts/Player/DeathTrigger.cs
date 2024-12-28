@@ -10,14 +10,15 @@ public class DeathTrigger : NetworkBehaviour
         if (!IsServer) return; 
 
         Debug.Log(other.name);
-        if (other.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != GetComponent<NetworkObject>().OwnerClientId)
+        ulong victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
+
+        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId)
         {
             Debug.Log("hit a player");
             // Trigger death ragdoll
-            GetComponent<Ragdoll>().TriggerRagdoll(true);
+            GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
 
             ulong shooterId = bullet.OwnerClientId;
-            ulong victimId = GetComponent<NetworkObject>().OwnerClientId;
 
             // Fetch player names from the Username component
             string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
@@ -28,11 +29,11 @@ public class DeathTrigger : NetworkBehaviour
 
             // Notify GameManager about the death
             GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
-            Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {GetComponent<NetworkObject>().OwnerClientId}");
+            Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
 
             // Award coins to the shooter
             //UpdateCoinValueServerRpc(bullet.bulletId);
-            bullet.DestroyNow();
         }
+        bullet.DestroyNow();
     }
 }
