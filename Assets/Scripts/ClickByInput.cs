@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 public class ClickByInput : MonoBehaviour
 {
-    [SerializeField] private InputActionReference scrollInput; // Input action reference
+    public InputActionReference scrollInput; // Input action reference
     [SerializeField] private UnityEvent onClickEvent;
 
     private void Awake() {

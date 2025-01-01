@@ -167,6 +167,8 @@ public class LobbyManager : MonoBehaviour
     {
         multiMenu.SetActive(false);
         joinMenu.SetActive(false);
+        friendList.gameObject.SetActive(true);
+        friendList.Play("FriendListOtherWay");
         multiLobby.SetActive(true);
         isHost = false;
         connected = true;

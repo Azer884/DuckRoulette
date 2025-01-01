@@ -197,8 +197,6 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void JoinById(TMP_InputField input)
     {
-        LobbyManager.instance.joinMenu.SetActive(false);
-        LobbyManager.instance.friendList.gameObject.SetActive(true);
         await PerformActionWithLock(async () =>
         {
             if (!ulong.TryParse(input.text, out ulong ID) || string.IsNullOrWhiteSpace(input.text))
@@ -445,6 +443,7 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void RandomJoin()
     {
+        
         await PerformActionWithLock(async () =>
         {
             if (Lobbies.Count == 0)

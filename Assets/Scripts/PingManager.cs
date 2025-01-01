@@ -9,7 +9,7 @@ public class StatsManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI pingText;
     [SerializeField] private TextMeshProUGUI fpsText;
 
-    private void Start()
+    private void OnEnable()
     {
         StartCoroutine(UpdateAfterDelay(1));
     }

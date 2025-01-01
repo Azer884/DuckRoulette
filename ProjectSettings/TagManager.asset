@@ -8,6 +8,7 @@ TagManager:
   - ChatMessage
   - PlayerCard
   - SettingsBar
+  - Ice
   layers:
   - Default
   - TransparentFX

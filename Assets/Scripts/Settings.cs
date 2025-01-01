@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Settings : MonoBehaviour
 {
     [SerializeField] private List<GameObject> menus;
-    [SerializeField] private GameObject friends;
+    [SerializeField] private GameObject friends, settingsMenu;
     private List<bool> isMenusActivated = new();
     private bool isFriendsActive;
     private Animator animator;
@@ -13,8 +14,23 @@ public class Settings : MonoBehaviour
         animator = GetComponent<Animator>();
     }
 
+    public void OnClick()
+    {
+        if (!settingsMenu.activeSelf)
+        {
+            OnSettingsClick();
+        }
+        else
+        {
+            OnReturnClick();
+        }
+    }
+
     public void OnSettingsClick()
     {
+        settingsMenu.SetActive(true);
+
+        animator.ResetTrigger("OnSettings"); // Reset any existing trigger
         if (menus[0].activeSelf)
         {
             animator.Play("Settings");
@@ -24,7 +40,7 @@ public class Settings : MonoBehaviour
         {
             animator.Play("Exit");
         }
-        
+
         isMenusActivated = new List<bool>(new bool[menus.Count]);
         for (int i = 0; i < menus.Count; i++)
         {
@@ -38,18 +54,19 @@ public class Settings : MonoBehaviour
 
     public void OnReturnClick()
     {
+        settingsMenu.SetActive(false);
+
         for (int i = 0; i < menus.Count; i++)
         {
             menus[i].SetActive(isMenusActivated[i]);
         }
         friends.SetActive(isFriendsActive);
-        
+
         if (menus[3].activeSelf)
         {
             friends.GetComponent<Animator>().Play("FriendListOtherWay");
         }
-        
-        else if (menus[0].activeSelf)
+        if (menus[0].activeSelf)
         {
             animator.Play("SettingsAndOthers");
         }
@@ -58,4 +75,5 @@ public class Settings : MonoBehaviour
             animator.Play("ExiitToSettings");
         }
     }
+
 }

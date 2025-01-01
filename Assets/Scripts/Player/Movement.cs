@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
@@ -44,6 +45,17 @@ public class Movement : NetworkBehaviour
     
     public CinemachineImpulseSource jumpImpulseSource;
 
+    
+    private bool isOnIce = false; // Check if the player is on ice
+    private bool isSliding = false;
+    [SerializeField] private float iceFriction = 0.98f; // Ice friction (less than 1 for sliding)
+    [SerializeField] private float slidingSpeedMultiplier = 7f; // Speed boost during tobogganing
+    [SerializeField] private float slidingFriction = 0.95f; // Friction for sliding deceleration
+    [SerializeField] private float slidingStopThreshold = 0.1f; // Minimum velocity to stop sliding
+    [SerializeField] private float slidingHeight = 0.5f;
+    [SerializeField] private GameObject slidingCam;
+    [SerializeField] private Rig rig;
+
     float mouseXSmooth = 0f;
 
     public override void OnNetworkSpawn()
@@ -55,6 +67,8 @@ public class Movement : NetworkBehaviour
             cam.SetActive(false);
             camHolder.gameObject.SetActive(false);
             secondCamHolder.SetActive(false);
+            slidingCam.SetActive(false);
+            rig.gameObject.SetActive(false);
             ChangeLayerRecursively(fullBody, 3);
             ChangeLayerRecursively(legs, 2);
             ChangeLayerRecursively(FPShadow, 2);
@@ -67,6 +81,8 @@ public class Movement : NetworkBehaviour
             cam.SetActive(true);
             camHolder.gameObject.SetActive(true);
             secondCamHolder.SetActive(true);
+            slidingCam.SetActive(true);
+            rig.gameObject.SetActive(true);
             ChangeLayerRecursively(fullBody, 2);
             ChangeLayerRecursively(legs, 3);
             ChangeLayerRecursively(FPShadow, 3);
@@ -111,9 +127,25 @@ public class Movement : NetworkBehaviour
         mouseXSmooth = Mathf.Clamp(mouseXSmooth, -1, 1);
     }
 
+
+// Update the OnControllerColliderHit to detect ice
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.gameObject.CompareTag("Ice"))
+        {
+            isOnIce = true;
+        }
+        else
+        {
+            isOnIce = false;
+        }
+    }
+
     private void DoMovement()
     {
         grounded = controller.isGrounded;
+
+        // Handle gravity and grounded state
         if (grounded && velocity.y < 0)
         {
             velocity.y = -2f;
@@ -122,22 +154,89 @@ public class Movement : NetworkBehaviour
         Vector2 movement = GetPlayerMovement();
         speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched ? 2.0f : 1.0f;
 
-        Vector3 move = transform.right * movement.x + transform.forward * movement.y;
-        controller.Move(movementSpeed * speedMultiplier * Time.deltaTime * move);
+        if (isSliding && isOnIce)
+        {
+            HandleSliding();
+        }
+        else
+        {
+            EndSliding();
+            Vector3 move = transform.right * movement.x + transform.forward * movement.y;
 
-        // Jumping
-        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched)
+            if (isOnIce)
+            {
+                // Ice sliding with movement control
+                velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
+                velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
+            }
+            else
+            {
+                // Regular movement
+                velocity.x = movementSpeed * speedMultiplier * move.x;
+                velocity.z = movementSpeed * speedMultiplier * move.z;
+            }
+        }
+
+        // Handle jumping
+        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpImpulseSource.GenerateImpulse();
+
+            if (isOnIce && !isSliding)
+            {
+                StartSliding();
+            }
         }
 
+        // Apply gravity
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0 , 10f * Time.deltaTime);
+        // Update animator
+        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
         velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
+    }
+
+    private void HandleSliding()
+    {
+        if (velocity.y <= 0.5f)
+        {
+            if (velocity.x < slidingStopThreshold && velocity.z < slidingStopThreshold)
+            {
+                EndSliding();
+                return;
+            }
+            // Decelerate sliding
+            velocity.x *= slidingFriction * slidingSpeedMultiplier;
+            velocity.z *= slidingFriction * slidingSpeedMultiplier;
+            rig.weight = Mathf.Lerp(rig.weight, 0.1f, Time.deltaTime * 5f);
+
+            slidingSpeedMultiplier = 1f;
+        }
+    }
+    private void StartSliding()
+    {
+        isSliding = true;
+
+        controller.height = slidingHeight;
+        legs.SetActive(false);
+        FPShadow.SetActive(false);
+        Hands.SetActive(false);
+        GetComponent<Shooting>().enabled = false;
+        slidingCam.SetActive(true);
+    }
+    private void EndSliding()
+    {
+        isSliding = false;
+        slidingSpeedMultiplier = 2.5f;
+
+        rig.weight = Mathf.Lerp(rig.weight, 1, Time.deltaTime * 5f);
+        legs.SetActive(true);
+        FPShadow.SetActive(true);
+        Hands.SetActive(true);
+        slidingCam.SetActive(false);
     }
 
     private void UpdateAnimator(float xVelocity, float yVelocity)
@@ -149,26 +248,31 @@ public class Movement : NetworkBehaviour
             animator.SetBool("IsGrounded", grounded);
             animator.SetBool("IsCrouched", isCrouched);
             animator.SetFloat("Turning", mouseXSmooth);
+            animator.SetBool("IsSliding", isSliding);
         }
         handAnim.SetFloat("XVelocity", xVelocity);
         handAnim.SetFloat("YVelocity", yVelocity);
         handAnim.SetBool("IsGrounded", grounded);
+        handAnim.SetBool("IsSliding", isSliding);
     }
 
     private void DoCrouch()
     {
-        if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
+        if (!isSliding)
         {
-            controller.height = crouchHeight;
-            isCrouched = true;
-        }
-        else
-        {
-            if (!Physics.Raycast(transform.position, Vector3.up, 2.0f))
+            if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
             {
-                controller.height = initHeight;
+                controller.height = crouchHeight;
+                isCrouched = true;
             }
-            isCrouched = false;
+            else
+            {
+                if (!Physics.Raycast(transform.position, Vector3.up, 2.0f))
+                {
+                    controller.height = initHeight;
+                    isCrouched = false;
+                }
+            }
         }
     }
 

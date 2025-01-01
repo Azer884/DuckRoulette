@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ public class GameManager : NetworkBehaviour
 
     private NetworkVariable<int> alivePlayersCount = new(0);
     private Dictionary<ulong, bool> playerStates = new();
-    public List<int> playersKills;
+    public  NetworkList<int> playersKills = new();
     private int coinsToWin;
 
 
@@ -172,8 +173,6 @@ public class GameManager : NetworkBehaviour
     private void EndGameServerRpc(ulong winnerId)
     {
         EndGameClientRpc(winnerId);
-
-        NetworkManager.Singleton.SceneManager.LoadScene("Lobby", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
     [ClientRpc]
@@ -183,7 +182,23 @@ public class GameManager : NetworkBehaviour
         PlayerSpawner.Instance.isStarted = false;
 
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
-        Debug.Log(winnerId);
+        if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
+        {
+            pauseMenu.endGamePanel.SetActive(true);
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                GameObject currentPlayer = Instantiate(pauseMenu.playerStatsObj, pauseMenu.endGamePanel.transform.GetChild(0).GetChild(6));
+
+                TextMeshProUGUI stat = currentPlayer.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+                stat.text = GetPlayerNickname(clientId);
+                if (clientId == winnerId)
+                {
+                    stat.color = Color.yellow;
+                }
+                stat = currentPlayer.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
+                stat.text = playersKills[(int)clientId].ToString();
+            }
+        }
 
         if (winnerId == OwnerClientId)
         {
@@ -216,9 +231,8 @@ public class GameManager : NetworkBehaviour
         {
             playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             StartCoroutine(SwitchPlayerAfterDelay(.5f));
+            Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         }
-        Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
-    
     }
 
     public void OnDisable()

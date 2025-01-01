@@ -11142,68 +11142,8 @@ PrefabInstance:
     - {fileID: 6446927661772287353, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
     - {fileID: 5422407174697673533, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7403945725505515396}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
---- !u!1 &3651183819661632029 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
-  m_PrefabInstance: {fileID: 3618494255145259516}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7403945725505515396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3651183819661632029}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce4b269aae5ec704788f1606c1323f34, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scrollInput: {fileID: -4907397186315549808, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
-  onClickEvent:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Settings, Assembly-CSharp
-        m_MethodName: OnReturnClick
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.Animator, UnityEngine
-        m_MethodName: Play
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: SettingsAndOthers
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 6800367360107977418}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: SettingsAndOthers
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!224 &4834170235563102473 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8151820358433423605, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
@@ -11422,7 +11362,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 690190895482579582, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_Text
-      value: D-Pad Down
+      value: D-Pad/Down
       objectReference: {fileID: 0}
     - target: {fileID: 690190895482579582, guid: f25dcd618d3acd64795bf8bb32edb6c9, type: 3}
       propertyPath: m_Color.b

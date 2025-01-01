@@ -11,6 +11,7 @@ public class PauseMenu : NetworkBehaviour
 
     private InputActionAsset inputActions;
     [SerializeField] private GameObject pauseMenu, crosshair;
+    public GameObject endGamePanel, playerStatsObj;
     private bool menuIsOpen = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
@@ -18,7 +19,13 @@ public class PauseMenu : NetworkBehaviour
         enabled = IsOwner;
 
         inputActions = GetComponent<InputSystem>().inputActions;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnect;
     }
+    private void OnDisable() 
+    {
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnect;
+    }
+
 
     // Update is called once per frame
     void Update()
@@ -36,38 +43,17 @@ public class PauseMenu : NetworkBehaviour
         }
     }
 
-    public void Leave()
+    private void OnDisconnect(ulong clientId)
     {
-        if (!IsHost)
+        if (clientId == 0)
         {
             LeaveGame();
         }
-        else
-        {
-            KickAllPlayersClientRpc();
-        }
-    }
-    public void GoBackToLobby()
-    {
-        PlayerSpawner.Instance.isStarted = false;
-        Cursor.lockState = CursorLockMode.Confined;
-
-        if (IsHost)
-        {
-            // Host loads the lobby scene and then notifies clients
-            NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-            NotifyClientsToGoBackToLobbyClientRpc();
-        }
     }
 
-    [ClientRpc]
-    private void NotifyClientsToGoBackToLobbyClientRpc()
+    public void Leave()
     {
-        // Clients load the lobby scene
-        if (!IsHost)
-        {
-            SceneManager.LoadScene("Lobby");
-        }
+        LeaveGame();
     }
 
     private void LeaveGame()
@@ -76,22 +62,12 @@ public class PauseMenu : NetworkBehaviour
 
         PlayerSpawner.Instance.isStarted = false;
         Cursor.lockState = CursorLockMode.Confined;
-        if (!IsHost)
-        {
-            SceneManager.LoadScene("Lobby");
-        }
-        else
-        {
-            NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
-        }
+        SceneManager.LoadScene("Lobby");
     
-        NetworkManager.Singleton.Shutdown();
-    }
-
-    [ClientRpc]
-    private void KickAllPlayersClientRpc()
-    {
-        LeaveGame();
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
     }
 
     private void LeaveSteamLobby()
@@ -127,9 +103,6 @@ public class PauseMenu : NetworkBehaviour
 
     private void OnApplicationQuit() 
     {
-        if (IsHost)
-        {
-            KickAllPlayersClientRpc();    
-        }
+        Leave();
     }
 }
