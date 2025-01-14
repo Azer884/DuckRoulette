@@ -143,7 +143,6 @@ public class Ragdoll : NetworkBehaviour
 
     private void DisableRagdoll()
     {
-        _characterController.enabled = true;
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
         {
             rigidbody.isKinematic = true;
@@ -159,6 +158,7 @@ public class Ragdoll : NetworkBehaviour
         foots.SetActive(true);
         hands.SetActive(true);
         shadow.SetActive(true);
+        _characterController.enabled = true;
         if (shootingStates && !shooting.enabled)
         {
             shooting.enabled = true;
@@ -173,7 +173,6 @@ public class Ragdoll : NetworkBehaviour
 
     public void EnableRagdoll()
     {
-        _characterController.enabled = false;
 
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
         {
@@ -193,6 +192,7 @@ public class Ragdoll : NetworkBehaviour
         hands.SetActive(false);
         foots.SetActive(false);
         shadow.SetActive(false);
+        _characterController.enabled = false;
 
         RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
     }

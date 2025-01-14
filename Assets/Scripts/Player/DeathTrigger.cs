@@ -1,21 +1,18 @@
 using UnityEngine;
 using Unity.Netcode;
 
-public class DeathTrigger : NetworkBehaviour
+public class DeathTrigger : MonoBehaviour
 {
+    private bool isDead = false;
+    private ulong victimId;
 
     public void OnTriggerEnter(Collider other) 
     {
-        Debug.Log("hit smt");
-        if (!IsServer) return; 
+        victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
 
-        Debug.Log(other.name);
-        ulong victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
-
-        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId)
+        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId && !isDead)
         {
-            Debug.Log("hit a player");
-            // Trigger death ragdoll
+            isDead = false;
             GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
 
             ulong shooterId = bullet.OwnerClientId;
@@ -25,7 +22,7 @@ public class DeathTrigger : NetworkBehaviour
             string victimName = GameManager.Instance.GetPlayerNickname(victimId);
 
             Debug.Log($"{shooterName} killed {victimName}");
-            GameManager.Instance.playersKills[(int)shooterId]++;
+            GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
 
             // Notify GameManager about the death
             GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
@@ -34,6 +31,6 @@ public class DeathTrigger : NetworkBehaviour
             // Award coins to the shooter
             //UpdateCoinValueServerRpc(bullet.bulletId);
         }
-        bullet.DestroyNow();
+        bullet.DestroyServerRpc(0);
     }
 }

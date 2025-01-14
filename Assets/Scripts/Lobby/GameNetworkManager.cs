@@ -335,10 +335,6 @@ public class GameNetworkManager : MonoBehaviour
 
         if (LobbySaver.instance.currentLobby?.MemberCount >= 6)
         {
-            LobbyManager.instance.friendList.Play("HideFriendList");
-        }
-        else
-        {
             LobbyManager.instance.friendList.SetTrigger("Hide");
         }
     }
@@ -443,7 +439,6 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void RandomJoin()
     {
-        
         await PerformActionWithLock(async () =>
         {
             if (Lobbies.Count == 0)

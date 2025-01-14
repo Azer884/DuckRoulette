@@ -38,7 +38,7 @@ public class PlayerPushObject : NetworkBehaviour
                 forceDirection.y = 0;
                 forceDirection.Normalize();
 
-                rigidBody.AddForceAtPosition(forceDirection * forceMagnitude, hitPoint, ForceMode.Impulse);
+                rigidBody.AddForceAtPosition(forceDirection * forceMagnitude / rigidBody.mass, hitPoint, ForceMode.Impulse);
             }
         }
     }

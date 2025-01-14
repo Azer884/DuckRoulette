@@ -17,13 +17,14 @@ public class BulletBehavior : NetworkBehaviour
         rb.isKinematic = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         
-        StartCoroutine(DestroyAfterDelay(5));
+        DestroyServerRpc(5);
         initialVelocity.OnValueChanged += MoveBullet;
     }
 
-    public void DestroyNow()
+    [ServerRpc(RequireOwnership = false)]
+    public void DestroyServerRpc(float delay)
     {
-        StartCoroutine(DestroyAfterDelay(0));
+        StartCoroutine(DestroyAfterDelay(delay));
     }
 
     public IEnumerator DestroyAfterDelay(float waitingTime)

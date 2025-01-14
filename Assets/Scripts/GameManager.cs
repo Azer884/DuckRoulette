@@ -15,8 +15,9 @@ public class GameManager : NetworkBehaviour
 
     private NetworkVariable<int> alivePlayersCount = new(0);
     private Dictionary<ulong, bool> playerStates = new();
-    public  NetworkList<int> playersKills = new();
+    public  List<int> playersKills = new();
     private int coinsToWin;
+    private bool isGameEnded = false;
 
 
     private void Awake()
@@ -121,8 +122,14 @@ public class GameManager : NetworkBehaviour
             playerStates[clientId] = !isDead;
 
             // Update alive player count
-            alivePlayersCount.Value = isDead ? alivePlayersCount.Value - 1 : alivePlayersCount.Value + 1;
-
+            if(isDead)
+            {
+                UpdateAlivePlayerCountServerRpc(alivePlayersCount.Value - 1);
+            }
+            else
+            {
+                UpdateAlivePlayerCountServerRpc(alivePlayersCount.Value + 1);
+            }
             if (alivePlayersCount.Value <= 1)
             {
                 ulong winnerId = 10;
@@ -172,31 +179,86 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void EndGameServerRpc(ulong winnerId)
     {
-        EndGameClientRpc(winnerId);
+        UpdateStatsClientRpc();
+        EndGameClientRpc(winnerId, playersKills.ToArray());
     }
 
     [ClientRpc]
-    private void EndGameClientRpc(ulong winnerId)
+    private void UpdateStatsClientRpc()
     {
+        if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Stats>(out var stats))
+        {
+            stats.timeSurvived.Value = stats.GetComponent<HideGun>().survivedTime;
+            stats.shotCounter.Value = stats.GetComponent<Shooting>().shotCounter;
+            stats.emptyShots.Value = stats.GetComponent<Shooting>().emptyShots;
+        }
+    }
+
+    [ClientRpc]
+    private void EndGameClientRpc(ulong winnerId, int[] playersKills)
+    {
+        if (isGameEnded) return;
+        isGameEnded = true;
+
         Cursor.lockState = CursorLockMode.Confined;
         PlayerSpawner.Instance.isStarted = false;
 
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
         if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
         {
-            pauseMenu.endGamePanel.SetActive(true);
+            pauseMenu.End();
             foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
                 GameObject currentPlayer = Instantiate(pauseMenu.playerStatsObj, pauseMenu.endGamePanel.transform.GetChild(0).GetChild(6));
 
+                //PlayerName
                 TextMeshProUGUI stat = currentPlayer.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
                 stat.text = GetPlayerNickname(clientId);
                 if (clientId == winnerId)
                 {
                     stat.color = Color.yellow;
                 }
+
+                //PlayerKills
                 stat = currentPlayer.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
                 stat.text = playersKills[(int)clientId].ToString();
+
+                //CoinsToWin
+                int coins = playersKills[(int)clientId] * 2 + 1;
+                if (clientId == winnerId)
+                {
+                    coins += coinsToWin; 
+                }
+
+                stat = currentPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+                stat.text = $"{coins}";
+
+                //PlayerSurvivalTime
+                int minutes = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value / 60f);
+                int seconds = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value % 60f);
+
+                string formattedTime = $"{minutes:D2}m {seconds:D2}s";
+
+                stat = currentPlayer.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
+                stat.text = formattedTime;
+
+                //PlayerAccuracy
+                stat = currentPlayer.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
+                stat.text = "0%";
+                if(pauseMenu.GetComponent<Stats>().shotCounter.Value > 0)
+                {
+                    stat.text = (playersKills[(int)clientId] / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
+                }
+
+                //Luck
+                string luck = "0%";
+                if(pauseMenu.GetComponent<Stats>().emptyShots.Value > 0)
+                {
+                    luck = (pauseMenu.GetComponent<Stats>().shotCounter.Value / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
+                }
+
+                //stat = currentPlayer.transform.GetChild(5).GetComponent<TextMeshProUGUI>();
+                //stat.text = luck;
             }
         }
 
@@ -239,5 +301,11 @@ public class GameManager : NetworkBehaviour
     {
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
         NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerState;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void UpdateKillsServerRpc(ulong shooterId, int killAmount)
+    {
+        playersKills[(int)shooterId] += killAmount;
     }
 }

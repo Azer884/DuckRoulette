@@ -20,6 +20,7 @@ public class Shooting : NetworkBehaviour
     public GameObject gun;
     public NetworkVariable<bool> haveGun = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private Slap slapScript;
+    public int shotCounter = 0, emptyShots;
 
     public override void OnNetworkSpawn()
     {
@@ -115,6 +116,7 @@ public class Shooting : NetworkBehaviour
                 // Notify the server to shoot and update hasShot on all clients
                 ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
                 
+                shotCounter++;
             }
             hasShot.Value = true;
 
@@ -123,6 +125,8 @@ public class Shooting : NetworkBehaviour
             {
                 animator.SetBool("Triggered", isTriggered);
             }
+            
+            emptyShots++;
         }
     }
 

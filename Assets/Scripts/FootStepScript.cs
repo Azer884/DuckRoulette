@@ -16,8 +16,8 @@ public class FootStepScript : NetworkBehaviour {
     private InputActionAsset inputActions;
     private void Awake()
     {
-        controller = movement.GetComponent<CharacterController>();
-        inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
+        // controller = movement.GetComponent<CharacterController>();
+        // inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
     }
     #endregion
 
@@ -29,34 +29,39 @@ public class FootStepScript : NetworkBehaviour {
     );
 
     void Update () {
-        // Adjust step rate based on movement speed
-        if (IsOwner)
-        {
-            if (movement.speedMultiplier > 1) {
-                stepRate = 0.35f;
-            } else {
-                stepRate = 0.5f;
-            }
-    
-            stepCoolDown -= Time.deltaTime;
-    
-            // Determine if the player is walking
-            isWalking.Value =
-                (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
-                && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
-                && controller.isGrounded;
-        }
-
-        // Only the owning player can trigger their own footsteps
-        if (isWalking.Value && stepCoolDown < 0f) 
-        {
-            if (IsOwner)
-            {
-                impulseSource.GenerateImpulse();
-            }
+        stepCoolDown -= Time.deltaTime;
+        if(stepCoolDown < 0f) {
             PlayFootstep();
             stepCoolDown = stepRate;
         }
+        // Adjust step rate based on movement speed
+        // if (IsOwner)
+        // {
+        //     if (movement.speedMultiplier > 1) {
+        //         stepRate = 0.35f;
+        //     } else {
+        //         stepRate = 0.5f;
+        //     }
+    
+        //     stepCoolDown -= Time.deltaTime;
+    
+        //     // Determine if the player is walking
+        //     isWalking.Value =
+        //         (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
+        //         && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
+        //         && controller.isGrounded;
+        // }
+
+        // // Only the owning player can trigger their own footsteps
+        // if (isWalking.Value && stepCoolDown < 0f) 
+        // {
+        //     if (IsOwner)
+        //     {
+        //         impulseSource.GenerateImpulse();
+        //     }
+        //     PlayFootstep();
+        //     stepCoolDown = stepRate;
+        // }
     }
 
     private void PlayFootstep() {

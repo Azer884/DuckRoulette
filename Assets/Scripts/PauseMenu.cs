@@ -13,10 +13,13 @@ public class PauseMenu : NetworkBehaviour
     [SerializeField] private GameObject pauseMenu, crosshair;
     public GameObject endGamePanel, playerStatsObj;
     private bool menuIsOpen = false;
+    private bool ended = false;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
     {
         enabled = IsOwner;
+        ended = false;
 
         inputActions = GetComponent<InputSystem>().inputActions;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnect;
@@ -30,7 +33,7 @@ public class PauseMenu : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (inputActions.FindAction("Pause").triggered)
+        if (inputActions.FindAction("Pause").triggered && !ended)
         {
             if (!menuIsOpen)
             {
@@ -99,6 +102,15 @@ public class PauseMenu : NetworkBehaviour
         crosshair.SetActive(false);
         Cursor.lockState = CursorLockMode.Confined;
         menuIsOpen = true;
+    }
+    public void End()
+    {
+        RebindSaveLoad.Instance.input.enabled = false;
+
+        endGamePanel.SetActive(true);
+        crosshair.SetActive(false);
+        Cursor.lockState = CursorLockMode.Confined;
+        ended = true;
     }
 
     private void OnApplicationQuit() 
