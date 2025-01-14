@@ -38,7 +38,7 @@ public class Movement : NetworkBehaviour
     [SerializeField] private GameObject legs;
     [SerializeField] private GameObject FPShadow;
     [SerializeField] private GameObject Hands;
-    [SerializeField] private GameObject fullBody;
+    [SerializeField] private GameObject fullBody, thirdPersonCam;
 
     private Vector3 lastPosition; // To store the last frame's position
     [HideInInspector]public float realMovementSpeed;  // To store the calculated speed
@@ -65,6 +65,7 @@ public class Movement : NetworkBehaviour
         if (!IsOwner)
         {
             cam.SetActive(false);
+            thirdPersonCam.SetActive(true);
             camHolder.gameObject.SetActive(false);
             secondCamHolder.SetActive(false);
             slidingCam.SetActive(false);
@@ -79,6 +80,7 @@ public class Movement : NetworkBehaviour
         {
             transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
             cam.SetActive(true);
+            thirdPersonCam.SetActive(false);
             camHolder.gameObject.SetActive(true);
             secondCamHolder.SetActive(true);
             slidingCam.SetActive(true);

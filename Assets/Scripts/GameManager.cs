@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ public class GameManager : NetworkBehaviour
     public  List<int> playersKills = new();
     private int coinsToWin;
     private bool isGameEnded = false;
+    private List<(ulong, ulong)> teams = new();
+
 
 
     private void Awake()
@@ -308,4 +311,119 @@ public class GameManager : NetworkBehaviour
     {
         playersKills[(int)shooterId] += killAmount;
     }
+
+    #region TeamUp
+
+    [ServerRpc(RequireOwnership = false)]
+    public void TeamUpRequestServerRpc(ulong teamMateId, ServerRpcParams serverRpcParams = default)
+    {
+        var clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new List<ulong> { teamMateId }
+            }
+        };
+        SendTeamUpRequestClientRpc(serverRpcParams.Receive.SenderClientId, clientRpcParams);
+    }
+
+    [ClientRpc]
+    private void SendTeamUpRequestClientRpc(ulong senderId, ClientRpcParams clientRpcParams = default)
+    {
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
+        {
+            if(teamUp.isTeamedUp)
+            {
+                return;
+            }
+
+            teamUp.RequestTeamUp(senderId);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void TeamUpResponseServerRpc(ulong teamMateId, ulong requesterId, Vector3 soundPosition, int isPerfectDap, ServerRpcParams serverRpcParams = default)
+    {
+        var clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new List<ulong> { requesterId}
+            }
+        };
+        bool isPerfectDapBool = isPerfectDap == 1;
+        PlayDapSoundClientRpc(soundPosition, isPerfectDapBool);
+
+        teams.Add((requesterId, teamMateId));
+        SendTeamUpResponseClientRpc(teamMateId, clientRpcParams);
+    }
+    
+    [ClientRpc]
+    private void SendTeamUpResponseClientRpc(ulong teamMateId, ClientRpcParams clientRpcParams = default)
+    {
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
+        {
+            teamUp.isTeamedUp = true;
+            teamUp.teamMateId = (int)teamMateId;
+            Debug.Log("You have teamed up with " + teamMateId);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void EndTeamUpServerRpc(ulong teamMateId, ServerRpcParams serverRpcParams = default)
+    {
+        var clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new List<ulong> { teamMateId }
+            }
+        };
+
+        // Remove the team regardless of the order of the tuple elements
+        teams.RemoveAll(team => (team.Item1 == serverRpcParams.Receive.SenderClientId && team.Item2 == teamMateId) ||
+                                (team.Item1 == teamMateId && team.Item2 == serverRpcParams.Receive.SenderClientId));
+        SendEndTeamUpClientRpc(clientRpcParams);
+    }
+
+    [ClientRpc]
+    private void SendEndTeamUpClientRpc(ClientRpcParams clientRpcParams)
+    {
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
+        {
+            teamUp.EndTeamUp();
+        }
+    }
+
+    [ClientRpc]
+    private void PlayDapSoundClientRpc(Vector3 soundPosition, bool isPerfectDap)
+    {
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
+        {
+            teamUp.PlayDapSound(soundPosition, isPerfectDap);
+        }
+    }
+
+    #endregion
+
+    #region  Spectate
+
+    public CinemachineCamera GetPlayerSpectateCam(ulong clientId)
+    {
+        foreach (var playerObject in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (playerObject.ClientId == clientId && playerObject.PlayerObject != null)
+            {
+                if (playerObject.PlayerObject.transform.GetChild(playerObject.PlayerObject.transform.childCount - 1).TryGetComponent<CinemachineCamera>(out var cam))
+                {
+                    return cam;
+                }
+            }
+        }
+
+        // Return a placeholder if the player is not found
+        return null;
+    }
+
+    #endregion
 }

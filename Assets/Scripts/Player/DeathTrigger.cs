@@ -1,10 +1,15 @@
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
+using System.Drawing.Imaging;
+using Unity.Cinemachine;
 
 public class DeathTrigger : MonoBehaviour
 {
     private bool isDead = false;
     private ulong victimId;
+    private ulong spectatedPlayerId;
+    private CinemachineCamera spectatorCamera;
 
     public void OnTriggerEnter(Collider other) 
     {
@@ -12,10 +17,15 @@ public class DeathTrigger : MonoBehaviour
 
         if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId && !isDead)
         {
-            isDead = false;
+            if (GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId)
+            {
+                return;
+            }
+            isDead = true;
             GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
 
             ulong shooterId = bullet.OwnerClientId;
+            spectatedPlayerId = shooterId;
 
             // Fetch player names from the Username component
             string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
@@ -30,7 +40,45 @@ public class DeathTrigger : MonoBehaviour
 
             // Award coins to the shooter
             //UpdateCoinValueServerRpc(bullet.bulletId);
+
+            StartCoroutine(WaitBeforeSpctate(5f));
         }
         bullet.DestroyServerRpc(0);
+    }
+
+    private IEnumerator WaitBeforeSpctate(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        Spectate(spectatedPlayerId);
+    }
+
+    private void Spectate(ulong playerId)
+    {
+        spectatorCamera = GameManager.Instance.GetPlayerSpectateCam(playerId);
+        if(spectatorCamera == null)
+        {
+            return;
+        }
+        spectatorCamera.Priority = 20;
+    }
+    private void EndSpectate(ulong playerId)
+    {
+        if(spectatorCamera == null)
+        {
+            return;
+        }
+        spectatorCamera.Priority = 0;
+    }
+
+    private void Update() {
+        if (//make a scrpt for death var &&
+            Input.GetKeyDown(KeyCode.Space))
+        {
+            EndSpectate(spectatedPlayerId);
+            spectatedPlayerId++;
+            spectatedPlayerId %= (ulong)NetworkManager.Singleton.ConnectedClientsList.Count;
+            Spectate(spectatedPlayerId);
+        }
     }
 }
