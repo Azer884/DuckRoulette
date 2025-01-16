@@ -1,18 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
+using Steamworks;
 using TMPro;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public int playerWithGun = -1;
+    public NetworkVariable<int> playerWithGun = new(-1);
     public NetworkVariable<int> bulletPosition = new();
     public NetworkVariable<int> randomBulletPosition = new();
     public NetworkVariable<bool> isReloaded = new(false);
-    public NetworkVariable<bool> canShoot = new(true);
+    public NetworkVariable<bool> canShoot = new(true), powerGunIsActive = new(false);
 
     private NetworkVariable<int> alivePlayersCount = new(0);
     private Dictionary<ulong, bool> playerStates = new();
@@ -48,21 +50,25 @@ public class GameManager : NetworkBehaviour
             playerStates[clientId] = true;
         }
         playersKills = new(new int[playerStates.Count]);
-        alivePlayersCount.Value = playerStates.Count;
-
+        if(IsServer)
+        {
+            alivePlayersCount.Value = playerStates.Count;
+        }
+        
         coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
 
-        playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+        ChangeVarValueServerRpc(playerWithGun.Value, Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count));
         CheckPlayerGunScript();
     }
-    public void OnClientShotChanged(ulong clientId, bool hasShot)
+    [ServerRpc(RequireOwnership = false)]
+    public void OnClientShotChangedServerRpc(ulong clientId, bool hasShot)
     {
         if (hasShot)
         {
-            playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            while (playerWithGun == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
+            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+            while (playerWithGun.Value == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
             {
-                playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+                playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             }
             CheckPlayerGunScript();
             bulletPosition.Value++;
@@ -92,18 +98,49 @@ public class GameManager : NetworkBehaviour
         ChangeVarValueServerRpc(canShoot.Value, false);
 
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
-
+        
         ChangeVarValueServerRpc(canShoot.Value, true);
-        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+
+        if (!powerGunIsActive.Value)
         {
-            if ((int)clientId == playerWithGun)
+            powerGunIsActive.Value = Percentage(5);
+
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
-                PlayerShootingScriptClientRpc(clientId, true);
+                if ((int)clientId == playerWithGun.Value)
+                {
+                    PlayerShootingScriptClientRpc(clientId, true);
+                }
+                else
+                {
+                    PlayerShootingScriptClientRpc(clientId, false);
+                }
             }
-            else
+        }
+        else
+        {
+            InformateClientRpc("Power gun is active!", true, 10);
+            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+            yield return new WaitForSeconds(10f);
+
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
-                PlayerShootingScriptClientRpc(clientId, false);
+                if ((int)clientId == playerWithGun.Value)
+                {
+                    PlayerShootingScriptClientRpc(clientId, true);
+                }
+                else
+                {
+                    PlayerShootingScriptClientRpc(clientId, false);
+                }
             }
+            InformateClientRpc($"{GetPlayerNickname((ulong)playerWithGun.Value)} has the gun now.", true, 5);
+            yield return new WaitForSeconds(5f);
+
+            powerGunIsActive.Value = false;
+            OnClientShotChangedServerRpc((ulong)playerWithGun.Value, true);
+
+            InformateClientRpc("Power gun is no longer active!");
         }
     }
     public void Reload()
@@ -114,6 +151,16 @@ public class GameManager : NetworkBehaviour
 
     [ServerRpc(RequireOwnership = false)]
     private void ChangeVarValueServerRpc(bool oldValue, bool newValue)
+    {
+        oldValue = newValue;
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void ChangeVarValueServerRpc(int oldValue, int newValue)
+    {
+        oldValue = newValue;
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void ChangeVarValueServerRpc(float oldValue, float newValue)
     {
         oldValue = newValue;
     }
@@ -235,6 +282,7 @@ public class GameManager : NetworkBehaviour
 
                 stat = currentPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
                 stat.text = $"{coins}";
+                Coin.Instance.UpdateCoinAmount(coins);
 
                 //PlayerSurvivalTime
                 int minutes = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value / 60f);
@@ -291,10 +339,10 @@ public class GameManager : NetworkBehaviour
 
     private void OnClientDisconnect(ulong clientId)
     {
-        bool haveTheGun = (int)clientId == playerWithGun;
+        bool haveTheGun = (int)clientId == playerWithGun.Value;
         if (haveTheGun && !IsHost)
         {
-            playerWithGun = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             StartCoroutine(SwitchPlayerAfterDelay(.5f));
             Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         }
@@ -302,8 +350,34 @@ public class GameManager : NetworkBehaviour
 
     public void OnDisable()
     {
+        LeaveGame();
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
         NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerState;
+    }
+
+    public void LeaveGame()
+    {
+        LeaveSteamLobby();
+
+        PlayerSpawner.Instance.isStarted = false;
+        Cursor.lockState = CursorLockMode.Confined;
+        SceneManager.LoadScene("Lobby");
+    
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+    }
+
+    public void LeaveSteamLobby()
+    {
+        if (SteamClient.IsValid && LobbySaver.instance.currentLobby != null)
+        {
+            LobbySaver.instance.currentLobby?.Leave();
+
+            LobbyManager.instance.playerInfo.Remove(OwnerClientId);
+            Debug.Log("Left Steam lobby successfully.");
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -426,4 +500,21 @@ public class GameManager : NetworkBehaviour
     }
 
     #endregion
+
+    bool Percentage(int percentageChance)
+    {
+        int randomValue = Random.Range(0, 100); // Generates a number between 0 and 99
+        return randomValue < percentageChance;
+    }
+
+    [ClientRpc]
+    private void InformateClientRpc(string message, bool activateCoolDown = false, int coolDownTime = 0)
+    {
+        Debug.Log(message);
+
+        if (activateCoolDown && NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<UIManager>(out var uiManager))
+        {
+            uiManager.StartCoolDown(coolDownTime);
+        }
+    }
 }

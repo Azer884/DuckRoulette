@@ -1,27 +1,31 @@
 using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
-using System.Drawing.Imaging;
 using Unity.Cinemachine;
 
 public class DeathTrigger : MonoBehaviour
 {
-    private bool isDead = false;
     private ulong victimId;
     private ulong spectatedPlayerId;
     private CinemachineCamera spectatorCamera;
+    private Death death;
+
+    private void Awake()
+    {
+        death = GetComponentInParent<Death>();
+    }
 
     public void OnTriggerEnter(Collider other) 
     {
         victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
 
-        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId && !isDead)
+        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId && !death.isDead.Value)
         {
             if (GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId)
             {
                 return;
             }
-            isDead = true;
+            death.isDead.Value = true;
             GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
 
             ulong shooterId = bullet.OwnerClientId;
@@ -37,9 +41,6 @@ public class DeathTrigger : MonoBehaviour
             // Notify GameManager about the death
             GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
             Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
-
-            // Award coins to the shooter
-            //UpdateCoinValueServerRpc(bullet.bulletId);
 
             StartCoroutine(WaitBeforeSpctate(5f));
         }
@@ -72,7 +73,7 @@ public class DeathTrigger : MonoBehaviour
     }
 
     private void Update() {
-        if (//make a scrpt for death var &&
+        if (death.isDead.Value &&
             Input.GetKeyDown(KeyCode.Space))
         {
             EndSpectate(spectatedPlayerId);

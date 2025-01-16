@@ -104,7 +104,25 @@ public class Shooting : NetworkBehaviour
     {
         if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered)
         {
-            if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
+            if (!GameManager.Instance.powerGunIsActive.Value)
+            {
+                if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
+                {
+                    foreach (Animator animator in animators)
+                    {
+                        animator.Play("Shooting");
+                    }
+                    RebindSaveLoad.Instance.RumbleGamepad(0.8f, 1f, 0f, 0.4f);
+                    OnGunShot?.Invoke();
+                    
+                    // Notify the server to shoot and update hasShot on all clients
+                    ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+                    
+                    shotCounter++;
+                }
+                hasShot.Value = true;
+            }
+            else
             {
                 foreach (Animator animator in animators)
                 {
@@ -118,7 +136,6 @@ public class Shooting : NetworkBehaviour
                 
                 shotCounter++;
             }
-            hasShot.Value = true;
 
             isTriggered = false;
             foreach (Animator animator in animators)
@@ -131,9 +148,9 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, ServerRpcParams serverRpcParams = default)
+    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, bool haveToReload = true, ServerRpcParams serverRpcParams = default)
     {
-        GameManager.Instance.isReloaded.Value = false;
+        GameManager.Instance.isReloaded.Value = !haveToReload;
 
         bullet = Instantiate(bulletPrefab, spawnPoint, rot);
         var bulletNetworkObject = bullet.GetComponent<NetworkObject>();
@@ -153,7 +170,7 @@ public class Shooting : NetworkBehaviour
         // Call the GameManager function and pass the necessary parameters
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnClientShotChanged(OwnerClientId, newValue);
+            GameManager.Instance.OnClientShotChangedServerRpc(OwnerClientId, newValue);
         }
     }
 

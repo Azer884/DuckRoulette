@@ -60,7 +60,7 @@ public class TeamUp : MonoBehaviour
             if (teamUpResults[i].GetComponentInParent<TeamUp>() != null)
             {
                 TeamUp teamUpComponent = teamUpResults[i].GetComponentInParent<TeamUp>();
-                if(teamUpComponent != this)
+                if(teamUpComponent != GetComponentInParent<TeamUp>())
                 {
                     validPlayers.Add(teamUpComponent.gameObject);
                 }

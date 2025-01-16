@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,13 +38,11 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 12
-  m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +65,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -97,7 +92,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -208,13 +203,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 140191132}
+  serializedVersion: 2
   m_LocalRotation: {x: 0.15086463, y: -1.1945524e-22, z: 1.8230227e-23, w: 0.9885544}
   m_LocalPosition: {x: 0, y: 2.25, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &140191136
 MonoBehaviour:
@@ -331,11 +326,11 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7632911616050328955, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ce4c5a6977f4c4a03a175dacd27f529e, type: 2}
     - target: {fileID: 7632911616286984587, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ce4c5a6977f4c4a03a175dacd27f529e, type: 2}
     - target: {fileID: 7632911616286984628, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
@@ -343,7 +338,7 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7632911616416927593, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ce4c5a6977f4c4a03a175dacd27f529e, type: 2}
     - target: {fileID: 7632911616416927594, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
@@ -407,11 +402,11 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7632911617428946535, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ce4c5a6977f4c4a03a175dacd27f529e, type: 2}
     - target: {fileID: 7632911617567587698, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ce4c5a6977f4c4a03a175dacd27f529e, type: 2}
     - target: {fileID: 7632911617567587711, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
@@ -459,6 +454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ScanRecursively: 1
   SuppressInputWhileBlending: 1
+  IgnoreTimeScale: 0
   m_ControllerManager:
     Controllers:
     - Name: Look Orbit X
@@ -469,6 +465,7 @@ MonoBehaviour:
         Gain: 1
         LegacyInput: Mouse X
         LegacyGain: 200
+        CancelDeltaTime: 0
       InputValue: 0
       Driver:
         AccelTime: 0.2
@@ -481,6 +478,7 @@ MonoBehaviour:
         Gain: -1
         LegacyInput: Mouse Y
         LegacyGain: -200
+        CancelDeltaTime: 0
       InputValue: 0
       Driver:
         AccelTime: 0.2
@@ -493,6 +491,7 @@ MonoBehaviour:
         Gain: 1
         LegacyInput: Mouse ScrollWheel
         LegacyGain: 200
+        CancelDeltaTime: 0
       InputValue: 0
       Driver:
         AccelTime: 0
@@ -511,13 +510,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f38bda98361e1de48a4ca2bd86ea3c17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TargetOffset: {x: 0, y: 1, z: 0}
-  Lookahead:
-    Enabled: 0
-    Time: 0
-    Smoothing: 0
-    IgnoreY: 0
-  Damping: {x: 0.5, y: 0.5}
   Composition:
     ScreenPosition: {x: 0, y: 0}
     DeadZone:
@@ -528,6 +520,13 @@ MonoBehaviour:
       Size: {x: 0.8, y: 0.8}
       Offset: {x: 0, y: 0}
   CenterOnActivate: 1
+  TargetOffset: {x: 0, y: 1, z: 0}
+  Damping: {x: 0.5, y: 0.5}
+  Lookahead:
+    Enabled: 0
+    Time: 0
+    Smoothing: 0
+    IgnoreY: 0
 --- !u!114 &1727080744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -540,6 +539,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b5d7c088409d9a40b7b09aa707777f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TargetOffset: {x: 0, y: 0, z: 0}
   TrackerSettings:
     BindingMode: 5
     PositionDamping: {x: 1, y: 1, z: 1}
@@ -640,13 +640,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1727080740}
+  serializedVersion: 2
   m_LocalRotation: {x: 0.15086463, y: -1.1945524e-22, z: 1.8230227e-23, w: 0.9885544}
   m_LocalPosition: {x: 0, y: 2.25, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1727080747
 MonoBehaviour:
@@ -673,6 +673,9 @@ MonoBehaviour:
     DistanceLimit: 0
     MinimumOcclusionTime: 0
     CameraRadius: 0.1
+    UseFollowTarget:
+      Enabled: 0
+      YOffset: 0
     Strategy: 0
     MaximumEffort: 4
     SmoothingTime: 0
@@ -896,3 +899,14 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8378e2b869340464a8ff1531d24726e8, type: 3}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 993682861312921315}
+  - {fileID: 290231337}
+  - {fileID: 140191135}
+  - {fileID: 7632911616239414954}
+  - {fileID: 306417144}
+  - {fileID: 5995860983734692292}
+  - {fileID: 1727080746}

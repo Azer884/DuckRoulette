@@ -17,7 +17,7 @@ public class HideGun : MonoBehaviour
 
     private void Update() 
     {
-        haveGun = (int)GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun;
+        haveGun = (int)GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun.Value;
         if(!haveGun)
         {
             survivedTime += Time.deltaTime;

@@ -1,10 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
-using System;
-using Netcode.Transports.Facepunch;
-using Steamworks;
 
 public class PauseMenu : NetworkBehaviour
 {
@@ -50,39 +46,15 @@ public class PauseMenu : NetworkBehaviour
     {
         if (clientId == 0)
         {
-            LeaveGame();
+            GameManager.Instance.LeaveGame();
         }
     }
 
     public void Leave()
     {
-        LeaveGame();
+        GameManager.Instance.LeaveGame();
     }
 
-    private void LeaveGame()
-    {
-        LeaveSteamLobby();
-
-        PlayerSpawner.Instance.isStarted = false;
-        Cursor.lockState = CursorLockMode.Confined;
-        SceneManager.LoadScene("Lobby");
-    
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.Shutdown();
-        }
-    }
-
-    private void LeaveSteamLobby()
-    {
-        if (SteamClient.IsValid && LobbySaver.instance.currentLobby != null)
-        {
-            LobbySaver.instance.currentLobby?.Leave();
-
-            LobbyManager.instance.playerInfo.Remove(OwnerClientId);
-            Debug.Log("Left Steam lobby successfully.");
-        }
-    }
     public void Resume()
     {
         RebindSaveLoad.Instance.input.enabled = true;
