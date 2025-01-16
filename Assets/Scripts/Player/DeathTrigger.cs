@@ -25,7 +25,7 @@ public class DeathTrigger : MonoBehaviour
             {
                 return;
             }
-            death.isDead.Value = true;
+            death.DieServerRpc();
             GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
 
             ulong shooterId = bullet.OwnerClientId;
@@ -39,7 +39,7 @@ public class DeathTrigger : MonoBehaviour
             GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
 
             // Notify GameManager about the death
-            GameManager.Instance.UpdatePlayerState(victimId, isDead: true);
+            GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
             Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
 
             StartCoroutine(WaitBeforeSpctate(5f));

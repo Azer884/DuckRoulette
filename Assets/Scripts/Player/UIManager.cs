@@ -3,12 +3,12 @@ using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
-    public void StartCoolDown(int time)
+    public void StartCoolDown(float time)
     {
         StartCoroutine(CoolDownCoroutine(time));
     }
 
-    private IEnumerator CoolDownCoroutine(int time)
+    private IEnumerator CoolDownCoroutine(float time)
     {
         while (time > 0)
         {

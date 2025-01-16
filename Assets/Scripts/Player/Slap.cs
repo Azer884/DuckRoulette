@@ -71,9 +71,10 @@ public class Slap : NetworkBehaviour
         List<GameObject> validSlappedPlayers = new();
         for (int i = 0; i < numColliders; i++)
         {
-            if (slapResults[i].TryGetComponent<Slap>(out var slapComponent) && slapComponent != this)
+            Slap slapRes = slapResults[i].GetComponentInParent<Slap>();
+            if (slapRes != this)
             {
-                validSlappedPlayers.Add(slapResults[i].gameObject);
+                validSlappedPlayers.Add(slapRes.gameObject);
             }
         }
         Debug.Log($"{validSlappedPlayers?.Count} Players can be slapped");

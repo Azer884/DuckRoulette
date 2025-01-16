@@ -2241,7 +2241,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efcfbc5099afcda49bd7ba5450bf7f5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerWithGun: -1
+  playerWithGun:
+    m_InternalValue: -1
   bulletPosition:
     m_InternalValue: 0
   randomBulletPosition:
@@ -3710,7 +3711,7 @@ MonoBehaviour:
   - {fileID: 7982222125460271496}
   otherPlayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 4096
   slapAudio: {fileID: 8837185115997718649}
 --- !u!114 &499319212786747193
 MonoBehaviour:

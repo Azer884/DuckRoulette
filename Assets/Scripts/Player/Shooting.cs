@@ -132,7 +132,7 @@ public class Shooting : NetworkBehaviour
                 OnGunShot?.Invoke();
                 
                 // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, false);
                 
                 shotCounter++;
             }

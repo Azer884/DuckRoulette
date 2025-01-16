@@ -18,11 +18,6 @@ public class PauseMenu : NetworkBehaviour
         ended = false;
 
         inputActions = GetComponent<InputSystem>().inputActions;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnect;
-    }
-    private void OnDisable() 
-    {
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnect;
     }
 
 
@@ -39,14 +34,6 @@ public class PauseMenu : NetworkBehaviour
             {
                 Resume();
             }
-        }
-    }
-
-    private void OnDisconnect(ulong clientId)
-    {
-        if (clientId == 0)
-        {
-            GameManager.Instance.LeaveGame();
         }
     }
 

@@ -1,8 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
 using TMPro;
-using System.Collections;
-using Unity.VisualScripting; // For text display, optional
 
 public class StatsManager : MonoBehaviour
 {
@@ -11,7 +9,8 @@ public class StatsManager : MonoBehaviour
 
     private void OnEnable()
     {
-        StartCoroutine(UpdateAfterDelay(1));
+        InvokeRepeating(nameof(UpdatePing), 1, 1);
+        InvokeRepeating(nameof(UpdateFps), 1, 1);
     }
 
     private void UpdateFps()
@@ -25,25 +24,6 @@ public class StatsManager : MonoBehaviour
     }
     private void UpdatePing()
     {
-        if (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer)
-        {
-            float rtt = NetworkManager.Singleton.ServerTime.TimeAsFloat - NetworkManager.Singleton.LocalTime.TimeAsFloat;
-            int ping = Mathf.RoundToInt(rtt * 1000f); // Convert seconds to milliseconds
-            if (pingText != null)
-            {
-                pingText.text = $"Ping: {ping} ms";
-            }
-        }
-    }
-
-    private IEnumerator UpdateAfterDelay(float delay)
-    {
-        while (true)
-        {
-            UpdateFps();
-            UpdatePing();
-
-            yield return new WaitForSeconds(delay);
-        }
+        pingText.text = $"Ping: {NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.Singleton.NetworkConfig.NetworkTransport.ServerClientId)} ms";
     }
 }

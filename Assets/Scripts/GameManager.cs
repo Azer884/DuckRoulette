@@ -14,7 +14,8 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<int> bulletPosition = new();
     public NetworkVariable<int> randomBulletPosition = new();
     public NetworkVariable<bool> isReloaded = new(false);
-    public NetworkVariable<bool> canShoot = new(true), powerGunIsActive = new(false);
+    public NetworkVariable<bool> canShoot = new(true),
+    powerGunIsActive = new(false);
 
     private NetworkVariable<int> alivePlayersCount = new(0);
     private Dictionary<ulong, bool> playerStates = new();
@@ -37,7 +38,7 @@ public class GameManager : NetworkBehaviour
         }
 
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
-        NetworkManager.Singleton.OnClientDisconnectCallback += UpdatePlayerState;
+        NetworkManager.Singleton.OnClientDisconnectCallback += UpdatePlayerStateServerRpc;
     }
 
 
@@ -49,17 +50,18 @@ public class GameManager : NetworkBehaviour
         {
             playerStates[clientId] = true;
         }
-        playersKills = new(new int[playerStates.Count]);
+        playersKills = new(new int[NetworkManager.Singleton.ConnectedClientsIds.Count]);
         if(IsServer)
         {
-            alivePlayersCount.Value = playerStates.Count;
+            alivePlayersCount.Value = NetworkManager.Singleton.ConnectedClientsIds.Count;
+            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+            CheckPlayerGunScript();
         }
         
         coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
 
-        ChangeVarValueServerRpc(playerWithGun.Value, Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count));
-        CheckPlayerGunScript();
     }
+
     [ServerRpc(RequireOwnership = false)]
     public void OnClientShotChangedServerRpc(ulong clientId, bool hasShot)
     {
@@ -69,8 +71,8 @@ public class GameManager : NetworkBehaviour
             while (playerWithGun.Value == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
             {
                 playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+                CheckPlayerGunScript();
             }
-            CheckPlayerGunScript();
             bulletPosition.Value++;
             bulletPosition.Value %= 6;
         }
@@ -95,53 +97,53 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
-        ChangeVarValueServerRpc(canShoot.Value, false);
+        canShoot.Value = false;
 
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
         
-        ChangeVarValueServerRpc(canShoot.Value, true);
-
+        canShoot.Value = true;
         if (!powerGunIsActive.Value)
         {
-            powerGunIsActive.Value = Percentage(5);
+            powerGunIsActive.Value = Percentage(1);
 
             foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
-                if ((int)clientId == playerWithGun.Value)
-                {
-                    PlayerShootingScriptClientRpc(clientId, true);
-                }
-                else
-                {
-                    PlayerShootingScriptClientRpc(clientId, false);
-                }
+                PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
             }
         }
         else
         {
-            InformateClientRpc("Power gun is active!", true, 10);
-            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            yield return new WaitForSeconds(10f);
-
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                if ((int)clientId == playerWithGun.Value)
-                {
-                    PlayerShootingScriptClientRpc(clientId, true);
-                }
-                else
-                {
-                    PlayerShootingScriptClientRpc(clientId, false);
-                }
-            }
-            InformateClientRpc($"{GetPlayerNickname((ulong)playerWithGun.Value)} has the gun now.", true, 5);
-            yield return new WaitForSeconds(5f);
-
-            powerGunIsActive.Value = false;
-            OnClientShotChangedServerRpc((ulong)playerWithGun.Value, true);
-
-            InformateClientRpc("Power gun is no longer active!");
+            ActivatePowerGun();
         }
+    }
+
+    private void ActivatePowerGun()
+    {
+        NotifyPlayersClientRpc("Power gun is active!", true, 10);
+        playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
+
+        // Wait for 10 seconds, then notify and assign gun
+        Invoke(nameof(AssignGun), 10f);
+    }
+
+    private void AssignGun()
+    {
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
+        }
+        NotifyPlayersClientRpc($"{GetPlayerNickname((ulong)playerWithGun.Value)} has the gun now.", true, 5);
+
+        // Wait for 5 seconds, then deactivate the power gun
+        Invoke(nameof(DeactivatePowerGun), 5f);
+    }
+
+    private void DeactivatePowerGun()
+    {
+        powerGunIsActive.Value = false;
+        OnClientShotChangedServerRpc((ulong)playerWithGun.Value, true);
+
+        NotifyPlayersClientRpc("Power gun is no longer active!");
     }
     public void Reload()
     {
@@ -150,60 +152,14 @@ public class GameManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void ChangeVarValueServerRpc(bool oldValue, bool newValue)
-    {
-        oldValue = newValue;
-    }
-    [ServerRpc(RequireOwnership = false)]
-    private void ChangeVarValueServerRpc(int oldValue, int newValue)
-    {
-        oldValue = newValue;
-    }
-    [ServerRpc(RequireOwnership = false)]
-    private void ChangeVarValueServerRpc(float oldValue, float newValue)
-    {
-        oldValue = newValue;
-    }
-
-    public void UpdatePlayerState(ulong clientId, bool isDead)
-    {
-        if (playerStates.ContainsKey(clientId))
-        {
-            playerStates[clientId] = !isDead;
-
-            // Update alive player count
-            if(isDead)
-            {
-                UpdateAlivePlayerCountServerRpc(alivePlayersCount.Value - 1);
-            }
-            else
-            {
-                UpdateAlivePlayerCountServerRpc(alivePlayersCount.Value + 1);
-            }
-            if (alivePlayersCount.Value <= 1)
-            {
-                ulong winnerId = 10;
-                foreach (var playerState in playerStates)
-                {
-                    if (playerState.Value) // Player is alive
-                    {
-                        winnerId = playerState.Key;
-                        break;
-                    }
-                }
-                EndGameServerRpc(winnerId);
-            }
-        }
-    }
-
-    public void UpdatePlayerState(ulong clientId)
+    public void UpdatePlayerStateServerRpc(ulong clientId)
     {
         if (playerStates.ContainsKey(clientId))
         {
             playerStates[clientId] = false;
 
             // Update alive player count
-            UpdateAlivePlayerCountServerRpc(-1);
+            alivePlayersCount.Value--;
 
             if (alivePlayersCount.Value <= 1)
             {
@@ -219,11 +175,6 @@ public class GameManager : NetworkBehaviour
                 EndGameServerRpc(winnerId);
             }
         }
-    }
-    [ServerRpc(RequireOwnership = false)]
-    public void UpdateAlivePlayerCountServerRpc(int value)
-    {
-        alivePlayersCount.Value += value;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -342,17 +293,19 @@ public class GameManager : NetworkBehaviour
         bool haveTheGun = (int)clientId == playerWithGun.Value;
         if (haveTheGun && !IsHost)
         {
-            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            StartCoroutine(SwitchPlayerAfterDelay(.5f));
+            OnClientShotChangedServerRpc(clientId, true);
             Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         }
     }
 
     public void OnDisable()
     {
-        LeaveGame();
+        if (this == Instance)
+        {
+            LeaveGame();        
+        }
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
-        NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerState;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerStateServerRpc;
     }
 
     public void LeaveGame()
@@ -508,7 +461,7 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void InformateClientRpc(string message, bool activateCoolDown = false, int coolDownTime = 0)
+    private void NotifyPlayersClientRpc(string message, bool activateCoolDown = false, int coolDownTime = 0)
     {
         Debug.Log(message);
 
