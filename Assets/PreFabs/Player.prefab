@@ -3496,6 +3496,7 @@ GameObject:
   - component: {fileID: 4619992438188470218}
   - component: {fileID: 3511677419663132241}
   - component: {fileID: 8268077465974644995}
+  - component: {fileID: 7545187074860238167}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -4487,7 +4488,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pauseMenu: {fileID: 6628175925985741812}
-  crosshair: {fileID: 1095700798805411578}
+  crosshair: {fileID: 1969380777910516697}
   endGamePanel: {fileID: 6628527514237443540}
   playerStatsObj: {fileID: 6637167484204046991, guid: 5fbd1848598e1ff4a8586ae62055b271, type: 3}
 --- !u!114 &4619992438188470218
@@ -4539,6 +4540,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a900a465882f64468a0c50bf1efe231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7545187074860238167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a449370f7cd1e5a4191e9d8a057df3cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeSurvived:
+    m_InternalValue: 0
+  shotCounter:
+    m_InternalValue: 0
+  emptyShots:
+    m_InternalValue: 0
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0

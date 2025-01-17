@@ -26,7 +26,7 @@ public class DeathTrigger : MonoBehaviour
                 return;
             }
             death.DieServerRpc();
-            GetComponentInParent<Ragdoll>().TriggerRagdoll(true);
+            death.KillPlayerServerRpc(victimId);
 
             ulong shooterId = bullet.OwnerClientId;
             spectatedPlayerId = shooterId;

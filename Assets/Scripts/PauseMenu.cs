@@ -47,7 +47,7 @@ public class PauseMenu : NetworkBehaviour
         RebindSaveLoad.Instance.input.enabled = true;
 
         pauseMenu.SetActive(false);
-        crosshair.SetActive(true);
+            crosshair.transform.parent.gameObject.SetActive(true);
         Cursor.lockState = CursorLockMode.Locked;
         menuIsOpen = false;
 
@@ -58,7 +58,7 @@ public class PauseMenu : NetworkBehaviour
         RebindSaveLoad.Instance.input.enabled = false;
 
         pauseMenu.SetActive(true);
-        crosshair.SetActive(false);
+        crosshair.transform.parent.gameObject.SetActive(false);
         Cursor.lockState = CursorLockMode.Confined;
         menuIsOpen = true;
     }

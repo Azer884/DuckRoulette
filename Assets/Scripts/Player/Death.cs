@@ -10,4 +10,23 @@ public class Death : NetworkBehaviour
     {
         isDead.Value = died;
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void KillPlayerServerRpc(ulong clientId)
+    {
+        KillPlayerClientRpc(clientId);
+    }
+    [ClientRpc]
+    private void KillPlayerClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            // Get the player's object and trigger the ragdoll
+            var playerObject = client.PlayerObject;
+            if (playerObject != null)
+            {
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(true);
+            }
+        }
+    }
 }

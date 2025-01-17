@@ -33,24 +33,7 @@ public class TeamUp : NetworkBehaviour
 
     void Update()
     {
-        if (haveRequest)
-        {
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                isTeamedUp = true;
-                teamMateId = requesterId;
-                perfectDap = UnityEngine.Random.Range(0, 2);
-                //Play the dap animation and sound
-
-                GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
-                Debug.Log("You have teamed up with player " + requesterId);
-                ResetHaveRequest();
-            }
-        }
-        else
-        {
-            TryToTeamUp();
-        }
+        TryToTeamUp();
 
         if (isTeamedUp && Input.GetKeyDown(KeyCode.X))
         {
@@ -77,12 +60,29 @@ public class TeamUp : NetworkBehaviour
         }
         if (validPlayers?.Count > 0)
         {
-            if (Input.GetKeyDown(KeyCode.E) && !isTeamedUp && Time.time >= lastTeamUpTime + teamUpCooldown)
+            if (Input.GetKeyDown(KeyCode.E))
             {
-                GameManager.Instance.TeamUpRequestServerRpc(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId);
-                lastTeamUpTime = Time.time;
+                if (!isTeamedUp && Time.time >= lastTeamUpTime + teamUpCooldown && !haveRequest)
+                {
+                    GameManager.Instance.TeamUpRequestServerRpc(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId);
+                    lastTeamUpTime = Time.time;
+                }
+                else if (haveRequest)
+                {
+                    isTeamedUp = true;
+                    teamMateId = requesterId;
+                    perfectDap = UnityEngine.Random.Range(0, 2);
+                    //Play the dap animation and sound
+
+                    GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
+                    Debug.Log("You have teamed up with player " + requesterId);
+                }
             }
             Debug.Log("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId));
+        }
+        else if (haveRequest)
+        {
+            haveRequest = false;
         }
     }
 
@@ -126,18 +126,6 @@ public class TeamUp : NetworkBehaviour
         // Play the sound and destroy the GameObject after the clip duration
         audioSource.Play();
         Destroy(audioObject, clipToPlay.length);
-    }
-
-    private void ResetHaveRequest()
-    {
-        if (validPlayers != null)
-        {
-            haveRequest = requesterId != (int)validPlayers[0].GetComponent<NetworkObject>().OwnerClientId;
-        }
-        else
-        {
-            haveRequest = false;
-        }
     }
 
     private void OnDrawGizmos() {

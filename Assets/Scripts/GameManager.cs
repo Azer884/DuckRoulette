@@ -24,8 +24,6 @@ public class GameManager : NetworkBehaviour
     private bool isGameEnded = false;
     private List<(ulong, ulong)> teams = new();
 
-
-
     private void Awake()
     {
         if (Instance == null)
@@ -302,7 +300,7 @@ public class GameManager : NetworkBehaviour
     {
         if (this == Instance)
         {
-            LeaveGame();        
+            LeaveGame();
         }
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
         NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerStateServerRpc;
@@ -456,8 +454,12 @@ public class GameManager : NetworkBehaviour
 
     bool Percentage(int percentageChance)
     {
-        int randomValue = Random.Range(0, 100); // Generates a number between 0 and 99
-        return randomValue < percentageChance;
+        if (percentageChance < 100)
+        {
+            int randomValue = Random.Range(0, 100); // Generates a number between 0 and 99
+            return randomValue < percentageChance;
+        }
+        return true;
     }
 
     [ClientRpc]

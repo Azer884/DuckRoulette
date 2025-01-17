@@ -69,8 +69,6 @@ public class Ragdoll : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if(!IsOwner) enabled = false;
-
-        base.OnNetworkSpawn();
     }
 
     void Awake()
@@ -284,23 +282,6 @@ public class Ragdoll : NetworkBehaviour
         {
             int randomIndex = Random.Range(0, _faceDownStandUpStateNames.Length);
             return _faceDownStandUpStateNames[randomIndex];
-        }
-    }
-
-
-    [ServerRpc(RequireOwnership = false)]
-    private void UpdateCoinValueServerRpc(ulong shooterId)
-    {
-        UpdateCoinValueClientRpc(shooterId);
-    }
-
-    [ClientRpc]
-    private void UpdateCoinValueClientRpc(ulong shooterId)
-    {
-        if (OwnerClientId == shooterId)
-        {
-            Debug.Log("Gained 3 Coins");
-            Coin.Instance.UpdateCoinAmount(3);
         }
     }
 
