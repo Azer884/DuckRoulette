@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Services.Matchmaker.Models;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class TeamUp : NetworkBehaviour
 {
@@ -22,6 +23,7 @@ public class TeamUp : NetworkBehaviour
     public Transform dapPosition;
     public AudioClip dapSound;
     public AudioClip perfectDapSound;
+    public AudioMixerGroup audioMixerGroup;
 
     public override void OnNetworkSpawn()
     {
@@ -117,6 +119,7 @@ public class TeamUp : NetworkBehaviour
         GameObject audioObject = new GameObject("TempAudio");
         audioObject.transform.position = dapPosition;
         AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
 
         // Set the clip and adjust the pitch for variety
         audioSource.clip = clipToPlay;

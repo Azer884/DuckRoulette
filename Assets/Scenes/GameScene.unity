@@ -475,7 +475,7 @@ AudioSource:
   m_GameObject: {fileID: 316287798}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 7918850962917512161, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
   m_audioClip: {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
   m_Resource: {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
   m_PlayOnAwake: 1
@@ -563,6 +563,22 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &316287802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316287798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e6eea9a64b215941bcef8f65d20fa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetObject: {fileID: 1118275323}
+  scaleMultiplier: 1
+  smoothTime: 0.1
+  originalScale: 1
 --- !u!64 &376412195
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1732,6 +1748,9 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 56b5b35badc13ce44969a2fbb7810e7d, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 316287802}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 56b5b35badc13ce44969a2fbb7810e7d, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 316287801}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 56b5b35badc13ce44969a2fbb7810e7d, type: 3}
       insertIndex: -1
@@ -1740,6 +1759,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 316287799}
   m_SourcePrefab: {fileID: 100100000, guid: 56b5b35badc13ce44969a2fbb7810e7d, type: 3}
+--- !u!4 &1118275323 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 56b5b35badc13ce44969a2fbb7810e7d, type: 3}
+  m_PrefabInstance: {fileID: 1118275322}
+  m_PrefabAsset: {fileID: 0}
 --- !u!146 &1286729297
 WheelCollider:
   m_ObjectHideFlags: 0

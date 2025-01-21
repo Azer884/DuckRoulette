@@ -3,6 +3,7 @@ using IniParser;
 using IniParser.Model;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.UI;
 
 public class SettingsManager : MonoBehaviour
@@ -12,7 +13,9 @@ public class SettingsManager : MonoBehaviour
     private IniData data;
     public static SettingsManager Instance { get; private set; }
 
-    void Awake()
+    public AudioMixer audioMixer;
+
+    void Start()
     {
         // Implement Singleton Pattern
         if (Instance == null)
@@ -27,6 +30,7 @@ public class SettingsManager : MonoBehaviour
         settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
         parser = new FileIniDataParser();
         LoadSettings();
+        gameObject.SetActive(false);
     }
 
     public void LoadSettings()
@@ -34,6 +38,23 @@ public class SettingsManager : MonoBehaviour
         if (File.Exists(settingsFilePath))
         {
             data = parser.ReadFile(settingsFilePath);
+
+            if (float.TryParse(GetSetting("Audio", "MasterVolume"), out float value))
+            {
+                audioMixer.SetFloat("MasterVolume", Mathf.Log10(value) * 20);
+            }
+            if (float.TryParse(GetSetting("Audio", "MusicVolume"), out value))
+            {
+                audioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
+            }
+            if (float.TryParse(GetSetting("Audio", "EffectsVolume"), out value))
+            {
+                audioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
+            }
+            if (float.TryParse(GetSetting("Audio", "VoiceChatVolume"), out value))
+            {
+                audioMixer.SetFloat("VCVolume", Mathf.Log10(value) * 20);
+            }
         }
         else
         {

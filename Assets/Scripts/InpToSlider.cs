@@ -3,10 +3,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class KeyBinds : MonoBehaviour
+public class InpToSlider : MonoBehaviour
 {
     [SerializeField] private Slider sliderSens;
     [SerializeField] private TMP_InputField sliderSensInp;
+    [SerializeField] private string sectionName = "MasterVolume";
 
     private bool isUpdating = false; // Flag to prevent recursive updates
 
@@ -33,12 +34,15 @@ public class KeyBinds : MonoBehaviour
         // Restrict to one digit before the decimal and two digits after
         if (float.TryParse(value, out float number))
         {
+            if (!string.IsNullOrWhiteSpace(sectionName))
+            {
+                SettingsManager.Instance.audioMixer.SetFloat(sectionName, Mathf.Log10(number) * 20);
+            }
             // Clamp the value between 0 and 1
             number = Mathf.Clamp(number, 0f, 1f);
 
             // Adjust for the specific rules
             if (number > 0.99f) number = 1f;
-            if (number < 0.01f) number = 0f;
 
             // Format the value to ensure proper display
             value = number.ToString("F2");
@@ -61,12 +65,15 @@ public class KeyBinds : MonoBehaviour
         if (isUpdating) return; // Prevent recursive calls
         isUpdating = true;
 
+        if (!string.IsNullOrWhiteSpace(sectionName))
+        {
+            SettingsManager.Instance.audioMixer.SetFloat(sectionName, Mathf.Log10(value) * 20);
+        }
         // Clamp the slider value between 0 and 1
         value = Mathf.Clamp(value, 0f, 1f);
 
         // Adjust for specific rules
         if (value > 0.99f) value = 1f;
-        if (value < 0.01f) value = 0f;
 
         // Update the input field and format the value
         sliderSensInp.text = value.ToString("F2");

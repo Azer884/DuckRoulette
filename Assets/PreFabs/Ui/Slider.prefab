@@ -391,6 +391,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sliderSens: {fileID: 7860342091016474634}
   sliderSensInp: {fileID: 1454075540439690445}
+  sectionName: MasterVolume
 --- !u!1 &2335849524264712617
 GameObject:
   m_ObjectHideFlags: 0
@@ -717,7 +718,7 @@ MonoBehaviour:
   m_FillRect: {fileID: 7129639181424085450}
   m_HandleRect: {fileID: 940503410398585674}
   m_Direction: 0
-  m_MinValue: 0
+  m_MinValue: 0.0001
   m_MaxValue: 1
   m_WholeNumbers: 0
   m_Value: 0.436
