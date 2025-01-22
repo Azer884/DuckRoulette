@@ -8,7 +8,7 @@ public class SoundToScale : MonoBehaviour
     public float scaleMultiplier = 1.0f;  // Scaling factor
     public float smoothTime = 0.1f;  // Smoothing factor for scaling
 
-    private AudioSource audioSource;
+    [HideInInspector] public AudioSource audioSource;
     private float[] samples = new float[256];  // Audio sample array
     private float currentLevel = 0f;  // Smoothed audio level
     private float velocity;  // SmoothDamp velocity
@@ -23,20 +23,23 @@ public class SoundToScale : MonoBehaviour
     void Update()
     {
         // Get the current audio data
-        audioSource.clip.GetData(samples, 0);
-
-        // Calculate the RMS value of the samples
-        float rmsValue = Mathf.Sqrt(GetRMS(samples));
-
-        // Smoothly scale the object based on the RMS value
-        currentLevel = Mathf.SmoothDamp(currentLevel, rmsValue, ref velocity, smoothTime);
-        if (filler != null)
+        if (audioSource != null)
         {
-            filler.fillAmount = currentLevel;
-            return;
+            audioSource.GetOutputData(samples, 0);
+    
+            // Calculate the RMS value of the samples
+            float rmsValue = Mathf.Sqrt(GetRMS(samples));
+    
+            // Smoothly scale the object based on the RMS value
+            currentLevel = Mathf.SmoothDamp(currentLevel, rmsValue, ref velocity, smoothTime);
+            if (filler != null)
+            {
+                filler.fillAmount = currentLevel;
+                return;
+            }
+            float scale = (1f + currentLevel * scaleMultiplier) * originalScale;
+            targetObject.localScale = new Vector3(scale, scale, scale);
         }
-        float scale = (1f + currentLevel * scaleMultiplier) * originalScale;
-        targetObject.localScale = new Vector3(scale, scale, scale);
     }
 
     private float GetRMS(float[] data)

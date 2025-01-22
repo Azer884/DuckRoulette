@@ -23,16 +23,16 @@ public class VoiceChatRaycast : NetworkBehaviour
         AddExistingPlayers();
 
         // Subscribe to new players joining
-        NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnPlayerDisconnected;
+        NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerConnect;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnPlayerDisconnect;
     }
     private void OnDisable()
     {
         // Unsubscribe when the object is destroyed
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnPlayerConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnPlayerDisconnected;
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnPlayerConnect;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnPlayerDisconnect;
         }
     }
 
@@ -113,7 +113,7 @@ public class VoiceChatRaycast : NetworkBehaviour
     }
 
     // This method is called when a new player connects to the game
-    private void OnPlayerConnected(ulong clientId)
+    private void OnPlayerConnect(ulong clientId)
     {
         GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).gameObject;
         if (playerObject != null && playerObject.CompareTag("Player") && playerObject != gameObject)
@@ -122,7 +122,7 @@ public class VoiceChatRaycast : NetworkBehaviour
             otherPlayers.Add(playerObject.transform);
         }
     }
-    private void OnPlayerDisconnected(ulong clientId)
+    private void OnPlayerDisconnect(ulong clientId)
     {
         GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId)?.gameObject;
         if (playerObject != null && playerObject.CompareTag("Player"))
