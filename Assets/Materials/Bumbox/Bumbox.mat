@@ -29,6 +29,7 @@ Material:
   disabledShaderPasses:
   - ALWAYS
   - MOTIONVECTORS
+  - SRPDEFAULTUNLIT
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3

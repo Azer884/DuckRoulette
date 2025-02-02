@@ -3735,6 +3735,7 @@ MonoBehaviour:
   bumBoxPickUpPosition: {fileID: 2028653435389426294}
   fakeBox: {fileID: 6107794117867015541}
   fakeboxShadow: {fileID: 6362856461599879792}
+  shooting: {fileID: 1816800951425717793}
 --- !u!114 &499319212786747193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17726,6 +17727,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LSocks
       objectReference: {fileID: 0}
+    - target: {fileID: 5442419963656555748, guid: 01165394d0aae674baa7563452d30758, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7513764216805979267, guid: 01165394d0aae674baa7563452d30758, type: 3}
       propertyPath: m_CastShadows
       value: 3
@@ -17930,6 +17935,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 233d87e780d6b3d4186a04ec5ecd0766, type: 3}
       propertyPath: m_Name
       value: EggShell
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 233d87e780d6b3d4186a04ec5ecd0766, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18259,6 +18268,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: c5e7ff426a0e67a4ea6fbd5aa985cbd4, type: 3}
       propertyPath: m_Name
       value: BoxingGlove
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c5e7ff426a0e67a4ea6fbd5aa985cbd4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18948,6 +18961,10 @@ PrefabInstance:
     - target: {fileID: 5259680594438542766, guid: 84965a957a946904cb016c302d5bda99, type: 3}
       propertyPath: m_Name
       value: RSocks
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259680594438542766, guid: 84965a957a946904cb016c302d5bda99, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5969340596456051247, guid: 84965a957a946904cb016c302d5bda99, type: 3}
       propertyPath: m_CastShadows

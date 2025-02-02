@@ -59,14 +59,13 @@ public class FootStepScript : NetworkBehaviour {
         }
     }
 
-    private void PlayFootstep() {
-        if (footstepClips.Length > 0) {
+    private void PlayFootstep() 
+    {
+        if (footstepClips.Length > 0)
+        {
             footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
             int index = Random.Range(0, footstepClips.Length);
-            Debug.Log("Playing footstep sound: " + index);
             footstepSource.PlayOneShot(footstepClips[index], 0.9f);
-        } else {
-            Debug.LogWarning("Footstep clips not assigned.");
         }
     }
 }

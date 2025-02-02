@@ -19,30 +19,33 @@ public class DeathTrigger : MonoBehaviour
     {
         victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
 
-        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet) && bullet.OwnerClientId != victimId && !death.isDead.Value)
+        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet))
         {
-            if (GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId)
+            if (bullet.OwnerClientId != victimId && !death.isDead.Value)
             {
-                return;
+                if (GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId)
+                {
+                    return;
+                }
+                death.DieServerRpc();
+                death.KillPlayerServerRpc(victimId);
+    
+                ulong shooterId = bullet.OwnerClientId;
+                spectatedPlayerId = shooterId;
+    
+                // Fetch player names from the Username component
+                string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
+                string victimName = GameManager.Instance.GetPlayerNickname(victimId);
+    
+                Debug.Log($"{shooterName} killed {victimName}");
+                GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
+    
+                // Notify GameManager about the death
+                GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
+                Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
+    
+                StartCoroutine(WaitBeforeSpctate(5f));
             }
-            death.DieServerRpc();
-            death.KillPlayerServerRpc(victimId);
-
-            ulong shooterId = bullet.OwnerClientId;
-            spectatedPlayerId = shooterId;
-
-            // Fetch player names from the Username component
-            string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
-            string victimName = GameManager.Instance.GetPlayerNickname(victimId);
-
-            Debug.Log($"{shooterName} killed {victimName}");
-            GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
-
-            // Notify GameManager about the death
-            GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
-            Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
-
-            StartCoroutine(WaitBeforeSpctate(5f));
         }
         bullet.DestroyServerRpc(0);
     }

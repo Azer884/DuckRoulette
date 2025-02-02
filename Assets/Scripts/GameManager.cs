@@ -24,6 +24,12 @@ public class GameManager : NetworkBehaviour
     private bool isGameEnded = false;
     private List<(ulong, ulong)> teams = new();
 
+    //Events
+    public delegate void OnPowerGunActive();
+    public static event OnPowerGunActive OnPowerGunActived;
+    public delegate void OnHostDisconnect();
+    public static event OnHostDisconnect OnHostDisconnected;
+
     private void Awake()
     {
         if (Instance == null)
@@ -122,6 +128,7 @@ public class GameManager : NetworkBehaviour
 
         // Wait for 10 seconds, then notify and assign gun
         Invoke(nameof(AssignGun), 10f);
+        OnPowerGunActived?.Invoke();
     }
 
     private void AssignGun()
@@ -300,6 +307,7 @@ public class GameManager : NetworkBehaviour
     {
         if (this == Instance)
         {
+            OnHostDisconnected?.Invoke();
             LeaveGame();
         }
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
@@ -412,7 +420,7 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void SendEndTeamUpClientRpc(ClientRpcParams clientRpcParams)
+    private void SendEndTeamUpClientRpc(ClientRpcParams clientRpcParams = default)
     {
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
