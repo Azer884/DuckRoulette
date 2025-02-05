@@ -41,7 +41,7 @@ Material:
     - _NoiseScale: 0.1
     - _NoiseWeight: 0.24
     - _PathBlending: 3
-    - _RimPower: 20
+    - _RimPower: 0
     - _SnowDepth: 51
     - _SnowHeight: 0.14
     - _SnowTextureOpacity: 0.784
@@ -56,3 +56,4 @@ Material:
     - _RimColor: {r: 0.21938412, g: 0.2406301, b: 0.3207547, a: 1}
     - _ShadowColor: {r: 0.003693494, g: 0.56786823, b: 0.7830189, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
