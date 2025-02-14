@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Services.Matchmaker.Models;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -11,6 +12,7 @@ public class TeamUp : NetworkBehaviour
     private List<GameObject> validPlayers = new List<GameObject>();
     public bool isTeamedUp = false;
     public int teamMateId = -1;
+    public GameObject teamMate;
     public float teamUpRaduis = 2f;
     public LayerMask otherPlayers;
     public Transform teamUpArea;
@@ -24,6 +26,8 @@ public class TeamUp : NetworkBehaviour
     public AudioClip dapSound;
     public AudioClip perfectDapSound;
     public AudioMixerGroup audioMixerGroup;
+    public Renderer[] renderers;
+    public Color teamColor = Color.green;
 
     public override void OnNetworkSpawn()
     {
@@ -35,13 +39,22 @@ public class TeamUp : NetworkBehaviour
 
     void Update()
     {
-        TryToTeamUp();
-
-        if (isTeamedUp && Input.GetKeyDown(KeyCode.X))
+        if (isTeamedUp)
         {
-            EndTeamUpOnServer();
-            Debug.Log("You have ended the team up with player " + teamMateId);
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                EndTeamUpOnServer();
+                if (teamMate != null)
+                {
+                    RemoveTeamMate();
+                }
+                Debug.Log("You have ended the team up with player " + teamMateId);
+            }
+
+            return;
         }
+
+        TryToTeamUp();
     }
 
     private void TryToTeamUp()
@@ -72,12 +85,16 @@ public class TeamUp : NetworkBehaviour
                 else if (haveRequest)
                 {
                     isTeamedUp = true;
+                    haveRequest = false;
                     teamMateId = requesterId;
                     perfectDap = UnityEngine.Random.Range(0, 2);
                     //Play the dap animation and sound
 
                     GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
                     Debug.Log("You have teamed up with player " + requesterId);
+
+                    // Change the color of the player
+                    AddTeamMate();
                 }
             }
             Debug.Log("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId));
@@ -129,6 +146,26 @@ public class TeamUp : NetworkBehaviour
         // Play the sound and destroy the GameObject after the clip duration
         audioSource.Play();
         Destroy(audioObject, clipToPlay.length);
+    }
+
+    public void AddTeamMate()
+    {
+        teamMate = validPlayers[0];
+
+        foreach (Renderer renderer in teamMate.GetComponent<TeamUp>().renderers)
+        {
+            renderer.material.SetColor("_Outline_Color", teamColor);
+        }
+    }
+
+    public void RemoveTeamMate()
+    {
+        foreach (Renderer renderer in teamMate.GetComponent<TeamUp>().renderers)
+        {
+            renderer.material.SetColor("_Outline_Color", Color.black);
+        }
+
+        teamMate = null;
     }
 
     private void OnDrawGizmos() {

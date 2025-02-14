@@ -398,6 +398,7 @@ public class GameManager : NetworkBehaviour
         {
             teamUp.isTeamedUp = true;
             teamUp.teamMateId = (int)teamMateId;
+            teamUp.AddTeamMate();
             Debug.Log("You have teamed up with " + teamMateId);
         }
     }
@@ -425,6 +426,7 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
             teamUp.EndTeamUp();
+            teamUp.RemoveTeamMate();
         }
     }
 

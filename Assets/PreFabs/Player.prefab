@@ -4527,6 +4527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isTeamedUp: 0
   teamMateId: -1
+  teamMate: {fileID: 0}
   teamUpRaduis: 2.5
   otherPlayers:
     serializedVersion: 2
@@ -4537,6 +4538,12 @@ MonoBehaviour:
   dapSound: {fileID: 8300000, guid: d31f89554bdf04243bf778cec0f9353b, type: 3}
   perfectDapSound: {fileID: 8300000, guid: eb3171f99f4f4d84fb58ff3569bba27a, type: 3}
   audioMixerGroup: {fileID: 5529914607747943723, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
+  renderers:
+  - {fileID: 7365002991867158603}
+  - {fileID: 93237497360091503}
+  - {fileID: 6611295453059689895}
+  - {fileID: 2764494379678518831}
+  teamColor: {r: 0, g: 0.49411765, b: 1, a: 1}
 --- !u!114 &3511677419663132241
 MonoBehaviour:
   m_ObjectHideFlags: 0
