@@ -105,7 +105,15 @@ public class GameManager : NetworkBehaviour
 
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
         
-        canShoot.Value = true;
+        
+        bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+        Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+        Debug.Log(wheather);
+        if (wheather)
+        {
+            //Start bad wheather
+        }
+
         if (!powerGunIsActive.Value)
         {
             powerGunIsActive.Value = Percentage(1);
@@ -119,6 +127,7 @@ public class GameManager : NetworkBehaviour
         {
             ActivatePowerGun();
         }
+        canShoot.Value = true;
     }
 
     private void ActivatePowerGun()
