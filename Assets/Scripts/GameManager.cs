@@ -21,12 +21,14 @@ public class GameManager : NetworkBehaviour
     private Dictionary<ulong, bool> playerStates = new();
     public  List<int> playersKills = new();
     private int coinsToWin;
-    private bool isGameEnded = false;
+    private bool isGameEnded = false, hasRained = false;
     private List<(ulong, ulong)> teams = new();
 
     //Events
     public delegate void OnPowerGunActive();
     public static event OnPowerGunActive OnPowerGunActived;
+    public delegate void OnWheaterChange();
+    public static event OnWheaterChange OnWheaterChanged;
     public delegate void OnHostDisconnect();
     public static event OnHostDisconnect OnHostDisconnected;
 
@@ -106,12 +108,17 @@ public class GameManager : NetworkBehaviour
         yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
         
         
-        bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-        Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-        Debug.Log(wheather);
-        if (wheather)
+        if (!hasRained)
         {
-            //Start bad wheather
+            bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+            Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+            Debug.Log(wheather);
+            if (wheather)
+            {
+                hasRained = true;
+                //Start bad wheather
+                OnWheaterChanged?.Invoke();
+            }
         }
 
         if (!powerGunIsActive.Value)
@@ -187,6 +194,25 @@ public class GameManager : NetworkBehaviour
                     }
                 }
                 EndGameServerRpc(winnerId);
+            }
+        }
+    }
+
+    [ServerRpc]
+    public void StunPlayerServerRpc(ulong clientId)
+    {
+        StunPlayerClientRpc(clientId);
+    }
+    [ClientRpc]
+    private void StunPlayerClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            // Get the player's object and trigger the ragdoll
+            var playerObject = client.PlayerObject;
+            if (playerObject != null)
+            {
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead : false);
             }
         }
     }
@@ -491,4 +517,5 @@ public class GameManager : NetworkBehaviour
             uiManager.StartCoolDown(coolDownTime);
         }
     }
+
 }

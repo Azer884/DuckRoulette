@@ -12,12 +12,12 @@ public class Death : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void KillPlayerServerRpc(ulong clientId)
+    public void KillPlayerServerRpc(ulong clientId, bool died = true)
     {
-        KillPlayerClientRpc(clientId);
+        KillPlayerClientRpc(clientId, died);
     }
     [ClientRpc]
-    private void KillPlayerClientRpc(ulong clientId)
+    private void KillPlayerClientRpc(ulong clientId, bool died = true)
     {
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
@@ -25,7 +25,7 @@ public class Death : NetworkBehaviour
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(true);
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(died);
             }
         }
     }

@@ -124,31 +124,12 @@ public class Slap : NetworkBehaviour
     {
         Debug.Log($"{player.name} is stunned!");
         
-        StunPlayerServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
+        GameManager.Instance.StunPlayerServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
 
         // Reset slap count and slap limit
         slapCount[player] = 0;
         slapLimit[player] = Random.Range(3, 10); // Generate new slap limit
         Debug.Log($"{player.name} is no longer stunned.");
-    }
-    
-    [ServerRpc]
-    private void StunPlayerServerRpc(ulong clientId)
-    {
-        StunPlayerClientRpc(clientId);
-    }
-    [ClientRpc]
-    private void StunPlayerClientRpc(ulong clientId)
-    {
-        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
-        {
-            // Get the player's object and trigger the ragdoll
-            var playerObject = client.PlayerObject;
-            if (playerObject != null)
-            {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead : false);
-            }
-        }
     }
 
     [ServerRpc]

@@ -20,19 +20,6 @@ public class BulletBehavior : NetworkBehaviour
         DestroyServerRpc(5);
         initialVelocity.OnValueChanged += MoveBullet;
     }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void DestroyServerRpc(float delay)
-    {
-        StartCoroutine(DestroyAfterDelay(delay));
-    }
-
-    public IEnumerator DestroyAfterDelay(float waitingTime)
-    {
-        yield return new WaitForSeconds(waitingTime);
-        GetComponent<NetworkObject>().Despawn();
-        Destroy(gameObject);
-    }
     private void MoveBullet(Vector3 previousValue, Vector3 newValue) 
     {
         transform.rotation = Quaternion.LookRotation(newValue);
@@ -42,5 +29,18 @@ public class BulletBehavior : NetworkBehaviour
     {
         base.OnNetworkDespawn();
         initialVelocity.OnValueChanged -= MoveBullet;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void DestroyServerRpc(float delay)
+    {
+        StartCoroutine(DestroyAfterDelay(delay));
+    }
+
+    private IEnumerator DestroyAfterDelay(float waitingTime)
+    {
+        yield return new WaitForSeconds(waitingTime);
+        gameObject.GetComponent<NetworkObject>().Despawn();
+        Destroy(gameObject);
     }
 }

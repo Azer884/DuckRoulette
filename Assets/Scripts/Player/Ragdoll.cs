@@ -115,7 +115,7 @@ public class Ragdoll : NetworkBehaviour
         }
     }
 
-    public void TriggerRagdoll(bool isDead)
+    public void TriggerRagdoll(bool isDead = false)
     {
         EnableRagdoll();
         if (!isDead)
@@ -192,7 +192,7 @@ public class Ragdoll : NetworkBehaviour
         shadow.SetActive(false);
         _characterController.enabled = false;
 
-        RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
+        if(RebindSaveLoad.Instance != null) RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
     }
 
     private void RagdollBehaviour()

@@ -46,8 +46,8 @@ public class DeathTrigger : MonoBehaviour
     
                 StartCoroutine(WaitBeforeSpctate(5f));
             }
+            bullet.DestroyServerRpc(0);
         }
-        bullet.DestroyServerRpc(0);
     }
 
     private IEnumerator WaitBeforeSpctate(float delay)
