@@ -3495,6 +3495,7 @@ GameObject:
   - component: {fileID: 7994633359111961727}
   - component: {fileID: 2362302214951902385}
   - component: {fileID: 4619992438188470218}
+  - component: {fileID: 5440557012229668666}
   - component: {fileID: 3511677419663132241}
   - component: {fileID: 8268077465974644995}
   - component: {fileID: 7545187074860238167}
@@ -4544,6 +4545,25 @@ MonoBehaviour:
   - {fileID: 6611295453059689895}
   - {fileID: 2764494379678518831}
   teamColor: {r: 0, g: 0.49411765, b: 1, a: 1}
+--- !u!114 &5440557012229668666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6460ec91908cb6342964afc23108ea98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hand: []
+  handTransform: {fileID: 0}
+  cardSpacing: 0.025
+  canBlackjack: 0
+  canDraw: 1
+  canDone: 0
+  drawnFirstCard: 0
 --- !u!114 &3511677419663132241
 MonoBehaviour:
   m_ObjectHideFlags: 0

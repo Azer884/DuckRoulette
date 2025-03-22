@@ -1365,7 +1365,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5016cb7e48b8ac941a02ef492f413f3b, type: 2}
+  - {fileID: 2100000, guid: 97ffabdf11e1147479fd911309b6127f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1463,6 +1463,67 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &7541794271116420005
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 12422895759160483, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3791979520
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.1301146
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.57074
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.717123
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4790120189711436367, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7354727990356955966, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_Name
+      value: BlackjackTable
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1476,3 +1537,4 @@ SceneRoots:
   - {fileID: 2097980756}
   - {fileID: 2082943957}
   - {fileID: 333526510}
+  - {fileID: 7541794271116420005}
