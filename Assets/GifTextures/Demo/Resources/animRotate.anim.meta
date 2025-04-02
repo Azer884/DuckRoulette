@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 7cc0eda2bc81f7746bc855d0dc49de50
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Demo/Resources/animRotate.anim
+  uploadId: 485619

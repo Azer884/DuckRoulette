@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 442849f92b82a5f46989640ad0554706
+TextScriptImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Plugins/Gif2Textures.XML
+  uploadId: 485619

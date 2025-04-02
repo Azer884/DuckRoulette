@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9c4b218070fd7574f9d63a03665a5565
+timeCreated: 1502085419
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Plugins/Gif2Textures_NoThreading.xml
+  uploadId: 485619

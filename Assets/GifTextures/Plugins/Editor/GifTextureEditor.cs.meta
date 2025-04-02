@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 05446bf5a53b1044c9a0aee76846377a
+timeCreated: 1519011231
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Plugins/Editor/GifTextureEditor.cs
+  uploadId: 485619

@@ -1,0 +1,251 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Gif2Textures</name>
+    </assembly>
+    <members>
+        <member name="T:Gif2Textures.GifFrames">
+            <summary>
+                The interface of Gif2Textures
+            </summary>
+            <remarks>
+                Pass a gif stream (e.g. FileStream, MemoryStream) to the GifFrames and then you can get the frame size and frames of the gif.
+            </remarks>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.#ctor">
+            <summary>
+                Constructor
+            </summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.Dispose">
+            <summary>
+                Dispose
+            </summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.Load(System.IO.Stream,System.Int32)">
+            <summary>
+                DEPRECATED! Please use the Load function with parameter Config.
+            </summary>
+        </member>
+        <member name="T:Gif2Textures.GifFrames.Config">
+            <summary>
+                The parameters of how to load a gif.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.EnableAtlas">
+            <summary>
+                It is set to true by default. If it is true, output textures will be atlases which means 1
+                texture may contains multiple frames. Enable atlas is good for performance and memory usage,
+                so enable it unless you really don't want it for some reason. If it is set to false, 1 texture
+                will only contain 1 frame.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.ShrinkFrameToFitTexture">
+            <summary>
+                It is set to false by default. If it set to false then nothing special will happen. But if it
+                is set to true, the size of frame may be shrunken base on the MaxTextureSize and MaxTextureCount.
+                For example, if MaxTextureSize is 2048 and MaxTextureCount is 1, and if the gif has too many
+                frames or its frame size if too big for 1 2048x2048 to contain, all frames will be shrink to
+                fit the 1 2048x2048 texture.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.MaxTextureSize">
+            <summary>
+                Maximum output texture size. Better be power of 2. Its default value is 2048.
+                This value needs to be greater than 0. Otherwise the EnableAtlas will be treated as false.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.MaxTextureCount">
+            <summary>
+                Maximum output texture count. MaxTextureCount only works if ShrinkFrameToFitTexture is enabled.
+                This value needs to be greater than 0. Otherwise the ShrinkFrameToFitTexture will be treated as
+                false.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.ExcludeFirstFrameFromAtlas">
+            <summary>
+                Set it to true if you want to load the first frame as early as possible. It will take a little
+                bit extra memory. Only works when EnableAtlas is false.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.TextureMipmap">
+            <summary>
+                Set it to true if you will use the textures on 3D object. Mipmap will use one-third more memory
+                 but it gives better performance.
+            </summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.Config.CacheTextureToPath">
+            <summary>
+                To enable texture caching, set a valid path. Texture caching improves loading time significantly
+                since 2nd time. But it take disk space.
+            </summary>
+        </member>
+        <member name="T:Gif2Textures.GifFrames.LoadingState">
+            <summary>The Gif loading state.</summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.LoadingState.FAILED">
+            <summary>Loading failed. Most likely the gif file is corrupted.</summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.LoadingState.SUCCEED">
+            <summary>Loading succeed</summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.LoadingState.IDLE">
+            <summary>The GifFrames has been instantiated, but the Load or the LoadAsync hasn't been called</summary>
+        </member>
+        <member name="F:Gif2Textures.GifFrames.LoadingState.IN_PROGRESS">
+            <summary>The loading isn't finished</summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.Load(System.IO.Stream,Gif2Textures.GifFrames.Config)">
+            <summary>
+                Loads a gif stream synchronously.
+            </summary>
+            <param name = "stream">
+                The gif stream
+            </param>
+            <param name = "config">
+                The parameters of how to load a gif.
+            </param>
+            <returns>
+                The loading result.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.LoadAsync(System.IO.Stream,Gif2Textures.GifFrames.Config)">
+            <summary>
+                Loads a gif stream asynchronously. Please be aware that asynchronous loading is not supported on Windows Store platform yet.
+                LoadAsync will fall back to Load on Windows Store platform.
+            </summary>
+            <param name = "stream">
+                The gif stream
+            </param>
+            <param name = "config">
+                The parameters of how to load a gif.
+            </param>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetCurrentLoadingState">
+            <summary>
+                Get current loading state. It could be IDLE, IN_PROGRESS, SUCCEED or FAILED.
+            </summary>
+            <returns>
+                The loading state.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetLoadingProgress">
+            <summary>
+                Get current loading progress.
+            </summary>
+            <returns>
+                The loading progress.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetCurrentLoadingConfig">
+            <summary>
+                Get current loading config.
+            </summary>
+            <returns>
+                The loading config.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetFrameCount">
+            <summary>
+                Get frame count of the gif.
+            </summary>
+            <returns>
+                The frame count of the gif.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetFrameWidth">
+            <summary>
+                Get frame width of the gif.
+            </summary>
+            <returns>
+                The frame width of the gif.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetFrameHeight">
+            <summary>
+                Get frame height of the gif.
+            </summary>
+            <returns>
+                The frame height of the gif.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetFrameTexture(System.Int32,UnityEngine.Texture2D@,System.Int32@,System.Int32@,System.Int32@,System.Int32@)">
+            <summary>
+                Get the texture, offset and size of a giving frame.
+            </summary>
+            <param name = "frameIndex">
+                the index of the frame you want to get
+            </param>
+            <param name = "texture">
+                the texture contains the frame
+            </param>
+            <param name = "offsetX">
+                the x offset of the frame on the texture
+            </param>
+            <param name = "offsetY">
+                the y offset of the frame on the texture
+            </param>
+            <param name = "width">
+                the width of the frame
+            </param>
+            <param name = "height">
+                the height of the frame
+            </param>
+            <returns>
+                A value that determines whether you get the frame successfully or not. If it return false, it
+                means the gif hasn't been loaded successfully.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetFrameDelay(System.Int32,System.Single@)">
+            <summary>
+                Get the delay of a giving frame.
+            </summary>
+            <param name = "frameIndex">
+                the index of the frame you want to get
+            </param>
+            <param name = "delay">
+                the delay of the frame
+            </param>
+            <returns>
+                A value that determines whether you get the frame successfully or not. If it return false, it
+                means the gif hasn't been loaded successfully.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetLoadedFrameCount">
+            <summary>
+                Call this function to get loaded frame count while loading.
+            </summary>
+            <returns>
+                Loaded frame count.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetNextFrame(UnityEngine.Texture2D@,System.Int32@,System.Int32@,System.Int32@,System.Int32@,System.Single@)">
+            <summary>
+                Deprecated
+            </summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.Restart">
+            <summary>
+                Deprecated
+            </summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetTextureCount">
+            <summary>
+                Get texture count of the gif.
+            </summary>
+            <returns>
+                The texture count of the gif.
+            </returns>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetLoadedTextures">
+            <summary>
+                This function returns all atlas or frame textures.
+            </summary>
+        </member>
+        <member name="M:Gif2Textures.GifFrames.GetTextureSizes">
+            <summary>
+                This function returns size of all textures.
+            </summary>
+        </member>
+    </members>
+</doc>

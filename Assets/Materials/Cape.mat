@@ -28,6 +28,7 @@ Material:
     RenderType: Opaque
   disabledShaderPasses:
   - ALWAYS
+  - SRPDEFAULTUNLIT
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3

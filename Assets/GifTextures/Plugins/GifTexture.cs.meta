@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 21cf441573b45b9469480dccdd1ecd32
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Plugins/GifTexture.cs
+  uploadId: 485619

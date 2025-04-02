@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4f207c79d42294c4fad27a087f84dc03
+timeCreated: 1519528220
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 12074
+  packageName: Gif2Textures
+  packageVersion: 3.3.1
+  assetPath: Assets/GifTextures/Demo/Resources/lighter.gif.bytes
+  uploadId: 485619
