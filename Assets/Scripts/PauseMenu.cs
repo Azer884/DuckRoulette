@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
+using System;
 
 public class PauseMenu : NetworkBehaviour
 {
@@ -10,6 +11,8 @@ public class PauseMenu : NetworkBehaviour
     public GameObject endGamePanel, playerStatsObj;
     private bool menuIsOpen = false;
     private bool ended = false;
+    public static event Action OnPause;
+    public static event Action OnUnPause;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public override void OnNetworkSpawn()
@@ -50,7 +53,7 @@ public class PauseMenu : NetworkBehaviour
             crosshair.transform.parent.gameObject.SetActive(true);
         Cursor.lockState = CursorLockMode.Locked;
         menuIsOpen = false;
-
+        OnUnPause?.Invoke();
     }
 
     public void Pause()
@@ -61,6 +64,7 @@ public class PauseMenu : NetworkBehaviour
         crosshair.transform.parent.gameObject.SetActive(false);
         Cursor.lockState = CursorLockMode.Confined;
         menuIsOpen = true;
+        OnPause?.Invoke();
     }
     public void End()
     {
