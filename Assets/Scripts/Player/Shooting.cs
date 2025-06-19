@@ -104,7 +104,7 @@ public class Shooting : NetworkBehaviour
     {
         if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered)
         {
-            if (!GameManager.Instance.powerGunIsActive.Value)
+            //if (!GameManager.Instance.powerGunIsActive.Value)
             {
                 if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
                 {
@@ -112,7 +112,6 @@ public class Shooting : NetworkBehaviour
                     {
                         animator.Play("Shooting");
                     }
-                    RebindSaveLoad.Instance.RumbleGamepad(0.8f, 1f, 0f, 0.4f);
                     OnGunShot?.Invoke();
                     
                     // Notify the server to shoot and update hasShot on all clients
@@ -122,20 +121,19 @@ public class Shooting : NetworkBehaviour
                 }
                 hasShot.Value = true;
             }
-            else
-            {
-                foreach (Animator animator in animators)
-                {
-                    animator.Play("Shooting");
-                }
-                RebindSaveLoad.Instance.RumbleGamepad(0.8f, 1f, 0f, 0.4f);
-                OnGunShot?.Invoke();
+            // else
+            // {
+            //     foreach (Animator animator in animators)
+            //     {
+            //         animator.Play("Shooting");
+            //     }
+            //     OnGunShot?.Invoke();
                 
-                // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, false);
+            //     // Notify the server to shoot and update hasShot on all clients
+            //     ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, false);
                 
-                shotCounter++;
-            }
+            //     shotCounter++;
+            // }
 
             isTriggered = false;
             foreach (Animator animator in animators)

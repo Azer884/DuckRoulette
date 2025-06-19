@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using TMPro;
+using Steamworks.Data;
 
 public class StatsManager : MonoBehaviour
 {
@@ -15,15 +16,14 @@ public class StatsManager : MonoBehaviour
 
     private void UpdateFps()
     {
-        int fps = Mathf.RoundToInt(1f / Time.unscaledDeltaTime);
         // Update the UI Text
         if (fpsText != null)
         {
-            fpsText.text = $"FPS: {fps}";
+            fpsText.text = $"FPS: {StatTracker.Instance.currentFPS:F0}";
         }
     }
     private void UpdatePing()
     {
-        pingText.text = $"Ping: {NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.Singleton.NetworkConfig.NetworkTransport.ServerClientId)} ms";
+        pingText.text = $"Ping: {StatTracker.Instance.currentPing:F0} ms";
     }
 }

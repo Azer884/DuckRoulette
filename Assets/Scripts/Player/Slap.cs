@@ -3,10 +3,11 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+using Steamworks.Data;
 //buged?
 public class Slap : NetworkBehaviour 
 {
-    public event System.Action OnSlap;
+    public event System.Action OnSlap, OnSlapTriggered;
     public event System.Action OnSlapRecived;
     private InputActionAsset inputActions;
     [SerializeField] private Transform slapArea;
@@ -50,7 +51,7 @@ public class Slap : NetworkBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.yellow;
+        Gizmos.color = UnityEngine.Color.yellow;
         Gizmos.DrawWireSphere(slapArea.position, slapRaduis);
     }
 
@@ -63,7 +64,6 @@ public class Slap : NetworkBehaviour
     private void TryToSlap()
     {
         OnSlap?.Invoke();
-        RebindSaveLoad.Instance.RumbleGamepad(0.5f, .8f, .2f, 0.3f);
         Debug.Log("Slap!");
         
         int numColliders = Physics.OverlapSphereNonAlloc(slapArea.position, slapRaduis, slapResults, otherPlayers);
@@ -94,11 +94,12 @@ public class Slap : NetworkBehaviour
         }
 
         slapAudio.Play();
+        OnSlapTriggered?.Invoke();
         slapCount[player]++;
         
         SlapImpactServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
 
-        Debug.Log($"Player {player.name} has been slapped {slapCount[player]} times (Limit: {slapLimit[player]})");
+        //Major error: Debug.Log($"Player {player.name} has been slapped {slapCount[player]} times (Limit: {slapLimit[player]})");
 
         if (slapCount[player] >= slapLimit[player])
         {
@@ -147,7 +148,6 @@ public class Slap : NetworkBehaviour
             if (playerObject != null)
             {
                 OnSlapRecived?.Invoke();
-                RebindSaveLoad.Instance.RumbleGamepad(0.25f, .8f, .2f, 0.3f);
             }
         }
     }

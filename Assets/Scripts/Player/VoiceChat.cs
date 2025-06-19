@@ -5,7 +5,6 @@ using System;
 using Unity.Netcode;
 using System.Linq;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 public class VoiceChat : NetworkBehaviour
 {

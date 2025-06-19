@@ -6,6 +6,7 @@ using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms;
 
 public class GameManager : NetworkBehaviour
 {
@@ -98,42 +99,42 @@ public class GameManager : NetworkBehaviour
 
     private void CheckPlayerGunScript()
     {
-        StartCoroutine(SwitchPlayerAfterDelay(2f));
+        StartCoroutine(SwitchPlayerAfterDelay(5f));
     }
 
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
         canShoot.Value = false;
 
-        yield return new WaitForSeconds(waitTime); // Wait for 2 seconds before switching players
-        
-        
-        if (!hasRained)
-        {
-            bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-            Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-            Debug.Log(wheather);
-            if (wheather)
-            {
-                hasRained = true;
-                //Start bad wheather
-                OnWheaterChanged?.Invoke();
-            }
-        }
+        yield return new WaitForSeconds(waitTime); // Wait for 5 seconds before switching players
+
+
+        //TODO if (!hasRained)
+        // {
+        //     bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+        //     Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
+        //     Debug.Log(wheather);
+        //     if (wheather)
+        //     {
+        //         hasRained = true;
+        //         //Start bad wheather
+        //         OnWheaterChanged?.Invoke();
+        //     }
+        // }
 
         if (!powerGunIsActive.Value)
         {
-            powerGunIsActive.Value = Percentage(1);
+            //powerGunIsActive.Value = Percentage(1);
 
             foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
                 PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
             }
         }
-        else
-        {
-            ActivatePowerGun();
-        }
+        //TODO else
+        // {
+        //     ActivatePowerGun();
+        // }
         canShoot.Value = true;
     }
 
@@ -229,7 +230,7 @@ public class GameManager : NetworkBehaviour
     {
         if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Stats>(out var stats))
         {
-            stats.timeSurvived.Value = stats.GetComponent<HideGun>().survivedTime;
+            stats.timeSurvived.Value = StatTracker.Instance.timeSurvived;
             stats.shotCounter.Value = stats.GetComponent<Shooting>().shotCounter;
             stats.emptyShots.Value = stats.GetComponent<Shooting>().emptyShots;
         }
@@ -264,6 +265,9 @@ public class GameManager : NetworkBehaviour
                 stat = currentPlayer.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
                 stat.text = playersKills[(int)clientId].ToString();
 
+                if (clientId == NetworkManager.Singleton.LocalClientId)
+                    StatTracker.Instance.kills = playersKills[(int)clientId];
+
                 //CoinsToWin
                 int coins = playersKills[(int)clientId] * 2 + 1;
                 if (clientId == winnerId)
@@ -274,6 +278,9 @@ public class GameManager : NetworkBehaviour
                 stat = currentPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
                 stat.text = $"{coins}";
                 Coin.Instance.UpdateCoinAmount(coins);
+
+                if (clientId == NetworkManager.Singleton.LocalClientId)
+                    StatTracker.Instance.coinsWon = coins;
 
                 //PlayerSurvivalTime
                 int minutes = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value / 60f);
@@ -434,7 +441,7 @@ public class GameManager : NetworkBehaviour
             teamUp.isTeamedUp = true;
             teamUp.teamMateId = (int)teamMateId;
             teamUp.AddTeamMate();
-            Debug.Log("You have teamed up with " + teamMateId);
+            MessageBox.Informate("You have teamed up with " + GetPlayerNickname(teamMateId), Color.green);
         }
     }
 

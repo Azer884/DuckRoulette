@@ -10,6 +10,7 @@ TagManager:
   - SettingsBar
   - Ice
   - TeamUp
+  - TutoBot
   layers:
   - Default
   - TransparentFX

@@ -52,6 +52,7 @@ public class Ragdoll : NetworkBehaviour
     private Movement movement;
     private Slap slap;
     private Shooting shooting;
+    private TeamUp teamUp;
     private Username userName;
     public float _timeToWakeUp;
     private Transform _hipsBone;
@@ -78,6 +79,7 @@ public class Ragdoll : NetworkBehaviour
         movement = GetComponent<Movement>();
         slap = GetComponent<Slap>();
         shooting = GetComponent<Shooting>();
+        teamUp = GetComponent<TeamUp>();
         userName = GetComponent<Username>();
         _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
 
@@ -129,6 +131,7 @@ public class Ragdoll : NetworkBehaviour
             movement.enabled = false;
             slap.enabled = false;
             shooting.enabled = false;
+            teamUp.enabled = false;
             cam.SetActive(false);
             hands.SetActive(false);
             foots.SetActive(false);
@@ -152,6 +155,7 @@ public class Ragdoll : NetworkBehaviour
             animator.enabled = true;
         }
         movement.enabled = true;
+        teamUp.enabled = true;
         cam.SetActive(true);
         foots.SetActive(true);
         hands.SetActive(true);
@@ -184,6 +188,7 @@ public class Ragdoll : NetworkBehaviour
         }
         shootingStates = shooting.enabled;
         movement.enabled = false;
+        teamUp.enabled = false;
         slap.enabled = false;
         shooting.enabled = false;
         cam.SetActive(false);

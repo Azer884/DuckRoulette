@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Services.Matchmaker.Models;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -29,6 +25,8 @@ public class TeamUp : NetworkBehaviour
     public Renderer[] renderers;
     public Color teamColor = Color.green;
 
+    public event System.Action OnTeamUp, OnExitTeamUp;
+
     public override void OnNetworkSpawn()
     {
         if (!IsOwner)
@@ -43,12 +41,14 @@ public class TeamUp : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.X))
             {
+                MessageBox.Informate("You have ended the team up with player " + GameManager.Instance.GetPlayerNickname((ulong)teamMateId), Color.red, MessagePriority.High);
+                OnExitTeamUp?.Invoke();
+
                 EndTeamUpOnServer();
                 if (teamMate != null)
                 {
                     RemoveTeamMate();
                 }
-                Debug.Log("You have ended the team up with player " + teamMateId);
             }
 
             return;
@@ -91,13 +91,14 @@ public class TeamUp : NetworkBehaviour
                     //Play the dap animation and sound
 
                     GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
-                    Debug.Log("You have teamed up with player " + requesterId);
+                    MessageBox.Informate("You have teamed up with player " + requesterId, Color.green, MessagePriority.High);
 
                     // Change the color of the player
                     AddTeamMate();
                 }
+
             }
-            Debug.Log("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId));
+            MessageBox.Informate("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId), Color.white, MessagePriority.Low, 0.5f);
         }
         else if (haveRequest)
         {
@@ -111,7 +112,7 @@ public class TeamUp : NetworkBehaviour
         {
             return;
         }
-        Debug.Log("Player " + GameManager.Instance.GetPlayerNickname(requesterId) + " wants to team up with you. Press E to accept.");
+        MessageBox.Informate("Player " + GameManager.Instance.GetPlayerNickname(requesterId) + " wants to team up with you. Press E to accept.", Color.yellow, MessagePriority.Medium);
         this.requesterId = (int)requesterId; // Store the requesterId
         haveRequest = true;
         
@@ -151,6 +152,7 @@ public class TeamUp : NetworkBehaviour
     public void AddTeamMate()
     {
         teamMate = validPlayers[0];
+        OnTeamUp?.Invoke();
 
         foreach (Renderer renderer in teamMate.GetComponent<TeamUp>().renderers)
         {

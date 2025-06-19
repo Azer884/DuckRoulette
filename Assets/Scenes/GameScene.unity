@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -474,6 +475,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!114 &564401318
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1162,6 +1164,71 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+--- !u!1 &768761499
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 768761501}
+  - component: {fileID: 768761500}
+  m_Layer: 0
+  m_Name: StatTracker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &768761500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768761499}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad1477ccd3a6e0f4eb127bbf3e3e8cc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeSurvived: 0
+  kills: 0
+  coinsWon: 0
+  timeTeamedUp: 0
+  teamUpsCount: 0
+  exitTeamUpCount: 0
+  shotsCount: 0
+  emptyShotsCount: 0
+  accuracy: 0
+  luck: 0
+  avgFPS: 0
+  currentFPS: 0
+  avgPing: 0
+  currentPing: 0
+  slapsRecivedCount: 0
+  slapsCount: 0
+  percMapExplored: 0
+  mapMin: {x: -28, y: -28}
+  mapMax: {x: 28, y: 28}
+  cellSize: 10
+  mapSampleInterval: 1
+--- !u!4 &768761501
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768761499}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 955.2813, y: 661.5793, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &772157788
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1886,7 +1953,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13ee00534ef55b440add704a3b367230, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.4941
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13ee00534ef55b440add704a3b367230, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1894,7 +1961,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13ee00534ef55b440add704a3b367230, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.5133
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 13ee00534ef55b440add704a3b367230, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3473,10 +3540,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1899243225}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1000
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3547,10 +3614,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1946688697}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3742,6 +3809,10 @@ PrefabInstance:
     - target: {fileID: 4590092747208494682, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2436929473
+      objectReference: {fileID: 0}
+    - target: {fileID: 4590092747208494682, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 3497694927
       objectReference: {fileID: 0}
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4015,3 +4086,4 @@ SceneRoots:
   - {fileID: 1899243214}
   - {fileID: 1878331062}
   - {fileID: 695592116}
+  - {fileID: 768761501}

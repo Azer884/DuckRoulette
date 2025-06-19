@@ -126,7 +126,7 @@ public class CardDeck : NetworkBehaviour
     [ServerRpc (RequireOwnership = false)]
     public void SpawnCardServerRpc(ulong clientId, Vector3 targetedPosition, Quaternion rot , int cardIndex, bool IsFirstCard = false)
     {
-        Debug.Log($"Spawning card {cardIndex}");
+        //Major error (can't use int in a string): Debug.Log($"Spawning card {cardIndex}");
         GameObject newCardObject = Instantiate(cardPrefab, transform.position, rot);
 
         NetworkObject networkObject = newCardObject.GetComponent<NetworkObject>();
