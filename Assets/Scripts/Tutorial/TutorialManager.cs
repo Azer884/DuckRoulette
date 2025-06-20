@@ -12,7 +12,7 @@ public class TutorialManager : MonoBehaviour
     public event Action OnLook, OnMove, OnSprint, OnJump, OnPickUp, OnThrow, OnShutDown, OnCrouch, OnSlide, OnSwitchToGun, OnReload, OnTrigger, OnGunShot, OnTeamUp, OnTalk, OnEndTeamUp, OnSlap;
     [HideInInspector] public bool looked, moved, sprinted, jumped, pickedUp, thrown, shutDown, crouched, slid, switchedToGun, reloaded, triggered, gunShot, teamedUp, talked, endedTeamUp, slapped;
 
-    private InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
+    public InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
     public static TutorialManager Instance { get; private set; }
     private CharacterController controller;
 
@@ -81,7 +81,6 @@ public class TutorialManager : MonoBehaviour
     }
     public void Pause(bool state)
     {
-        isPaused = state;
         pauseMenu.SetActive(state);
         crosshair.SetActive(!state);
         if (state)
@@ -99,7 +98,11 @@ public class TutorialManager : MonoBehaviour
     private void Update()
     {
         DoLooking();
-        if (looked) DoMovement();
+        if (looked)
+        {
+            DoMovement();
+            PlayFootstep();
+        }
         if (jumped) PickUpThrowShut();
         if (shutDown) DoCrouch();
         if (slid && canSwitch)
@@ -137,8 +140,8 @@ public class TutorialManager : MonoBehaviour
 
         if (inputActions.FindAction("Pause").triggered)
         {
-            Pause(isPaused);
             isPaused = !isPaused;
+            Pause(isPaused);
         }
 
         Vector3 currentPos = transform.position;
@@ -196,7 +199,7 @@ public class TutorialManager : MonoBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        if (inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched)
+        if (moved && inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched)
         {
             speedMultiplier = 2.0f;
             if (!sprinted)
@@ -242,7 +245,7 @@ public class TutorialManager : MonoBehaviour
         }
 
         // Handle jumping
-        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
+        if (sprinted && grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpImpulseSource.GenerateImpulse();
@@ -486,6 +489,7 @@ public class TutorialManager : MonoBehaviour
         {
             rb.linearVelocity = direction * 15f;
         }
+        Destroy(bullet, 5f);
     }
     public void SwitchParent(bool state)
     {
@@ -504,9 +508,6 @@ public class TutorialManager : MonoBehaviour
             Hands.transform.localRotation = Quaternion.identity;
         }
     }
-
-
-
 
 
 
@@ -573,7 +574,7 @@ public class TutorialManager : MonoBehaviour
     public GameObject teamMate;
     public float teamUpRaduis = 2f;
     public Transform teamUpArea;
-    Collider[] teamUpResults = new Collider[10];
+    Collider[] teamUpResults = new Collider[1];
     public AudioClip dapSound;
     public AudioClip perfectDapSound;
     private int perfectDap = 0;
@@ -676,7 +677,7 @@ public class TutorialManager : MonoBehaviour
         teamMate.GetComponentInChildren<TutoBot>().Accept(Color.black);
         teamMate = null;
     }
-    
+
 
 
     [SerializeField] private LayerMask pickUpLayerMask;
@@ -694,7 +695,7 @@ public class TutorialManager : MonoBehaviour
                 if (pickedUpObject == null)
                 {
                     if (haveGun) return;
-                    
+
                     PickUpObject(hit.collider);
                 }
             }
@@ -722,7 +723,7 @@ public class TutorialManager : MonoBehaviour
 
     private void PickUpObject(Collider collider)
     {
-        if(collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
+        if (collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
         {
             interactable.Interact(0);
 
@@ -746,7 +747,7 @@ public class TutorialManager : MonoBehaviour
         {
             pickedUpObject.gameObject.SetActive(true);
             pickedUpObject = null;
-            if(!thrown)
+            if (!thrown)
             {
                 thrown = true;
                 OnThrow?.Invoke();
@@ -759,11 +760,42 @@ public class TutorialManager : MonoBehaviour
         if (obj.TryGetComponent(out OfflineBumBox bumBox))
         {
             bumBox.Mute();
-            if(!shutDown)
+            if (!shutDown)
             {
                 shutDown = true;
                 OnShutDown?.Invoke();
             }
         }
+    }
+    
+    public float stepRate = 0.5f;
+    public float stepCoolDown;
+    public AudioSource footstepSource;
+    public AudioClip[] footstepClips;
+
+    private void PlayFootstep()
+    {
+        if (speedMultiplier > 1)
+        {
+            stepRate = 0.35f;
+        }
+        else
+        {
+            stepRate = 0.5f;
+        }
+
+        stepCoolDown -= Time.deltaTime;
+        // Only the owning player can trigger their own footsteps
+        if ((GetPlayerMovement() != Vector2.zero) && realMovementSpeed > 1.2f && controller.isGrounded && stepCoolDown < 0f)
+        {
+            if (footstepClips.Length > 0)
+            {
+                footstepSource.pitch = 1f + UnityEngine.Random.Range(-0.2f, 0.2f);
+                int index = UnityEngine.Random.Range(0, footstepClips.Length);
+                footstepSource.PlayOneShot(footstepClips[index], 0.9f);
+            }
+            stepCoolDown = stepRate;
+        }
+        
     }
 }

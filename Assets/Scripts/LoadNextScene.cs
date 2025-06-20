@@ -9,22 +9,24 @@ public class LoadNextScene : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Tutorial.Load();
-        if (Tutorial.Data.hasCompletedTutorial)
+        if (SteamClient.IsValid)
         {
-            StartCoroutine(LoadMainScene());
+            Tutorial.Load();
+            if (Tutorial.Data.hasCompletedTutorial)
+            {
+                StartCoroutine(LoadMainScene());
+            }
+            else SceneManager.LoadScene("Tutorial");
         }
-        else SceneManager.LoadScene("Tutorial");
+        else SceneManager.LoadScene("Error");
     }
 
     // Update is called once per frame
     IEnumerator LoadMainScene()
     {
         yield return new WaitUntil(() => NetworkManager.Singleton != null);
-        if (SteamClient.IsValid)
-        {
-            SceneManager.LoadScene("Lobby");
-        }
-        else SceneManager.LoadScene("Error");
+        
+        SceneManager.LoadScene("Lobby");
+        
     }
 }

@@ -9,6 +9,7 @@ public class TutorialRagdoll : MonoBehaviour
     private Rigidbody[] _ragdollRigidbodies;
 
     [SerializeField] private GameObject dizzy;
+    [SerializeField] private GameObject botName;
 
     void Awake()
     {
@@ -22,6 +23,7 @@ public class TutorialRagdoll : MonoBehaviour
         {
             rigidbody.isKinematic = false;
         }
+        botName.SetActive(false);
         EnableDizziness(5f);
     }
 

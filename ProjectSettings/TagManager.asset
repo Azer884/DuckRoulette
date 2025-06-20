@@ -11,6 +11,7 @@ TagManager:
   - Ice
   - TeamUp
   - TutoBot
+  - Doll
   layers:
   - Default
   - TransparentFX

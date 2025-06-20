@@ -6,6 +6,7 @@ public class TutorialStepController : MonoBehaviour
 {
     private int currentStep = 0;
     [SerializeField] private Color messageColor = Color.yellow;
+    [SerializeField] private AudioSource audioSource;
 
     private void Start()
     {
@@ -34,6 +35,13 @@ public class TutorialStepController : MonoBehaviour
 
     private void ShowStepMessage(int step)
     {
+        int randomIndex = Random.Range(0, 5);
+        if (randomIndex == 0)
+        {
+            audioSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
+            audioSource.Play();
+        }
+
         string msg = step switch
         {
             0 => "Move your mouse to look around.",
@@ -110,7 +118,7 @@ public class TutorialStepController : MonoBehaviour
     private void Step_Jumped()
     {
         Debug.Log("Step 3: Jumped");
-        AdvanceStep(3, 5);
+        AdvanceStep(3, 3);
     }
 
     private void Step_PickedUp()
@@ -128,14 +136,14 @@ public class TutorialStepController : MonoBehaviour
     private void Step_ShutDown()
     {
         Debug.Log("Step 6: Shut down");
-        AdvanceStep(6, 5);
+        AdvanceStep(6, 4);
         TutorialEnvironment.Instance.OpenDoor(2);
     }
 
     private void Step_Crouched()
     {
         Debug.Log("Step 7: Crouched");
-        AdvanceStep(7, 5);
+        AdvanceStep(7, 4);
     }
 
     private void Step_Slid()
@@ -143,6 +151,7 @@ public class TutorialStepController : MonoBehaviour
         Debug.Log("Step 8: Slid");
         AdvanceStep(8, 3);
         TutorialEnvironment.Instance.OpenDoor(3);
+        TutorialEnvironment.Instance.isTutoDollActive = true;
     }
 
     private void Step_SwitchedToGun()
@@ -154,7 +163,7 @@ public class TutorialStepController : MonoBehaviour
     private void Step_Reloaded()
     {
         Debug.Log("Step 10: Reloaded");
-        AdvanceStep(10, 8);
+        AdvanceStep(10, 7);
     }
 
     private void Step_Triggered()
@@ -166,21 +175,23 @@ public class TutorialStepController : MonoBehaviour
     private void Step_GunShot()
     {
         Debug.Log("Step 12: Shot the gun");
-        AdvanceStep(12, 15);
+        AdvanceStep(12, 10);
         TutorialEnvironment.Instance.OpenDoor(4);
         TutorialEnvironment.Instance.OpenDoor(5);
+        TutorialEnvironment.Instance.ActivateTutoBot();
     }
 
     private void Step_TeamUp()
     {
         Debug.Log("Step 13: Teamed up");
-        AdvanceStep(13, 5);
+        AdvanceStep(13, 3);
+        TutorialEnvironment.Instance.TriggerTutoBotMovement();
     }
 
     private void Step_Talk()
     {
         Debug.Log("Step 14: Talked");
-        AdvanceStep(14, 3);
+        AdvanceStep(14, 5);
     }
 
     private void Step_EndTeamUp()
@@ -197,9 +208,9 @@ public class TutorialStepController : MonoBehaviour
 
     private IEnumerator LoadLobbyAfterDelay()
     {
-        yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(5f);
         Cursor.lockState = CursorLockMode.None;
-        SceneManager.LoadScene("Lobby");
+        SceneManager.LoadScene("Loading");
     }
 
     private void OnDestroy()

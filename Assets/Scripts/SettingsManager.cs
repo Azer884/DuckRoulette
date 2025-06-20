@@ -14,6 +14,7 @@ public class SettingsManager : MonoBehaviour
     public static SettingsManager Instance { get; private set; }
 
     public AudioMixer audioMixer;
+    public bool startInavtive = true;
 
     void Start()
     {
@@ -30,6 +31,7 @@ public class SettingsManager : MonoBehaviour
         settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
         parser = new FileIniDataParser();
         LoadSettings();
+        
         gameObject.SetActive(false);
     }
 

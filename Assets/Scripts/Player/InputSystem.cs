@@ -6,7 +6,7 @@ public class InputSystem : MonoBehaviour
 {
     public InputActionAsset inputActions;
 
-    private void OnEnable() 
+    private void OnEnable()
     {
         inputActions.Disable();
         inputActions.Enable();
