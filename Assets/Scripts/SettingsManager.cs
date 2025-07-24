@@ -2,6 +2,7 @@ using System.IO;
 using IniParser;
 using IniParser.Model;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
@@ -31,8 +32,6 @@ public class SettingsManager : MonoBehaviour
         settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
         parser = new FileIniDataParser();
         LoadSettings();
-        
-        gameObject.SetActive(false);
     }
 
     public void LoadSettings()

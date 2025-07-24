@@ -3,7 +3,6 @@ using UnityEngine;
 public class Doll : MonoBehaviour
 {
     public Animator animator;
-    public AudioSource audioSource;
     public bool isAlive = true, shown;
     public void Hide()
     {
@@ -14,7 +13,7 @@ public class Doll : MonoBehaviour
     {
         animator.SetTrigger("Spawn");
         shown = true;
-        int randomDelay = Random.Range(1, 5);
+        int randomDelay = Random.Range(3, 5);
         StartCoroutine(HideAfterDelay(randomDelay));
     }
     private System.Collections.IEnumerator HideAfterDelay(int delay)

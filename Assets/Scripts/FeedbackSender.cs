@@ -47,8 +47,4 @@ public class FeedbackSender : MonoBehaviour
             SendStatsAndOpenForm();
         }
     }
-    private void OnDestroy()
-    {
-        SendStatsAndOpenForm();
-    }
 }

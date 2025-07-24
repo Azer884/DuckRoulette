@@ -75,7 +75,7 @@ public class TutorialEnvironment : MonoBehaviour
 
             if (eligibleDolls.Count > 0)
             {
-                int dollsToShow = Mathf.Min(Random.Range(1, 5), eligibleDolls.Count);
+                int dollsToShow = Mathf.Min(Random.Range(3, 9), eligibleDolls.Count);
                 List<Doll> shownThisBatch = new List<Doll>();
 
                 for (int i = 0; i < dollsToShow; i++)

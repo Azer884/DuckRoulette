@@ -35,8 +35,8 @@ public class TutorialStepController : MonoBehaviour
 
     private void ShowStepMessage(int step)
     {
-        int randomIndex = Random.Range(0, 5);
-        if (randomIndex == 0)
+        int randomIndex = Random.Range(0, 15);
+        if (randomIndex == 1)
         {
             audioSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
             audioSource.Play();

@@ -21,6 +21,7 @@ public class Shooting : NetworkBehaviour
     public NetworkVariable<bool> haveGun = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private Slap slapScript;
     public int shotCounter = 0, emptyShots;
+    [SerializeField] private GameObject vfxPrefab;
 
     public override void OnNetworkSpawn()
     {
@@ -135,13 +136,26 @@ public class Shooting : NetworkBehaviour
             //     shotCounter++;
             // }
 
-            isTriggered = false;
-            foreach (Animator animator in animators)
+            for (int i = 0; i < animators.Length - 1; i++)
             {
-                animator.SetBool("Triggered", isTriggered);
+                animators[i].Play("Shooting");
             }
+            StartCoroutine(Triggering());
             
             emptyShots++;
+        }
+    }
+    private System.Collections.IEnumerator Triggering()
+    {
+        // Wait until the "Shooting" animation has finished playing
+        while (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
+        {
+            yield return null;
+        }
+        isTriggered = false;
+        foreach (Animator animator in animators)
+        {
+            animator.SetBool("Triggered", isTriggered);
         }
     }
 
@@ -160,6 +174,11 @@ public class Shooting : NetworkBehaviour
         {
             bulletBehavior.initialVelocity.Value = direction;
         }
+
+        GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);
+        NetworkObject networkVfx = vfx.GetComponent<NetworkObject>();
+        networkVfx.Spawn(); // Or SpawnWithOwnership if needed
+        StartCoroutine(DestroyVfxAfterDelay(networkVfx, 1f));
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -190,5 +209,10 @@ public class Shooting : NetworkBehaviour
         fPHands.SwitchParent(state);
         slapScript.enabled = !state;
     }
-    
+
+    private System.Collections.IEnumerator DestroyVfxAfterDelay(NetworkObject netObj, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        netObj.Despawn();
+    }
 }

@@ -34,7 +34,6 @@ public class TutorialManager : MonoBehaviour
     public bool isCrouched;
 
     [SerializeField] private Animator[] animators;
-    [SerializeField] private Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
 
@@ -329,10 +328,6 @@ public class TutorialManager : MonoBehaviour
 
             animator.SetBool("HaveAGun", haveGun);
         }
-        handAnim.SetFloat("XVelocity", xVelocity);
-        handAnim.SetFloat("YVelocity", yVelocity);
-        handAnim.SetBool("IsGrounded", grounded);
-        handAnim.SetBool("IsSliding", isSliding);
     }
 
     private void DoCrouch()
@@ -372,7 +367,7 @@ public class TutorialManager : MonoBehaviour
     }
 
 
-    public GameObject bulletPrefab;
+    public GameObject bulletPrefab, vfxPrefab;
     private GameObject bullet;
     public Transform spawnPt;
     public Animator bulletAnimator;
@@ -427,7 +422,7 @@ public class TutorialManager : MonoBehaviour
                 OnTrigger?.Invoke();
             }
         }
-        if (animators[3].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
+        if (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
         {
             canShoot = false;
         }
@@ -450,10 +445,7 @@ public class TutorialManager : MonoBehaviour
 
                 if (!gunShot)
                 {
-                    gunShot = true;
-                    onlySlap = true;
-                    haveGun = false;
-                    SwitchParent(false);
+                    StartCoroutine(DisableGunWithDelay(2f));
                     OnGunShot?.Invoke();
                 }
                 Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -471,13 +463,35 @@ public class TutorialManager : MonoBehaviour
 
             }
             bulletPos++;
-
-            isTriggered = false;
-            foreach (Animator animator in animators)
+            for (int i = 0; i < animators.Length - 1; i++)
             {
-                animator.SetBool("Triggered", isTriggered);
+                animators[i].Play("Shooting");
             }
+            StartCoroutine(Triggering());
         }
+    }
+    private IEnumerator Triggering()
+    {
+        // Wait until the "Shooting" animation has finished playing
+        while (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
+        {
+            yield return null;
+        }
+        isTriggered = false;
+        foreach (Animator animator in animators)
+        {
+            animator.SetBool("Triggered", isTriggered);
+        }
+    }
+
+    private IEnumerator DisableGunWithDelay(float delay = 1f)
+    {
+        yield return new WaitForSeconds(delay);
+
+        gunShot = true;
+        onlySlap = true;
+        haveGun = false;
+        SwitchParent(false);
     }
     public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim)
     {
@@ -490,6 +504,8 @@ public class TutorialManager : MonoBehaviour
             rb.linearVelocity = direction * 15f;
         }
         Destroy(bullet, 5f);
+        GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);
+        Destroy(vfx, 1f);
     }
     public void SwitchParent(bool state)
     {

@@ -2951,4 +2951,18 @@ AnimationClip:
     flags: 0
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
-  m_Events: []
+  m_Events:
+  - time: 0
+    functionName: PlaySoundWithAnimation
+    data: 
+    objectReferenceParameter: {fileID: 8300000, guid: ec001663444a8e34ba169b9f392e62e7, type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
+  - time: 0.33333334
+    functionName: PlaySoundWithAnimation
+    data: 
+    objectReferenceParameter: {fileID: 8300000, guid: 14529797f80eb2741ab14d75ddee4d0e, type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0

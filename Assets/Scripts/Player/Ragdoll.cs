@@ -186,6 +186,7 @@ public class Ragdoll : NetworkBehaviour
         {
             animator.enabled = false;
         }
+        GetComponent<SFXHandler>().PainSound();
         shootingStates = shooting.enabled;
         movement.enabled = false;
         teamUp.enabled = false;

@@ -20,7 +20,7 @@ public class GameManager : NetworkBehaviour
 
     private NetworkVariable<int> alivePlayersCount = new(0);
     private Dictionary<ulong, bool> playerStates = new();
-    public  List<int> playersKills = new();
+    public List<int> playersKills = new();
     private int coinsToWin;
     private bool isGameEnded = false, hasRained = false;
     private List<(ulong, ulong)> teams = new();
@@ -58,13 +58,13 @@ public class GameManager : NetworkBehaviour
             playerStates[clientId] = true;
         }
         playersKills = new(new int[NetworkManager.Singleton.ConnectedClientsIds.Count]);
-        if(IsServer)
+        if (IsServer)
         {
             alivePlayersCount.Value = NetworkManager.Singleton.ConnectedClientsIds.Count;
             playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
             CheckPlayerGunScript();
         }
-        
+
         coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
 
     }
@@ -213,7 +213,7 @@ public class GameManager : NetworkBehaviour
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead : false);
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead: false);
             }
         }
     }
@@ -228,7 +228,7 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void UpdateStatsClientRpc()
     {
-        if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Stats>(out var stats))
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Stats>(out var stats))
         {
             stats.timeSurvived.Value = StatTracker.Instance.timeSurvived;
             stats.shotCounter.Value = stats.GetComponent<Shooting>().shotCounter;
@@ -246,7 +246,7 @@ public class GameManager : NetworkBehaviour
         PlayerSpawner.Instance.isStarted = false;
 
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
-        if(NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
+        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
         {
             pauseMenu.End();
             foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
@@ -272,7 +272,7 @@ public class GameManager : NetworkBehaviour
                 int coins = playersKills[(int)clientId] * 2 + 1;
                 if (clientId == winnerId)
                 {
-                    coins += coinsToWin; 
+                    coins += coinsToWin;
                 }
 
                 stat = currentPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
@@ -294,14 +294,14 @@ public class GameManager : NetworkBehaviour
                 //PlayerAccuracy
                 stat = currentPlayer.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
                 stat.text = "0%";
-                if(pauseMenu.GetComponent<Stats>().shotCounter.Value > 0)
+                if (pauseMenu.GetComponent<Stats>().shotCounter.Value > 0)
                 {
                     stat.text = (playersKills[(int)clientId] / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
                 }
 
                 //Luck
                 string luck = "0%";
-                if(pauseMenu.GetComponent<Stats>().emptyShots.Value > 0)
+                if (pauseMenu.GetComponent<Stats>().emptyShots.Value > 0)
                 {
                     luck = (pauseMenu.GetComponent<Stats>().shotCounter.Value / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
                 }
@@ -363,7 +363,7 @@ public class GameManager : NetworkBehaviour
         PlayerSpawner.Instance.isStarted = false;
         Cursor.lockState = CursorLockMode.Confined;
         SceneManager.LoadScene("Lobby");
-    
+
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.Shutdown();
@@ -407,7 +407,7 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
-            if(teamUp.isTeamedUp)
+            if (teamUp.isTeamedUp)
             {
                 return;
             }
@@ -423,7 +423,7 @@ public class GameManager : NetworkBehaviour
         {
             Send = new ClientRpcSendParams
             {
-                TargetClientIds = new List<ulong> { requesterId}
+                TargetClientIds = new List<ulong> { requesterId }
             }
         };
         bool isPerfectDapBool = isPerfectDap == 1;
@@ -432,7 +432,7 @@ public class GameManager : NetworkBehaviour
         teams.Add((requesterId, teamMateId));
         SendTeamUpResponseClientRpc(teamMateId, clientRpcParams);
     }
-    
+
     [ClientRpc]
     private void SendTeamUpResponseClientRpc(ulong teamMateId, ClientRpcParams clientRpcParams = default)
     {
