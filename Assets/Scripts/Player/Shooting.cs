@@ -9,11 +9,9 @@ public class Shooting : NetworkBehaviour
     public GameObject bulletPrefab;
     private GameObject bullet;
     public Transform spawnPt;
-    public Transform cam;
     private InputActionAsset inputActions;
     public Animator[] animators;
     public Animator bulletAnimator;
-    public NetworkVariable<bool> hasShot = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public bool canTrigger, canShoot, isTriggered;
     [SerializeField] private Transform targetAim;
     [SerializeField] private Hands fPHands;
@@ -37,16 +35,11 @@ public class Shooting : NetworkBehaviour
 
     private void OnEnable()
     {
-        hasShot.Value = false;
-
-        hasShot.OnValueChanged += OnHasShotChangedServerRpc;
-
         HandsState(true);
         haveGun.Value = true;
     }
     private void OnDisable()
     {
-        hasShot.OnValueChanged -= OnHasShotChangedServerRpc;
         
         HandsState(false);
         haveGun.Value = false;
@@ -120,7 +113,8 @@ public class Shooting : NetworkBehaviour
                     
                     shotCounter++;
                 }
-                hasShot.Value = true;
+                OnShotServerRpc();
+
             }
             // else
             // {
@@ -145,6 +139,15 @@ public class Shooting : NetworkBehaviour
             emptyShots++;
         }
     }
+    [ServerRpc]
+    private void OnShotServerRpc(ServerRpcParams rpcParams = default)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnClientShotChangedServerRpc(rpcParams.Receive.SenderClientId, true);
+        }
+    }
+
     private System.Collections.IEnumerator Triggering()
     {
         // Wait until the "Shooting" animation has finished playing
@@ -172,7 +175,7 @@ public class Shooting : NetworkBehaviour
 
         if (bullet.TryGetComponent(out BulletBehavior bulletBehavior))
         {
-            bulletBehavior.initialVelocity.Value = direction;
+            bulletBehavior.Init(direction); // Set bullet direction immediately
         }
 
         GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);
@@ -180,6 +183,7 @@ public class Shooting : NetworkBehaviour
         networkVfx.Spawn(); // Or SpawnWithOwnership if needed
         StartCoroutine(DestroyVfxAfterDelay(networkVfx, 1f));
     }
+
 
     [ServerRpc(RequireOwnership = false)]
     private void OnHasShotChangedServerRpc(bool oldValue, bool newValue)

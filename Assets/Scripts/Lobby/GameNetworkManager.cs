@@ -364,13 +364,12 @@ public class GameNetworkManager : MonoBehaviour
     }
     public void StartGame()
     {
-    
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 
-        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
-        NetworkTransmission.instance.StarGameFeeServerRpc();
+        LoadingManager.Instance.StartGame(sceneName);
     }
+
     
     #region MapSelection
     public void ChooseMap(int index)

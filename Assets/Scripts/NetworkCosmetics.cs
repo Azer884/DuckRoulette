@@ -56,6 +56,10 @@ public class NetworkCosmetics : NetworkBehaviour
         if (newValue == 0) return;
 
         GameObject mainItem = items[newValue - 1];
+        if(shadowitems.Length < newValue || shadowitems[newValue - 1] == null)
+        {
+            return;
+        }
         GameObject shadowItem = shadowitems[newValue - 1];
         
         ApplyShadowOnlyMode(shadowItem);

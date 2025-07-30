@@ -9,6 +9,6 @@ public class SettingsVisibility : MonoBehaviour
         settingsPanel.SetActive(true);
         settingsPanel.SetActive(false);
 
-        statsPanel.SetActive(true);
+        if (statsPanel != null) statsPanel.SetActive(true);
     }
 }

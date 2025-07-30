@@ -11,9 +11,12 @@ public class Rocks : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void OnCollisionEnter(Collision other)
     {
-        if (other.body.CompareTag("Player"))
+        if(other.body != null)
         {
-            GameManager.Instance.StunPlayerServerRpc(other.body.GetComponent<NetworkObject>().OwnerClientId);
+            if (other.body.CompareTag("Player"))
+            {
+                GameManager.Instance.StunPlayerServerRpc(other.body.GetComponent<NetworkObject>().OwnerClientId);
+            }
         }
         DestroyServerRpc(0);
         Destroy(gameObject);

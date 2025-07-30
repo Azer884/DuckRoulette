@@ -13711,6 +13711,7 @@ GameObject:
   - component: {fileID: 1276153728}
   - component: {fileID: 1276153727}
   - component: {fileID: 1276153731}
+  - component: {fileID: 1276153732}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -13830,6 +13831,20 @@ MonoBehaviour:
   - {fileID: 1899812547}
   - {fileID: 5881674212228472953}
   - {fileID: 1247109336812308403}
+--- !u!114 &1276153732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1276153726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a55ab8ee697c2f647b65a43565154908, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settingsPanel: {fileID: 1231256456}
+  statsPanel: {fileID: 0}
 --- !u!1 &1293686357
 GameObject:
   m_ObjectHideFlags: 0
@@ -24667,7 +24682,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Y
+  m_Text: Triangle
 --- !u!222 &2121157592
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26625,7 +26640,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press Start
+  m_Text: Press Options
 --- !u!222 &1417702907012230356
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -27814,7 +27829,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press Select
+  m_Text: Press Share
 --- !u!222 &3550634479618380687
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28067,6 +28082,10 @@ PrefabInstance:
     - target: {fileID: 1947537338097087, guid: 1b0b97bf434ec4247a1af426f045d008, type: 3}
       propertyPath: m_Name
       value: Grid
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947537338097087, guid: 1b0b97bf434ec4247a1af426f045d008, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4854648424565589305, guid: 1b0b97bf434ec4247a1af426f045d008, type: 3}
       propertyPath: m_Camera
@@ -28660,7 +28679,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press B
+  m_Text: Press Circle
 --- !u!1 &6016186320520596243
 GameObject:
   m_ObjectHideFlags: 0
@@ -30052,7 +30071,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Y
+  m_Text: Triangle
 --- !u!222 &8164774897928189217
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -59,6 +59,16 @@ public class TutorialManager : MonoBehaviour
     [SerializeField] private GameObject pauseMenu, crosshair;
     private bool isPaused = false;
 
+    [SerializeField] private float fallMultiplier = 2.5f;
+    [SerializeField] private float lowJumpMultiplier = 2f;
+    [SerializeField] private float coyoteTime = 0.2f;
+    [SerializeField] private float jumpBufferTime = 0.2f;
+
+    private float coyoteTimeCounter;
+    private float jumpBufferCounter;
+
+
+
     float mouseXSmooth = 0f;
 
     private void Awake()
@@ -191,14 +201,34 @@ public class TutorialManager : MonoBehaviour
     {
         grounded = controller.isGrounded;
 
-        // Handle gravity and grounded state
-        if (grounded && velocity.y < 0)
+        // === COYOTE TIME ===
+        if (grounded)
         {
-            velocity.y = -2f;
+            coyoteTimeCounter = coyoteTime;
+            if (velocity.y < 0)
+                velocity.y = -2f;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
         }
 
-        Vector2 movement = GetPlayerMovement();
-        if (moved && inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched)
+        // === JUMP BUFFERING ===
+        if (inputActions.FindAction("Jump").triggered)
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        // === INPUT MOVEMENT ===
+        Vector2 input = GetPlayerMovement();
+        Vector3 move = transform.right * input.x + transform.forward * input.y;
+
+        // Sprint logic
+        if (moved && inputActions.FindAction("Run").ReadValue<float>() > 0 && input.y > 0 && !isCrouched)
         {
             speedMultiplier = 2.0f;
             if (!sprinted)
@@ -211,7 +241,8 @@ public class TutorialManager : MonoBehaviour
         {
             speedMultiplier = 1.0f;
         }
-        if (movement.magnitude > 0.1f)
+
+        if (input.magnitude > 0.1f)
         {
             if (!moved)
             {
@@ -220,6 +251,7 @@ public class TutorialManager : MonoBehaviour
             }
         }
 
+        // === MOVEMENT LOGIC (air vs ground) ===
         if (isSliding && isOnIce)
         {
             HandleSliding();
@@ -227,27 +259,31 @@ public class TutorialManager : MonoBehaviour
         else
         {
             EndSliding();
-            Vector3 move = transform.right * movement.x + transform.forward * movement.y;
 
             if (isOnIce)
             {
-                // Ice sliding with movement control
                 velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
                 velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
             }
             else
             {
-                // Regular movement
-                velocity.x = movementSpeed * speedMultiplier * move.x;
-                velocity.z = movementSpeed * speedMultiplier * move.z;
+                float airControl = grounded ? 1f : 0.3f; // limit air movement
+
+                Vector3 targetVelocity = move * movementSpeed * speedMultiplier;
+                velocity.x = Mathf.Lerp(velocity.x, targetVelocity.x, Time.deltaTime * 10f * airControl);
+                velocity.z = Mathf.Lerp(velocity.z, targetVelocity.z, Time.deltaTime * 10f * airControl);
             }
         }
 
-        // Handle jumping
-        if (sprinted && grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
+        // === JUMP ===
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0 && !isCrouched && !isSliding)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpBufferCounter = 0f;
+            coyoteTimeCounter = 0f;
+
             jumpImpulseSource.GenerateImpulse();
+
             if (!jumped)
             {
                 jumped = true;
@@ -260,15 +296,26 @@ public class TutorialManager : MonoBehaviour
             }
         }
 
-        // Apply gravity
-        velocity.y += gravity * Time.deltaTime;
+        // === CUSTOM GRAVITY ===
+
+        if (velocity.y < 0)
+        {
+            velocity.y += gravity * fallMultiplier * Time.deltaTime;
+        }
+        else
+        {
+            velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
+        }
+
         controller.Move(velocity * Time.deltaTime);
 
-        // Update animator
-        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
-        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
+        // === ANIMATOR ===
+        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? input.x : 0, 10f * Time.deltaTime);
+        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (input.y * speedMultiplier) : 0, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
     }
+
+
 
     private void HandleSliding()
     {
@@ -376,7 +423,7 @@ public class TutorialManager : MonoBehaviour
     public bool canTrigger, canShoot, isTriggered, isReloaded;
     private bool haveGun = false, onlySlap = false;
     private bool canSwitch = true;
-    private int bulletPos = 0;
+    private int bulletPos = 0, bulletSpeed = 30;
 
 
     private void Reload()
@@ -501,7 +548,7 @@ public class TutorialManager : MonoBehaviour
 
         if (bullet.TryGetComponent(out Rigidbody rb))
         {
-            rb.linearVelocity = direction * 15f;
+            rb.linearVelocity = direction * bulletSpeed;
         }
         Destroy(bullet, 5f);
         GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);

@@ -6,29 +6,23 @@ using UnityEngine;
 public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
-    private float speed = 15f;
-    public NetworkVariable<Vector3> initialVelocity;
+    public float speed = 15f;
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.isKinematic = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        
+
         DestroyServerRpc(5);
-        initialVelocity.OnValueChanged += MoveBullet;
     }
-    private void MoveBullet(Vector3 previousValue, Vector3 newValue) 
+
+    public void Init(Vector3 direction)
     {
-        transform.rotation = Quaternion.LookRotation(newValue);
-        rb.linearVelocity = newValue * speed;
-    }
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkDespawn();
-        initialVelocity.OnValueChanged -= MoveBullet;
+        transform.rotation = Quaternion.LookRotation(direction);
+        rb.linearVelocity = direction * speed;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -44,3 +38,4 @@ public class BulletBehavior : NetworkBehaviour
         Destroy(gameObject);
     }
 }
+

@@ -17750,7 +17750,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press RT
+  m_Text: Press R2
 --- !u!224 &1186688657970932105
 RectTransform:
   m_ObjectHideFlags: 0
@@ -20904,9 +20904,9 @@ RectTransform:
   - {fileID: 4606647780959885355}
   m_Father: {fileID: 1154168380585266694}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 204.85999, y: -207.51501}
   m_SizeDelta: {x: 293.74, y: 80.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1706589736573007375
@@ -22558,7 +22558,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: LT
+  m_Text: L2
 --- !u!1 &2103271838948683843
 GameObject:
   m_ObjectHideFlags: 0
@@ -23607,9 +23607,9 @@ RectTransform:
   - {fileID: 5686388939717771036}
   m_Father: {fileID: 1154168380585266694}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 204.85999, y: -446.075}
   m_SizeDelta: {x: 293.74, y: 80.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2336676251451682735
@@ -24827,7 +24827,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: A
+  m_Text: Cross
 --- !u!4 &2656297504444770250
 Transform:
   m_ObjectHideFlags: 0
@@ -30164,7 +30164,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: D-Pad/Down
+  m_Text: D-Pad Down
 --- !u!114 &3762045720191252237
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31076,7 +31076,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: RT
+  m_Text: R2
 --- !u!4 &3917718061086929658
 Transform:
   m_ObjectHideFlags: 0
@@ -33356,7 +33356,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: B
+  m_Text: Circle
 --- !u!224 &4368124941070272226
 RectTransform:
   m_ObjectHideFlags: 0
@@ -34274,7 +34274,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press RT
+  m_Text: Press R2
 --- !u!114 &4520970296165236313
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35368,7 +35368,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: RB
+  m_Text: R1
 --- !u!4 &4661843343514563467
 Transform:
   m_ObjectHideFlags: 0
@@ -35463,7 +35463,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: RT
+  m_Text: R2
 --- !u!224 &4674818091970340066
 RectTransform:
   m_ObjectHideFlags: 0
@@ -36891,9 +36891,9 @@ RectTransform:
   - {fileID: 3851874096893843089}
   m_Father: {fileID: 1154168380585266694}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 204.85999, y: -88.235}
   m_SizeDelta: {x: 293.74, y: 80.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4961466591129816911
@@ -40679,9 +40679,9 @@ RectTransform:
   - {fileID: 4205564752288295959}
   m_Father: {fileID: 1154168380585266694}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 204.85999, y: -565.35504}
   m_SizeDelta: {x: 293.74, y: 80.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5734924856562370986
@@ -43241,9 +43241,9 @@ RectTransform:
   - {fileID: 5986369322301216624}
   m_Father: {fileID: 1154168380585266694}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 204.85999, y: -326.79504}
   m_SizeDelta: {x: 293.74, y: 80.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6249684229937986666
@@ -44828,7 +44828,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &6630186266025979708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50164,7 +50164,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: LB
+  m_Text: L1
 --- !u!4 &7635656496705429771
 Transform:
   m_ObjectHideFlags: 0
@@ -50348,7 +50348,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: RT
+  m_Text: R2
 --- !u!222 &7680910148487042282
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -54832,7 +54832,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: LB
+  m_Text: L1
 --- !u!114 &8597722697920178384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58132,13 +58132,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72c7953cb381c1e4a9bd478ebb6bf1c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  looked: 0
-  moved: 0
-  sprinted: 0
-  jumped: 0
-  pickedUp: 0
-  thrown: 0
-  shutDown: 0
+  looked: 1
+  moved: 1
+  sprinted: 1
+  jumped: 1
+  pickedUp: 1
+  thrown: 1
+  shutDown: 1
   crouched: 0
   slid: 0
   switchedToGun: 0
@@ -58153,10 +58153,10 @@ MonoBehaviour:
   camHolder: {fileID: 7573274269000740039}
   movementSpeed: 3
   lookSensitivity: 5
-  gravity: -9.81
+  gravity: -12
   speedMultiplier: 1
-  jumpHeight: 1.5
-  initHeight: 0
+  jumpHeight: 2
+  initHeight: 2.94
   crouchHeight: 2.5
   isCrouched: 0
   animators:
@@ -58170,10 +58170,10 @@ MonoBehaviour:
   legs: {fileID: 5890130779423857946}
   FPShadow: {fileID: 3007406928978614372}
   Hands: {fileID: 5496963465276041828}
-  realMovementSpeed: 0
+  realMovementSpeed: NaN
   jumpImpulseSource: {fileID: 7136494256649813401}
   iceFriction: 0.7
-  slidingSpeedMultiplier: 2
+  slidingSpeedMultiplier: 2.5
   slidingFriction: 0.95
   slidingStopThreshold: 0.05
   slidingHeight: 1.5
@@ -58181,6 +58181,10 @@ MonoBehaviour:
   rig: {fileID: 987856351302393156}
   pauseMenu: {fileID: 6628175926800880483}
   crosshair: {fileID: 1590375514}
+  fallMultiplier: 2.5
+  lowJumpMultiplier: 1.7
+  coyoteTime: 0.2
+  jumpBufferTime: 0.2
   bulletPrefab: {fileID: 6737399816244376482, guid: 5a997dede9a67b2479a8d0b92064b7f0, type: 3}
   vfxPrefab: {fileID: 5277833064454356266, guid: 8c73d6cd65ce64749aaff02b108e6dd5, type: 3}
   spawnPt: {fileID: 6379040416006691213}
@@ -58216,7 +58220,7 @@ MonoBehaviour:
   bumBoxPickUpPosition: {fileID: 6107794117054502370}
   pickedUpObject: {fileID: 0}
   stepRate: 0.5
-  stepCoolDown: 0
+  stepCoolDown: -11.433733
   footstepSource: {fileID: 696230871}
   footstepClips:
   - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}

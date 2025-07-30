@@ -170,6 +170,12 @@ public class Ragdoll : NetworkBehaviour
             shooting.enabled = false;
             slap.enabled = true;
         }
+        _animator.Update(0f);
+        foreach (Animator animator in otherAnimators)
+        {
+            animator.Update(0f);
+        }
+
 
     }
 

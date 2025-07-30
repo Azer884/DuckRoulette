@@ -3684,9 +3684,9 @@ MonoBehaviour:
   cam: {fileID: 8813567206117873541}
   movementSpeed: 3
   lookSensitivity: 5
-  gravity: -9.81
+  gravity: -12
   speedMultiplier: 1
-  jumpHeight: 1.5
+  jumpHeight: 2
   initHeight: 0
   crouchHeight: 2.5
   isCrouched: 0
@@ -3712,6 +3712,10 @@ MonoBehaviour:
   slidingHeight: 1.5
   slidingCam: {fileID: 2003941008710050662}
   rig: {fileID: 1053368495529338142}
+  fallMultiplier: 2.5
+  lowJumpMultiplier: 1.7
+  coyoteTime: 0.2
+  jumpBufferTime: 0.2
 --- !u!114 &5993872244831146990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8791,6 +8795,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settingsPanel: {fileID: 6628175925985741812}
+  statsPanel: {fileID: 1095700798805411578}
 --- !u!1 &5800702657969833947
 GameObject:
   m_ObjectHideFlags: 0

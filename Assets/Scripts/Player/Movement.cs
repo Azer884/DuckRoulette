@@ -48,13 +48,22 @@ public class Movement : NetworkBehaviour
     
     private bool isOnIce = false; // Check if the player is on ice
     private bool isSliding = false;
-    [SerializeField] private float iceFriction = 0.98f; // Ice friction (less than 1 for sliding)
-    [SerializeField] private float slidingSpeedMultiplier = 7f; // Speed boost during tobogganing
-    [SerializeField] private float slidingFriction = 0.95f; // Friction for sliding deceleration
-    [SerializeField] private float slidingStopThreshold = 0.1f; // Minimum velocity to stop sliding
+    [SerializeField] private float slidingFriction = 0.95f;    
+    [SerializeField] private float iceFriction = 0.90f;        
+    [SerializeField] private float slidingSpeedMultiplier = 4f;
+    [SerializeField] private float slidingStopThreshold = 0.5f;
+
     [SerializeField] private float slidingHeight = 0.5f;
     [SerializeField] private GameObject slidingCam;
     [SerializeField] private Rig rig;
+
+    [SerializeField] private float fallMultiplier = 2.5f;
+    [SerializeField] private float lowJumpMultiplier = 2f;
+    [SerializeField] private float coyoteTime = 0.2f;
+    [SerializeField] private float jumpBufferTime = 0.2f;
+
+    private float coyoteTimeCounter;
+    private float jumpBufferCounter;
 
     float mouseXSmooth = 0f;
 
@@ -147,15 +156,43 @@ public class Movement : NetworkBehaviour
     {
         grounded = controller.isGrounded;
 
-        // Handle gravity and grounded state
-        if (grounded && velocity.y < 0)
+        // === COYOTE TIME ===
+        if (grounded)
         {
-            velocity.y = -2f;
+            coyoteTimeCounter = coyoteTime;
+            if (velocity.y < 0)
+                velocity.y = -2f;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
         }
 
-        Vector2 movement = GetPlayerMovement();
-        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched ? 2.0f : 1.0f;
+        // === JUMP BUFFERING ===
+        if (inputActions.FindAction("Jump").triggered)
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
 
+        // === INPUT MOVEMENT ===
+        Vector2 input = GetPlayerMovement();
+        Vector3 move = transform.right * input.x + transform.forward * input.y;
+
+        // Sprint logic
+        if (inputActions.FindAction("Run").ReadValue<float>() > 0 && input.y > 0 && !isCrouched)
+        {
+            speedMultiplier = 2.0f;
+        }
+        else
+        {
+            speedMultiplier = 1.0f;
+        }
+
+        // === MOVEMENT LOGIC (air vs ground) ===
         if (isSliding && isOnIce)
         {
             HandleSliding();
@@ -163,41 +200,52 @@ public class Movement : NetworkBehaviour
         else
         {
             EndSliding();
-            Vector3 move = transform.right * movement.x + transform.forward * movement.y;
 
             if (isOnIce)
             {
-                // Ice sliding with movement control
                 velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
                 velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
             }
             else
             {
-                // Regular movement
-                velocity.x = movementSpeed * speedMultiplier * move.x;
-                velocity.z = movementSpeed * speedMultiplier * move.z;
+                float airControl = grounded ? 1f : 0.3f; // limit air movement
+
+                Vector3 targetVelocity = move * movementSpeed * speedMultiplier;
+                velocity.x = Mathf.Lerp(velocity.x, targetVelocity.x, Time.deltaTime * 10f * airControl);
+                velocity.z = Mathf.Lerp(velocity.z, targetVelocity.z, Time.deltaTime * 10f * airControl);
             }
         }
 
-        // Handle jumping
-        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
+        // === JUMP ===
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0 && !isCrouched && !isSliding)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            jumpImpulseSource.GenerateImpulse();
+            jumpBufferCounter = 0f;
+            coyoteTimeCounter = 0f;
 
+            jumpImpulseSource.GenerateImpulse();
             if (isOnIce && !isSliding)
             {
                 StartSliding();
             }
         }
 
-        // Apply gravity
-        velocity.y += gravity * Time.deltaTime;
+        // === CUSTOM GRAVITY ===
+
+        if (velocity.y < 0)
+        {
+            velocity.y += gravity * fallMultiplier * Time.deltaTime;
+        }
+        else
+        {
+            velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
+        }
+
         controller.Move(velocity * Time.deltaTime);
 
-        // Update animator
-        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
-        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
+        // === ANIMATOR ===
+        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? input.x : 0, 10f * Time.deltaTime);
+        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (input.y * speedMultiplier) : 0, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
     }
 
@@ -205,19 +253,43 @@ public class Movement : NetworkBehaviour
     {
         if (velocity.y <= 0.5f)
         {
-            if (velocity.x < slidingStopThreshold && velocity.z < slidingStopThreshold)
+            Vector2 input = GetPlayerMovement();
+            Vector3 inputDir = transform.right * input.x + transform.forward * input.y;
+            inputDir.y = 0;
+
+            Vector2 flatVel = new Vector2(velocity.x, velocity.z);
+            float flatSpeed = flatVel.magnitude;
+
+            // === STRONG ACCELERATION on input ===
+            if (inputDir.magnitude > 0.1f)
+            {
+                Vector3 target = inputDir.normalized * movementSpeed * slidingSpeedMultiplier;
+
+                float accelerationStrength = 20f; // Stronger = faster acceleration
+                velocity.x = Mathf.MoveTowards(velocity.x, target.x, accelerationStrength * Time.deltaTime);
+                velocity.z = Mathf.MoveTowards(velocity.z, target.z, accelerationStrength * Time.deltaTime);
+            }
+            else
+            {
+                // === NATURAL DECELERATION when no input ===
+                float decel = 0.985f; // Closer to 1 = slower deceleration
+                velocity.x *= decel;
+                velocity.z *= decel;
+            }
+
+            // === STOP SLIDING when speed too low ===
+            if (flatSpeed < slidingStopThreshold)
             {
                 EndSliding();
                 return;
             }
-            // Decelerate sliding
-            velocity.x *= slidingFriction * slidingSpeedMultiplier;
-            velocity.z *= slidingFriction * slidingSpeedMultiplier;
-            rig.weight = Mathf.Lerp(rig.weight, 0.1f, Time.deltaTime * 5f);
 
-            slidingSpeedMultiplier = 1f;
+            rig.weight = Mathf.Lerp(rig.weight, 0.1f, Time.deltaTime * 5f);
         }
     }
+
+
+
     private void StartSliding()
     {
         isSliding = true;
@@ -229,6 +301,7 @@ public class Movement : NetworkBehaviour
         GetComponent<Shooting>().enabled = false;
         slidingCam.SetActive(true);
     }
+
     private void EndSliding()
     {
         isSliding = false;
