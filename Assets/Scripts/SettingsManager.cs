@@ -32,6 +32,7 @@ public class SettingsManager : MonoBehaviour
         settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
         parser = new FileIniDataParser();
         LoadSettings();
+        gameObject.SetActive(!startInavtive);
     }
 
     public void LoadSettings()

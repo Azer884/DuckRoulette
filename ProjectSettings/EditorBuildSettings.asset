@@ -24,6 +24,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Tutorial.unity
     guid: 5d9442db5aa4159429bde029b2685f20
   m_configObjects:
-    com.unity.input.settings: {fileID: 11400000, guid: 982d1464a9a22104085e4bd7e6d10d50, type: 2}
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
+    com.unity.input.settings: {fileID: 11400000, guid: 3ba9bfd546597924388579a2da8b92fd, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: ce89cfeba77339b439bdc3620159e66a, type: 3}
   m_UseUCBPForAssetBundles: 0
