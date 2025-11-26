@@ -5,124 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8e3cb98b-6c1f-4c15-8eaa-884e912b130a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.vscode/extensions.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Gun/Gun.controller" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Gun/Gun.controller" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Gun/GunReload.anim" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Gun/GunReload.anim" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Gun/GunShot.anim" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Gun/GunShot.anim" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Player/1stP/Shooting.anim" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Player/1stP/Shooting.anim" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Player/3rdP/PlayerController.controller" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Player/3rdP/PlayerController.controller" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Player/Idle/Idle.controller" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Player/Idle/Idle.controller" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Assets.sln.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 1.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 2.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 3.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 3.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 4.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material 4.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/FlexibleCelShader-SRP-main/Urp/Shaders/New Material.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Assets/Editor/CFXR_MaterialInspector.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Assets/Editor/CFXR_MaterialInspector.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR3 Hit Fire B (Air).prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR3 Hit Fire B (Air).prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/CFXR Demo Ground URP.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/CFXR Demo Ground URP.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Arrow R.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Arrow R.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Arrow.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Arrow.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Bloom H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Bloom H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Bloom.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Bloom.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Camera H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Camera H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Camera.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Camera.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn CameraShake H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn CameraShake H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn CameraShake.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn CameraShake.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Ground H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Ground H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Ground.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Ground.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Lights H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Lights H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Lights.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn Lights.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn SlowMo H.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn SlowMo H.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn SlowMo.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/Demo Assets/UI/CFXR Demo Btn SlowMo.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Body.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Body.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Cape.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Cape.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Cosmetics/Crown.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Cosmetics/Crown.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Gun/Body+Head.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Gun/Body+Head.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Gun/Wheel+Trigger.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Gun/Wheel+Trigger.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Outline/FriendOutline.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Outline/FriendOutline.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Player/Beak.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Player/Beak.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Player/Body.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Player/Body.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Player/Legs.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Player/Legs.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/Terrain/Sheet.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/Terrain/Sheet.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Materials/coffee/Glass.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/coffee/Glass.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Models/MapAlpha1.fbx" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Models/MapAlpha1.fbx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Music/hap.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Music/hap.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/New Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Material.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Ball.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Ball.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Bullet.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Bullet.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Character.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Character.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Hail.prefab.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Hail.prefab.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/AudioMixer.mixer" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/AudioMixer.mixer" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/RunSFX.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/RunSFX.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/Slap.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/Slap.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/WalkSFX.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/WalkSFX.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/WalkSFX1.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/WalkSFX1.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/WalkSFX2.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/WalkSFX2.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/bad dap.mp3.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/bad dap.mp3.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/SFX/perrfect dap.wav.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SFX/perrfect dap.wav.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Blue.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Blue.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Cameron_Enemy_Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Cameron_Enemy_Material.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Cameron_Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Cameron_Material.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Checkerboard Big Squares.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Checkerboard Big Squares.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Checkerboard.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Checkerboard.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/DarkStripes.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/DarkStripes.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GlowingBlue.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GlowingBlue.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GlowingGold.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GlowingGold.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Grey.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Grey.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GreyTransparent.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/GreyTransparent.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Red.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/Red.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/ShinyDarkBlue.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Materials/ShinyDarkBlue.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Textures/CircleSprite.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Samples/Cinemachine/3.1.1/Shared Assets/Textures/CircleSprite.png.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Error.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Error.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Rock.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Rock.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Loading.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Loading.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Lobby.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Lobby.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/test.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/test.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/BulletBehaivor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/BulletBehaivor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/GameManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GameManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/InputSys/Inputs.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/InputSys/Inputs.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/LoadNextScene.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/LoadNextScene.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Lobby/GameNetworkManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Lobby/GameNetworkManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/NetworkCosmetics.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/NetworkCosmetics.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/PauseMenu.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/PauseMenu.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/PingManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/PingManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Death.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Death.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/DeathTrigger.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/DeathTrigger.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/InputSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/InputSystem.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Shooting.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Shooting.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Slap.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Slap.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/TeamUp.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/TeamUp.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/VoiceChat.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/VoiceChat.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/PlayersManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/PlayersManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/RebindSaveLoad.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/RebindSaveLoad.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Build Profiles/FullGame.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Build Profiles/FullGame.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/Build Profiles/Shorts.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/Build Profiles/Shorts.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/URP-Balanced.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/URP-Balanced.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/TextMesh Pro/Resources/Fonts &amp; Materials/LiberationSans SDF - Fallback.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/UniversalRenderPipelineGlobalSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/UniversalRenderPipelineGlobalSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/lambert2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/lambert2.mat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ShaderGraphSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ShaderGraphSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/URPProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/URPProjectSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/VirtualProjectsConfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/VirtualProjectsConfig.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,35 +21,36 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/Assets/Scripts/LoadScene7.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ee16c2cb688d4766af955c0ec92acd90573638/f9/b0edd0f6/IEnumerator.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="35W6Alq2JfKNOD9hmMx3An4qjxl" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.sourceCode.C#",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.sourceCode.C#&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\6000.2.10f1\Editor\Unity.exe" />
@@ -227,6 +116,8 @@
       <option name="presentableId" value="Default" />
       <updated>1763213339298</updated>
       <workItem from="1763213343622" duration="5617000" />
+      <workItem from="1764098024513" duration="386000" />
+      <workItem from="1764102074551" duration="4367000" />
     </task>
     <servers />
   </component>

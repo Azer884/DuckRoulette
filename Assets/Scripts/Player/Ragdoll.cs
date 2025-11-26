@@ -120,86 +120,85 @@ public class Ragdoll : NetworkBehaviour
     public void TriggerRagdoll(bool isDead = false)
     {
         EnableRagdoll();
+
         if (!isDead)
         {
             _timeToWakeUp = Random.Range(3, 6);
             _currentState = PlayerState.Ragdoll;
             EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2);
         }
-        else
-        {
-            movement.enabled = false;
-            slap.enabled = false;
-            shooting.enabled = false;
-            teamUp.enabled = false;
-            cam.SetActive(false);
-            hands.SetActive(false);
-            foots.SetActive(false);
-            shadow.SetActive(false);
-
-            DisableServerRpc(OwnerClientId);
-
-        }
     }
+
 
     private void DisableRagdoll()
     {
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
-        {
             rigidbody.isKinematic = true;
-        }
 
         _animator.enabled = true;
         foreach (Animator animator in otherAnimators)
-        {
             animator.enabled = true;
-        }
-        movement.enabled = true;
-        teamUp.enabled = true;
-        cam.SetActive(true);
-        foots.SetActive(true);
-        hands.SetActive(true);
-        shadow.SetActive(true);
-        _characterController.enabled = true;
-        if (shootingStates && !shooting.enabled)
-        {
-            shooting.enabled = true;
-        }
-        else if (!shootingStates)
-        {
-            shooting.enabled = false;
-            slap.enabled = true;
-        }
 
+        SetVisualsEnabled(true);
+        SetScriptsEnabled(true);
     }
+
 
     public void EnableRagdoll()
     {
-
         foreach (Rigidbody rigidbody in _ragdollRigidbodies)
-        {
             rigidbody.isKinematic = false;
-        }
 
         _animator.enabled = false;
         foreach (Animator animator in otherAnimators)
-        {
             animator.enabled = false;
-        }
+
         GetComponent<SFXHandler>().PainSound();
+
         shootingStates = shooting.enabled;
-        movement.enabled = false;
-        teamUp.enabled = false;
-        slap.enabled = false;
-        shooting.enabled = false;
-        cam.SetActive(false);
-        hands.SetActive(false);
-        foots.SetActive(false);
-        shadow.SetActive(false);
+
+        SetScriptsEnabled(false);
+        SetVisualsEnabled(false);
+
         _characterController.enabled = false;
 
-        if(RebindSaveLoad.Instance != null) RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
+        if (RebindSaveLoad.Instance != null)
+            RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
     }
+
+    public void SetScriptsEnabled(bool state)
+    {
+        movement.enabled = state;
+        teamUp.enabled = state;
+
+        // Shooting/slap logic
+        if (state)
+        {
+            if (shootingStates)
+                shooting.enabled = true;
+            else
+            {
+                shooting.enabled = false;
+                slap.enabled = true;
+            }
+        }
+        else
+        {
+            slap.enabled = false;
+            shooting.enabled = false;
+        }
+        
+        EnableServerRpc(OwnerClientId, state);
+    }
+
+    public void SetVisualsEnabled(bool state)
+    {
+        cam.SetActive(state);
+        hands.SetActive(state);
+        foots.SetActive(state);
+        shadow.SetActive(state);
+    }
+
 
     private void RagdollBehaviour()
     {
@@ -292,18 +291,18 @@ public class Ragdoll : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void DisableServerRpc(ulong clientId)
+    private void EnableServerRpc(ulong clientId, bool state)
     {
-        DisableClientRpc(clientId);
+        EnableClientRpc(clientId, state);
     }
 
     [ClientRpc]
-    private void DisableClientRpc(ulong clientId)
+    private void EnableClientRpc(ulong clientId, bool state)
     {
         if (OwnerClientId == clientId)
         {
-            _characterController.enabled = false;
-            userName.userName.gameObject.SetActive(false);
+            _characterController.enabled = state;
+            userName.userName.gameObject.SetActive(state);
         }
     }
 
