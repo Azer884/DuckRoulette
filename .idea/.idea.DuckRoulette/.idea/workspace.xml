@@ -6,11 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="8e3cb98b-6c1f-4c15-8eaa-884e912b130a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Rock.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Rock.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Hide.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Hide.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Interact.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Interact.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SettingsVisibility.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SettingsVisibility.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +24,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ee16c2cb688d4766af955c0ec92acd90573638/f9/b0edd0f6/IEnumerator.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.netcode.gameobjects@f2477a6c90fe/Runtime/Messaging/Messages/RpcMessages.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
@@ -118,6 +120,7 @@
       <workItem from="1763213343622" duration="5617000" />
       <workItem from="1764098024513" duration="386000" />
       <workItem from="1764102074551" duration="4367000" />
+      <workItem from="1764159613890" duration="7385000" />
     </task>
     <servers />
   </component>

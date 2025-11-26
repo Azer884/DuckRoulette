@@ -14,9 +14,8 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     public void Interact(ulong clientId)
     {
         if (IsHeld) return;
+        
         HideServerRpc(clientId);
-        
-        
     }
 
     public void Drop()
@@ -26,7 +25,7 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         ExitServerRpc((ulong)holderId);
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void HideServerRpc(ulong clientId)
     {
         HideClientRpc(clientId);
@@ -38,16 +37,16 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         IsHeld = true;
         holderId = (int)clientId;
 
-        if (OwnerClientId == clientId)
+        if (NetworkManager.Singleton.LocalClientId == clientId)
         {
             GameObject player = NetworkManager.Singleton.LocalClient.PlayerObject.gameObject;
             
-            PlayHidingAnimation(player);
+            Hide(player);
             StartCountDown();
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void ExitServerRpc(ulong clientId)
     {
         ExitClientRpc(clientId);
@@ -56,21 +55,20 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     [ClientRpc]
     private void ExitClientRpc(ulong clientId)
     {
-        if (OwnerClientId == clientId)
+        if (NetworkManager.Singleton.LocalClientId == clientId)
         {
             GameObject player = NetworkManager.Singleton.LocalClient.PlayerObject.gameObject;
             
-            PlayExitAnimation(player);
+            Exit(player);
         }
         
         IsHeld = false;
         holderId = -1;
     }
 
-    private void PlayHidingAnimation(GameObject player)
+    private void Hide(GameObject player)
     {
         //Animation logic
-        leavingSpot.position = player.transform.position;
         player.transform.position = hidingSpot.position;
         
         Ragdoll ragdoll = player.GetComponent<Ragdoll>();
@@ -79,7 +77,7 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         ragdoll.SetVisualsEnabled(false);
     }
     
-    private void PlayExitAnimation(GameObject player)
+    private void Exit(GameObject player)
     {
         //Animation logic
         player.transform.position = leavingSpot.position;

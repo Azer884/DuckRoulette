@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class SettingsVisibility : MonoBehaviour
+public class SettingsVisibility : NetworkBehaviour
 {
     [SerializeField] private GameObject settingsPanel, statsPanel;
     // Awake is called when the script instance is being loaded
-    void Awake()
+    public override void OnNetworkSpawn()
     {
         settingsPanel.SetActive(true);
         settingsPanel.SetActive(false);

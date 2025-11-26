@@ -17,38 +17,51 @@ public class Interact : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out RaycastHit hit, maxDistance, pickUpLayerMask))
+        if (pickedUpObject != null && Input.GetKeyDown(KeyCode.E))
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            DropObject();
+            return;
+        }
+
+        // Raycast for interactions
+        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward,
+                out RaycastHit hit, maxDistance, pickUpLayerMask))
+        {
+            // Try pickup
+            if (Input.GetKeyDown(KeyCode.E) && pickedUpObject == null)
             {
-                if (pickedUpObject == null)
-                {
-                    if (shooting.enabled) return;
-                    
-                    PickUpObject(hit.collider);
-                }
+                if (shooting.enabled) return;
+                PickUpObject(hit.collider);
             }
 
+            // Try mute
             if (Input.GetKeyDown(KeyCode.F))
             {
                 TryToMute(hit.transform);
             }
         }
 
-        else if (pickedUpObject != null)
+        // Move object you are holding
+        if (pickedUpObject != null)
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            var interact = pickedUpObject.GetComponent<IInteractable>();
+
+            if (interact.IsPickable)
             {
-                DropObject();
+                MoveObjectServerRpc(
+                    pickedUpObject.GetComponent<NetworkObject>().NetworkObjectId,
+                    bumBoxPickUpPosition.position,
+                    bumBoxPickUpPosition.rotation
+                );
+
+                fakeBox.localScale = pickedUpObject.localScale;
+                fakeboxShadow.localScale = pickedUpObject.localScale;
             }
+
             if (Input.GetKeyDown(KeyCode.F))
             {
                 TryToMute(pickedUpObject);
             }
-
-            MoveObjectServerRpc(pickedUpObject.GetComponent<NetworkObject>().NetworkObjectId, bumBoxPickUpPosition.position, bumBoxPickUpPosition.rotation);
-            fakeBox.localScale = pickedUpObject.localScale;
-            fakeboxShadow.localScale = pickedUpObject.localScale;
         }
     }
 
@@ -57,10 +70,10 @@ public class Interact : NetworkBehaviour
         if(collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
         {
             interactable.Interact(OwnerClientId);
+            pickedUpObject = collider.transform;
 
             if (interactable.IsPickable)
             {
-                pickedUpObject = collider.transform;
                 Movement.ChangeLayerRecursively(pickedUpObject.gameObject, 2);
             }
         }
@@ -69,12 +82,13 @@ public class Interact : NetworkBehaviour
     private void DropObject()
     {
         pickedUpObject.GetComponent<IInteractable>().Drop();
+        bool isPickable = pickedUpObject.GetComponent<IInteractable>().IsPickable;
 
-        if (pickedUpObject.GetComponent<IInteractable>().IsPickable)
+        if (isPickable)
         {
             Movement.ChangeLayerRecursively(pickedUpObject.gameObject, 13);
-            pickedUpObject = null;
         }
+        pickedUpObject = null;
     }
 
     private void TryToMute(Transform obj)
