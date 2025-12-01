@@ -31,36 +31,41 @@ public class RebindSaveLoad : MonoBehaviour
 
     private void OnEnable()
     {
+        string rebinds = "";
+
         // Load rebinds from Steam Cloud or PlayerPrefs
         if (SteamClient.IsValid && SteamRemoteStorage.FileExists(rebindFileName))
         {
             var rebindBytes = SteamRemoteStorage.FileRead(rebindFileName);
-            var rebinds = System.Text.Encoding.UTF8.GetString(rebindBytes);
-            if (!string.IsNullOrEmpty(rebinds))
+
+            if (rebindBytes != null && rebindBytes.Length > 0)
             {
-                actions.LoadBindingOverridesFromJson(rebinds);
+                rebinds = System.Text.Encoding.UTF8.GetString(rebindBytes);
                 Debug.Log("Loaded rebinds from Steam Cloud: " + rebinds);
+            }
+            else
+            {
+                Debug.LogWarning("Steam Cloud rebind file was empty or null.");
             }
         }
         else
         {
-            var rebinds = PlayerPrefs.GetString("rebinds");
-            if (!string.IsNullOrEmpty(rebinds))
-                actions.LoadBindingOverridesFromJson(rebinds);
-
+            rebinds = PlayerPrefs.GetString("rebinds", "");
             Debug.Log("Loaded rebinds from PlayerPrefs: " + rebinds);
         }
+
+        if (!string.IsNullOrEmpty(rebinds))
+            actions.LoadBindingOverridesFromJson(rebinds);
 
         gamepad = Gamepad.current;
         input = GetComponent<PlayerInput>();
         input.onControlsChanged += SwitchControls;
 
-        // Wait for player to spawn
         StartCoroutine(WaitForPlayerSpawn());
 
-        // Optional: if you want to re-check when scenes change
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
+
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {

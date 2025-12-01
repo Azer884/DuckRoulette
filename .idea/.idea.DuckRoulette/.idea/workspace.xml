@@ -6,12 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="8e3cb98b-6c1f-4c15-8eaa-884e912b130a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Hide.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Hide.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/TestingEnviroment.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/GameScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Loading.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Loading.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Lobby.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Lobby.unity" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Interact.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Interact.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SettingsVisibility.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SettingsVisibility.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/RebindSaveLoad.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/RebindSaveLoad.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,6 +123,7 @@
       <workItem from="1764098024513" duration="386000" />
       <workItem from="1764102074551" duration="4367000" />
       <workItem from="1764159613890" duration="7385000" />
+      <workItem from="1764243724777" duration="2141000" />
     </task>
     <servers />
   </component>

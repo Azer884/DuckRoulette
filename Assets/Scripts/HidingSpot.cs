@@ -1,7 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
-using Unity.Netcode;
 public class HidingSpot : NetworkBehaviour, IInteractable
 {
     public Animation[]  animations;
