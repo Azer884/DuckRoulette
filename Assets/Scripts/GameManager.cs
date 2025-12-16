@@ -25,13 +25,16 @@ public class GameManager : NetworkBehaviour
     private bool isGameEnded = false, hasRained = false;
     private List<(ulong, ulong)> teams = new();
 
-    //Events
+    private int round = 0;
+
+    #region Events
     public delegate void OnPowerGunActive();
     public static event OnPowerGunActive OnPowerGunActived;
     public delegate void OnWheaterChange();
-    public static event OnWheaterChange OnWheaterChanged;
+    public static event OnWheaterChange OnWeatherChange;
     public delegate void OnHostDisconnect();
     public static event OnHostDisconnect OnHostDisconnected;
+    #endregion
 
     private void Awake()
     {
@@ -100,27 +103,17 @@ public class GameManager : NetworkBehaviour
     private void CheckPlayerGunScript()
     {
         StartCoroutine(SwitchPlayerAfterDelay(5f));
+        round++;
     }
 
+    // ReSharper disable Unity.PerformanceAnalysis
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
         canShoot.Value = false;
 
         yield return new WaitForSeconds(waitTime); // Wait for 5 seconds before switching players
-
-
-        //TODO if (!hasRained)
-        // {
-        //     bool wheather = Percentage((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-        //     Debug.Log((int)Mathf.Pow(1.01f, Time.timeSinceLevelLoad));
-        //     Debug.Log(wheather);
-        //     if (wheather)
-        //     {
-        //         hasRained = true;
-        //         //Start bad wheather
-        //         OnWheaterChanged?.Invoke();
-        //     }
-        // }
+        
+        StartRain();
 
         if (!powerGunIsActive.Value)
         {
@@ -504,7 +497,7 @@ public class GameManager : NetworkBehaviour
 
     #endregion
 
-    bool Percentage(int percentageChance)
+    public bool Percentage(float percentageChance)
     {
         if (percentageChance < 100)
         {
@@ -525,4 +518,27 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    private static void OnWeatherChanged()
+    {
+        OnWeatherChange?.Invoke();
+    }
+
+    private void StartRain()
+    {
+        if (!hasRained)
+        {
+            float percentageChance = Mathf.Pow(1.0155f, Time.timeSinceLevelLoad);
+            Debug.Log(percentageChance);
+            
+            bool shouldRain = Percentage(percentageChance);
+            Debug.Log(shouldRain);
+            
+            if (shouldRain)
+            {
+                hasRained = true;
+                //Start bad weather
+                OnWeatherChanged();
+            }
+        }
+    }
 }

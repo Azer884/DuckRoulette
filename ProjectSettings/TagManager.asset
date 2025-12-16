@@ -12,6 +12,7 @@ TagManager:
   - TeamUp
   - TutoBot
   - Doll
+  - Hittable
   layers:
   - Default
   - TransparentFX

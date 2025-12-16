@@ -3,11 +3,13 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR;
 
-public class WheaterHandler : NetworkBehaviour
+public class WeatherHandler : NetworkBehaviour
 {
     [SerializeField] private float duration = 20f;
     [SerializeField] private GameObject rockPrefab;
     [SerializeField] private BoxCollider spawnArea;
+    
+    private int chanceOfBadWeather = 0;
 
     public override void OnNetworkSpawn()
     {
@@ -18,26 +20,20 @@ public class WheaterHandler : NetworkBehaviour
     }
     private void OnEnable() 
     {
-        GameManager.OnWheaterChanged += HandleWheaterChange;
+        GameManager.OnWeatherChange += HandleWeatherChange;
     }
     private void OnDisable()
     {
-        GameManager.OnWheaterChanged -= HandleWheaterChange;
-    }
-    public void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space) && IsServer)
-        {
-            HandleWheaterChange();
-        }
+        GameManager.OnWeatherChange -= HandleWeatherChange;
     }
 
-    private void HandleWheaterChange()
+    private void HandleWeatherChange()
     {
-        HandleWheaterServerRpc();
+        HandleWeatherServerRpc();
     }
 
-    private IEnumerator ChangeWheater()
+    // ReSharper disable Unity.PerformanceAnalysis
+    private IEnumerator ChangeWeather()
     {
         float timer = 0;
         float spawnInterval = 1f;
@@ -48,20 +44,20 @@ public class WheaterHandler : NetworkBehaviour
             yield return new WaitForSeconds(1 / spawnInterval);
             timer += 1 / spawnInterval;
         }
-        StopBadWheater();
+        StopBadWeather();
     }
 
     [ServerRpc (RequireOwnership = false)]
-    private void HandleWheaterServerRpc()
+    private void HandleWeatherServerRpc()
     {
-        HandleWheaterClientRpc();
-        StartCoroutine(ChangeWheater());
+        HandleWeatherClientRpc();
+        StartCoroutine(ChangeWeather());
     }
 
     [ClientRpc]
-    private void HandleWheaterClientRpc()
+    private void HandleWeatherClientRpc()
     {
-        StartBadWheater();
+        StartBadWeather();
     }
 
     [ServerRpc (RequireOwnership = false)]
@@ -87,12 +83,13 @@ public class WheaterHandler : NetworkBehaviour
         }
     }
 
-    private void StartBadWheater()
+    // ReSharper disable Unity.PerformanceAnalysis
+    private void StartBadWeather()
     {
         Debug.Log("Bad wheater started!");
     }
 
-    private void StopBadWheater()
+    private void StopBadWeather()
     {
         Debug.Log("Bad wheater is over!");
     }

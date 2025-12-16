@@ -1,99 +1,83 @@
 using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
+
 public class Ragdoll : NetworkBehaviour
 {
     private class BoneTransform
     {
-        public Vector3 Position { get; set; }
-        public Quaternion Rotation { get; set; }
+        public Vector3 Position;
+        public Quaternion Rotation;
     }
 
     private enum PlayerState
     {
         Idle,
         Ragdoll,
+        ResettingBones,
         StandingUp,
-        ResettingBones
+        Dead
     }
 
-    [SerializeField]
-    private Transform parent;
+    [SerializeField] private Transform parent;
 
-    // Arrays to hold multiple possible animation states for randomization
-    [SerializeField]
-    private string[] _faceUpStandUpStateNames;
-    [SerializeField]
-    private string[] _faceDownStandUpStateNames;
+    [SerializeField] private string[] _faceUpStandUpStateNames;
+    [SerializeField] private string[] _faceDownStandUpStateNames;
 
-    [SerializeField]
-    private string[] _faceUpStandUpClipNames;
-    [SerializeField]
-    private string[] _faceDownStandUpClipNames;
+    [SerializeField] private string[] _faceUpStandUpClipNames;
+    [SerializeField] private string[] _faceDownStandUpClipNames;
 
-    [SerializeField]
-    private float _timeToResetBones;
+    [SerializeField] private float _timeToResetBones = 0.5f;
+
+    [SerializeField] private Animator _animator;
+    [SerializeField] private Animator[] otherAnimators;
+
+    [SerializeField] private GameObject cam, foots, shadow, hands, dizzy;
 
     private Rigidbody[] _ragdollRigidbodies;
-    private PlayerState _currentState = PlayerState.Idle;
-    [SerializeField]
-    private Animator _animator;
-    [SerializeField]
-    private Animator[] otherAnimators;
-    [SerializeField]
-    private GameObject cam;
-    [SerializeField]
-    private GameObject foots;
-    [SerializeField]
-    private GameObject shadow;
-    [SerializeField]
-    private GameObject hands;
     private CharacterController _characterController;
     private Movement movement;
-    private Slap slap;
     private Shooting shooting;
+    private Slap slap;
     private TeamUp teamUp;
     private Username userName;
-    public float _timeToWakeUp;
-    private Transform _hipsBone;
 
+    private Transform _hipsBone;
+    private Transform[] _bones;
+
+    private BoneTransform[] _ragdollBoneTransforms;
     private BoneTransform[] _faceUpStandUpBoneTransforms;
     private BoneTransform[] _faceDownStandUpBoneTransforms;
-    private BoneTransform[] _ragdollBoneTransforms;
-    private Transform[] _bones;
+
+    private PlayerState _currentState = PlayerState.Idle;
+    private float _timeToWakeUp;
     private float _elapsedResetBonesTime;
     private bool _isFacingUp;
     private bool shootingStates;
-
-    [SerializeField] private GameObject dizzy;
+    private string _currentStandUpAnim;
 
     public override void OnNetworkSpawn()
     {
-        if(!IsOwner) enabled = false;
+        if (!IsOwner) enabled = false;
     }
 
     void Awake()
     {
         _ragdollRigidbodies = parent.GetComponentsInChildren<Rigidbody>();
         _characterController = GetComponent<CharacterController>();
+
         movement = GetComponent<Movement>();
-        slap = GetComponent<Slap>();
         shooting = GetComponent<Shooting>();
+        slap = GetComponent<Slap>();
         teamUp = GetComponent<TeamUp>();
         userName = GetComponent<Username>();
+
         _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
-
         _bones = _hipsBone.GetComponentsInChildren<Transform>();
-        _faceUpStandUpBoneTransforms = new BoneTransform[_bones.Length];
-        _faceDownStandUpBoneTransforms = new BoneTransform[_bones.Length];
-        _ragdollBoneTransforms = new BoneTransform[_bones.Length];
 
-        for (int boneIndex = 0; boneIndex < _bones.Length; boneIndex++)
-        {
-            _faceUpStandUpBoneTransforms[boneIndex] = new BoneTransform();
-            _faceDownStandUpBoneTransforms[boneIndex] = new BoneTransform();
-            _ragdollBoneTransforms[boneIndex] = new BoneTransform();
-        }
+        _ragdollBoneTransforms = CreateBoneArray();
+        _faceUpStandUpBoneTransforms = CreateBoneArray();
+        _faceDownStandUpBoneTransforms = CreateBoneArray();
 
         PopulateAnimationStartBoneTransforms(_faceUpStandUpClipNames[0], _faceUpStandUpBoneTransforms);
         PopulateAnimationStartBoneTransforms(_faceDownStandUpClipNames[0], _faceDownStandUpBoneTransforms);
@@ -108,70 +92,133 @@ public class Ragdoll : NetworkBehaviour
             case PlayerState.Ragdoll:
                 RagdollBehaviour();
                 break;
-            case PlayerState.StandingUp:
-                StandingUpBehaviour();
-                break;
             case PlayerState.ResettingBones:
                 ResettingBonesBehaviour();
                 break;
+            case PlayerState.StandingUp:
+                StandingUpBehaviour();
+                break;
         }
     }
+
+    /* ===================== PUBLIC ===================== */
 
     public void TriggerRagdoll(bool isDead = false)
     {
         EnableRagdoll();
 
-        if (!isDead)
+        if (isDead)
         {
-            _timeToWakeUp = Random.Range(3, 6);
-            _currentState = PlayerState.Ragdoll;
-            EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2);
+            _currentState = PlayerState.Dead;
+            return;
+        }
+
+        _timeToWakeUp = Random.Range(3f, 6f);
+        _currentState = PlayerState.Ragdoll;
+
+        EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2f);
+    }
+
+    /* ===================== STATES ===================== */
+
+    private void RagdollBehaviour()
+    {
+        _timeToWakeUp -= Time.deltaTime;
+
+        if (_timeToWakeUp <= 0f)
+        {
+            _isFacingUp = _hipsBone.forward.y > 0f;
+            AlignPositionToHips();
+            PopulateBoneTransforms(_ragdollBoneTransforms);
+
+            _elapsedResetBonesTime = 0f;
+            _currentState = PlayerState.ResettingBones;
         }
     }
 
-
-    private void DisableRagdoll()
+    private void ResettingBonesBehaviour()
     {
-        foreach (Rigidbody rigidbody in _ragdollRigidbodies)
-            rigidbody.isKinematic = true;
+        _elapsedResetBonesTime += Time.deltaTime;
+        float t = Mathf.Clamp01(_elapsedResetBonesTime / _timeToResetBones);
 
-        _animator.enabled = true;
-        foreach (Animator animator in otherAnimators)
-            animator.enabled = true;
+        var target = _isFacingUp ? _faceUpStandUpBoneTransforms : _faceDownStandUpBoneTransforms;
 
-        SetVisualsEnabled(true);
-        SetScriptsEnabled(true);
+        for (int i = 0; i < _bones.Length; i++)
+        {
+            _bones[i].localPosition = Vector3.Lerp(
+                _ragdollBoneTransforms[i].Position,
+                target[i].Position,
+                t
+            );
+
+            _bones[i].localRotation = Quaternion.Slerp(
+                _ragdollBoneTransforms[i].Rotation,
+                target[i].Rotation,
+                t
+            );
+        }
+
+        if (t >= 1f)
+        {
+            _currentStandUpAnim = GetStandUpStateName();
+            DisableRagdoll();
+
+            _animator.Play(_currentStandUpAnim, 0, 0);
+            foreach (var anim in otherAnimators)
+                anim.Play(_currentStandUpAnim, 0, 0);
+
+            _currentState = PlayerState.StandingUp;
+        }
     }
 
-
-    public void EnableRagdoll()
+    private void StandingUpBehaviour()
     {
-        foreach (Rigidbody rigidbody in _ragdollRigidbodies)
-            rigidbody.isKinematic = false;
+        if (!_animator.GetCurrentAnimatorStateInfo(0).IsName(_currentStandUpAnim))
+            _currentState = PlayerState.Idle;
+    }
+
+    /* ===================== RAGDOLL ===================== */
+
+    private void EnableRagdoll()
+    {
+        foreach (var rb in _ragdollRigidbodies)
+            rb.isKinematic = false;
 
         _animator.enabled = false;
-        foreach (Animator animator in otherAnimators)
-            animator.enabled = false;
+        foreach (var anim in otherAnimators)
+            anim.enabled = false;
 
         GetComponent<SFXHandler>().PainSound();
-
         shootingStates = shooting.enabled;
 
         SetScriptsEnabled(false);
         SetVisualsEnabled(false);
 
         _characterController.enabled = false;
-
-        if (RebindSaveLoad.Instance != null)
-            RebindSaveLoad.Instance.RumbleGamepad(1f, 1f, .3f, .2f);
     }
+
+    private void DisableRagdoll()
+    {
+        foreach (var rb in _ragdollRigidbodies)
+            rb.isKinematic = true;
+
+        _animator.enabled = true;
+        foreach (var anim in otherAnimators)
+            anim.enabled = true;
+
+        SetScriptsEnabled(true);
+        SetVisualsEnabled(true);
+
+        _characterController.enabled = true;
+    }
+
+    /* ===================== ORIGINAL METHODS KEPT ===================== */
 
     public void SetScriptsEnabled(bool state)
     {
         movement.enabled = state;
         teamUp.enabled = state;
 
-        // Shooting/slap logic
         if (state)
         {
             if (shootingStates)
@@ -187,7 +234,7 @@ public class Ragdoll : NetworkBehaviour
             slap.enabled = false;
             shooting.enabled = false;
         }
-        
+
         EnableServerRpc(OwnerClientId, state);
     }
 
@@ -197,98 +244,62 @@ public class Ragdoll : NetworkBehaviour
         hands.SetActive(state);
         foots.SetActive(state);
         shadow.SetActive(state);
+        userName.userName.gameObject.SetActive(state);
     }
 
+    /* ===================== HELPERS ===================== */
 
-    private void RagdollBehaviour()
+    private BoneTransform[] CreateBoneArray()
     {
-        _timeToWakeUp -= Time.deltaTime;
+        var arr = new BoneTransform[_bones.Length];
+        for (int i = 0; i < arr.Length; i++)
+            arr[i] = new BoneTransform();
+        return arr;
+    }
 
-        if (_timeToWakeUp <= 0)
+    private void PopulateBoneTransforms(BoneTransform[] target)
+    {
+        for (int i = 0; i < _bones.Length; i++)
         {
-            _isFacingUp = _hipsBone.forward.y > 0;
-            AlignPositionToHips();
-            PopulateBoneTransforms(_ragdollBoneTransforms);
-            _currentState = PlayerState.ResettingBones;
-            _elapsedResetBonesTime = 0;
+            target[i].Position = _bones[i].localPosition;
+            target[i].Rotation = _bones[i].localRotation;
         }
     }
 
-    private void StandingUpBehaviour()
+    private void PopulateAnimationStartBoneTransforms(string clipName, BoneTransform[] target)
     {
-        if (_animator.GetCurrentAnimatorStateInfo(0).IsName(GetStandUpStateName()) == false)
-        {
-            _currentState = PlayerState.Idle;
-        }
-    }
+        transform.GetPositionAndRotation(out var p, out var r);
 
-    private void ResettingBonesBehaviour()
-    {
-        _elapsedResetBonesTime += Time.deltaTime;
-        float elapsedPercentage = _elapsedResetBonesTime / _timeToResetBones;
-
-        if (elapsedPercentage >= 1)
-        {
-            _currentState = PlayerState.StandingUp;
-            DisableRagdoll();
-            string animName = GetStandUpStateName();
-            _animator.Play(animName, 0, 0);
-            _animator.Play(animName, 1, 0);
-            foreach (Animator anim in otherAnimators)
-            {
-                anim.Play(animName, 0, 0);
-                anim.Play(animName, 1, 0);
-            }
-        }
-    }
-
-    private void AlignPositionToHips()
-    {
-        _hipsBone.GetPositionAndRotation(out Vector3 hipsPosition, out Quaternion hipsRotation);
-        transform.SetPositionAndRotation(new Vector3(hipsPosition.x, transform.position.y, hipsPosition.z), Quaternion.Euler(0, hipsRotation.eulerAngles.y, 0));
-        _hipsBone.position = hipsPosition;
-        _hipsBone.rotation = hipsRotation;
-    }
-
-    private void PopulateBoneTransforms(BoneTransform[] boneTransforms)
-    {
-        for (int boneIndex = 0; boneIndex < _bones.Length; boneIndex++)
-        {
-            boneTransforms[boneIndex].Position = _bones[boneIndex].localPosition;
-            boneTransforms[boneIndex].Rotation = _bones[boneIndex].localRotation;
-        }
-    }
-
-    private void PopulateAnimationStartBoneTransforms(string clipName, BoneTransform[] boneTransforms)
-    {
-        transform.GetPositionAndRotation(out Vector3 positionBeforeSampling, out Quaternion rotationBeforeSampling);
-        foreach (AnimationClip clip in _animator.runtimeAnimatorController.animationClips)
+        foreach (var clip in _animator.runtimeAnimatorController.animationClips)
         {
             if (clip.name == clipName)
             {
-                clip.SampleAnimation(gameObject, 0);
-                PopulateBoneTransforms(boneTransforms);
+                clip.SampleAnimation(gameObject, 0f);
+                PopulateBoneTransforms(target);
                 break;
             }
         }
 
-        transform.SetPositionAndRotation(positionBeforeSampling, rotationBeforeSampling);
+        transform.SetPositionAndRotation(p, r);
     }
 
-    // Randomly select a stand-up animation based on the character's orientation
+    private void AlignPositionToHips()
+    {
+        _hipsBone.GetPositionAndRotation(out var p, out var r);
+        transform.SetPositionAndRotation(
+            new Vector3(p.x, transform.position.y, p.z),
+            Quaternion.Euler(0, r.eulerAngles.y, 0)
+        );
+    }
+
     private string GetStandUpStateName()
     {
-        if (_isFacingUp)
-        {
-            int randomIndex = Random.Range(0, _faceUpStandUpStateNames.Length);
-            return _faceUpStandUpStateNames[randomIndex];
-        }
-        else
-        {
-            int randomIndex = Random.Range(0, _faceDownStandUpStateNames.Length);
-            return _faceDownStandUpStateNames[randomIndex];
-        }
+        return _isFacingUp
+            ? _faceUpStandUpStateNames[Random.Range(0, _faceUpStandUpStateNames.Length)]
+            : _faceDownStandUpStateNames[Random.Range(0, _faceDownStandUpStateNames.Length)];
     }
+
+    /* ===================== RPCs ===================== */
 
     [ServerRpc(RequireOwnership = false)]
     private void EnableServerRpc(ulong clientId, bool state)
@@ -300,14 +311,11 @@ public class Ragdoll : NetworkBehaviour
     private void EnableClientRpc(ulong clientId, bool state)
     {
         if (OwnerClientId == clientId)
-        {
             _characterController.enabled = state;
-            userName.userName.gameObject.SetActive(state);
-        }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void EnableDizzinessServerRpc(ulong clientId , float waitTime)
+    private void EnableDizzinessServerRpc(ulong clientId, float waitTime)
     {
         EnableDizzinessClientRpc(clientId, waitTime);
     }
@@ -315,18 +323,15 @@ public class Ragdoll : NetworkBehaviour
     [ClientRpc]
     private void EnableDizzinessClientRpc(ulong clientId, float waitTime)
     {
-        if (OwnerClientId == clientId)
-        {
-            dizzy.SetActive(true);
+        if (OwnerClientId != clientId) return;
 
-            StartCoroutine(WaitBeforeDisactivate(waitTime));
-        }
+        dizzy.SetActive(true);
+        StartCoroutine(DisableDizzyAfter(waitTime));
     }
 
-    private IEnumerator WaitBeforeDisactivate(float waitTime)
+    private IEnumerator DisableDizzyAfter(float t)
     {
-        yield return new WaitForSeconds(waitTime);
-
+        yield return new WaitForSeconds(t);
         dizzy.SetActive(false);
     }
 }
