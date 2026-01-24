@@ -24,6 +24,8 @@ public class GameManager : NetworkBehaviour
     private int coinsToWin;
     private bool isGameEnded = false, hasRained = false;
     private List<(ulong, ulong)> teams = new();
+    
+    private Dictionary<ulong, List<PlayerTask>> allPlayersTasks = new();
 
     private int round = 0;
 
@@ -113,6 +115,8 @@ public class GameManager : NetworkBehaviour
 
         yield return new WaitForSeconds(waitTime); // Wait for 5 seconds before switching players
         
+        canShoot.Value = true;
+        
         StartRain();
 
         if (!powerGunIsActive.Value)
@@ -124,11 +128,12 @@ public class GameManager : NetworkBehaviour
                 PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
             }
         }
+
+        DistrubuteTasks();
         //TODO else
         // {
         //     ActivatePowerGun();
         // }
-        canShoot.Value = true;
     }
 
     private void ActivatePowerGun()
@@ -540,5 +545,54 @@ public class GameManager : NetworkBehaviour
                 OnWeatherChanged();
             }
         }
+    }
+
+    #region Tasks
+    
+
+    private void DistrubuteTasks()
+    {
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (!playerStates[clientId])
+                continue;
+
+            // If player already has tasks
+            if (allPlayersTasks.TryGetValue(clientId, out var existingTasks))
+            {
+                // Remove completed tasks
+                existingTasks.RemoveAll(t => t.completed);
+
+                // Add new tasks
+                existingTasks.AddRange(TaskManager.Instance.GenerateTasks());
+            }
+            else
+            {
+                // First round
+                allPlayersTasks[clientId] = TaskManager.Instance.GenerateTasks();
+            }
+        }
+    }
+
+
+    #endregion
+
+    public int AlivePlayersCount()
+    {
+        return alivePlayersCount.Value;
+    }
+}
+
+
+[System.Serializable]
+public class PlayerTask
+{
+    public Challenge challenge;
+    public bool completed;
+
+    public PlayerTask(Challenge challenge)
+    {
+        this.challenge = challenge;
+        completed = false;
     }
 }
