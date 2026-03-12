@@ -1,13 +1,13 @@
 # DuckRoulette
 
 ## Overview
-DuckRoulette is an engaging and interactive project that simulates a fun game where players can participate in a virtual roulette featuring ducks. This application combines elements of chance and strategy, allowing users to place bets on different ducks and watch them race in a unique virtual environment.
+DuckRoulette is a Unity-based multiplayer game where **you are the duck**. It blends the tense elimination mechanics of Russian Roulette with the stealth and evasion of Hide and Seek. Players take on the role of ducks, trying to survive each round by hiding from — and outsmarting — their opponents in a high-stakes game of chance and cunning.
 
 ## Features
-- **Interactive Gameplay**: Users can engage in real-time betting on their favorite ducks.
-- **Duck Selection**: A diverse range of uniquely designed ducks, each with varying attributes.
-- **Race Simulation**: An exciting simulation of duck races, complete with animations and sound effects.
-- **Betting System**: Users can place and track their bets, with a clear display of odds and potential winnings.
+- **Play as a Duck**: Players embody ducks directly, experiencing the game from a first-person duck perspective.
+- **Russian Roulette Mechanics**: Survival tension and elimination-style gameplay keep every round unpredictable.
+- **Hide and Seek Gameplay**: Sneak, hide, and evade other players to survive each round.
+- **Custom Shaders & Visuals**: Advanced HLSL and ShaderLab rendering creates a polished visual experience.
 
 ## Installation
 To install DuckRoulette, clone the repository and open it in your favorite editor:
@@ -17,9 +17,9 @@ git clone https://github.com/Azer884/DuckRoulette.git
 ```
 
 ## Getting Started
-1. Install the necessary dependencies.
-2. Run the application.
-3. Join the fun and start betting on ducks!
+1. Open the project in Unity (see `ProjectSettings/` for the required Unity version).
+2. Install the necessary dependencies via Unity Package Manager.
+3. Hit Play and join the round — survive or be eliminated!
 
 ## Contributing
 We welcome contributions to enhance DuckRoulette. Please fork the repository and submit pull requests for any improvements or bug fixes.
