@@ -10,16 +10,16 @@ DuckRoulette is an engaging and interactive project that simulates a fun game wh
 - **Betting System**: Users can place and track their bets, with a clear display of odds and potential winnings.
 
 ## Installation
-To install DuckRoulette, clone the repository and open it in your favorite editor:
+To install DuckRoulette:
 
 ```bash
-git clone https://github.com/Azer884/DuckRoulette.git
+git clone https://github.com/Azer884/DuckRouletteBuild.git
 ```
 
 ## Getting Started
-1. Install the necessary dependencies.
-2. Run the application.
-3. Join the fun and start betting on ducks!
+1. Open Steam
+2. Open DuckRoulette.exe
+3. Hit Play and join the round — survive or be eliminated!
 
 ## Contributing
 We welcome contributions to enhance DuckRoulette. Please fork the repository and submit pull requests for any improvements or bug fixes.
