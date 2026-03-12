@@ -10,15 +10,15 @@ DuckRoulette is a Unity-based multiplayer game where **you are the duck**. It bl
 - **Custom Shaders & Visuals**: Advanced HLSL and ShaderLab rendering creates a polished visual experience.
 
 ## Installation
-To install DuckRoulette, clone the repository and open it in your favorite editor:
+To install DuckRoulette:
 
 ```bash
-git clone https://github.com/Azer884/DuckRoulette.git
+git clone https://github.com/Azer884/DuckRouletteBuild.git
 ```
 
 ## Getting Started
-1. Open the project in Unity (see `ProjectSettings/` for the required Unity version).
-2. Install the necessary dependencies via Unity Package Manager.
+1. Open Steam
+2. Open DuckRoulette.exe
 3. Hit Play and join the round — survive or be eliminated!
 
 ## Contributing
