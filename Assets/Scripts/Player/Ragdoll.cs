@@ -116,7 +116,10 @@ public class Ragdoll : NetworkBehaviour
         _timeToWakeUp = Random.Range(3f, 6f);
         _currentState = PlayerState.Ragdoll;
 
-        EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2f);
+        if (CanSendNetworkRpc())
+        {
+            EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2f);
+        }
     }
 
     /* ===================== STATES ===================== */
@@ -240,7 +243,10 @@ public class Ragdoll : NetworkBehaviour
             shooting.enabled = false;
         }
 
-        EnableServerRpc(OwnerClientId, state);
+        if (CanSendNetworkRpc())
+        {
+            EnableServerRpc(OwnerClientId, state);
+        }
     }
 
     public void SetVisualsEnabled(bool state)
@@ -338,5 +344,10 @@ public class Ragdoll : NetworkBehaviour
     {
         yield return new WaitForSeconds(t);
         dizzy.SetActive(false);
+    }
+
+    private bool CanSendNetworkRpc()
+    {
+        return IsSpawned && NetworkManager != null && NetworkManager.IsListening;
     }
 }

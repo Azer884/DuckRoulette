@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
-using Steamworks.Data;
+using UnityEngine.Audio;
 //buged?
 public class Slap : NetworkBehaviour 
 {
@@ -23,6 +23,8 @@ public class Slap : NetworkBehaviour
     private Dictionary<GameObject, int> slapLimit = new();
     private Dictionary<GameObject, Coroutine> slapCoroutines = new();
     public AudioSource slapAudio;
+    [SerializeField] private AudioClip slapClip;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     public override void OnNetworkSpawn()
     {
@@ -77,8 +79,8 @@ public class Slap : NetworkBehaviour
                 validSlappedPlayers.Add(slapRes.gameObject);
             }
         }
-        Debug.Log($"{validSlappedPlayers?.Count} Players can be slapped");
-        if (validSlappedPlayers?.Count > 0)
+        Debug.Log($"{validSlappedPlayers.Count} Players can be slapped");
+        if (validSlappedPlayers.Count > 0)
         {
             SlapPlayer(validSlappedPlayers[0]);
         }
@@ -93,7 +95,7 @@ public class Slap : NetworkBehaviour
             slapLimit[player] = Random.Range(3, 10); // Set a random limit between 3 and 10
         }
 
-        slapAudio.Play();
+        PlaySlapSound(slapArea != null ? slapArea.position : transform.position);
         OnSlapTriggered?.Invoke();
         slapCount[player]++;
         
@@ -138,6 +140,66 @@ public class Slap : NetworkBehaviour
     {
         SlapImpactClientRpc(clientId);
     }
+
+    private void PlaySlapSound(Vector3 position)
+    {
+        if (CanUseNetcode())
+        {
+            PlaySlapSoundServerRpc(position);
+            return;
+        }
+
+        PlayLocalOneShot(GetSlapClip(), position);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void PlaySlapSoundServerRpc(Vector3 position)
+    {
+        PlaySlapSoundClientRpc(position);
+    }
+
+    [ClientRpc]
+    private void PlaySlapSoundClientRpc(Vector3 position)
+    {
+        PlayLocalOneShot(GetSlapClip(), position);
+    }
+
+    private AudioClip GetSlapClip()
+    {
+        if (slapClip != null)
+        {
+            return slapClip;
+        }
+
+        return slapAudio != null ? slapAudio.clip : null;
+    }
+
+    private void PlayLocalOneShot(AudioClip clip, Vector3 position)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        GameObject audioObject = new GameObject($"{clip.name}_OneShot");
+        audioObject.transform.position = position;
+
+        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+        audioSource.clip = clip;
+        audioSource.spatialBlend = 1f;
+        audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        audioSource.playOnAwake = false;
+        audioSource.outputAudioMixerGroup = sfxMixerGroup;
+        audioSource.Play();
+
+        Destroy(audioObject, clip.length);
+    }
+
+    private bool CanUseNetcode()
+    {
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+    }
+
     [ClientRpc]
     private void SlapImpactClientRpc(ulong clientId)
     {

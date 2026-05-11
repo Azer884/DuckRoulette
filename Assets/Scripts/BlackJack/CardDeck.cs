@@ -41,17 +41,12 @@ public class CardDeck : NetworkBehaviour
         if (turnsText == null)
         {
             Debug.LogError("CardDeck: turnsText is not assigned!");
-            return;
         }
-
-        if (GameManager.Instance == null)
+        else if (!TrySetTurnText())
         {
-            Debug.LogError("CardDeck: GameManager.Instance is null!");
             turnsText.text = "Turn: Unknown";
-            return;
+            StartCoroutine(WaitForGameManagerAndRefreshTurnText());
         }
-
-        turnsText.text = $"Turn: {GameManager.Instance.GetPlayerNickname(playerTurn.Value)}";
     }
     public void EnterGame(ulong clientId)
     {
@@ -61,6 +56,12 @@ public class CardDeck : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void EnterGameServerRpc(ulong clientId)
     {
+        if (GameManager.Instance == null)
+        {
+            Debug.LogWarning("CardDeck: GameManager.Instance is not ready yet.");
+            return;
+        }
+
         if (!playerInCurrentGameList.ContainsKey(clientId))
         {
             playerInGameList.Add(clientId, 0);
@@ -102,9 +103,9 @@ public class CardDeck : NetworkBehaviour
         }
     }
 
-    private bool DeckIsEmpty(Dictionary<Card, int> cardDictionary)
+    private bool DeckIsEmpty(Dictionary<Card, int> deckCounts)
     {
-        foreach (KeyValuePair<Card, int> card in cardDictionary)
+        foreach (KeyValuePair<Card, int> card in deckCounts)
         {
             if (card.Value > 0)
             {
@@ -138,7 +139,7 @@ public class CardDeck : NetworkBehaviour
     }
 
     [ServerRpc (RequireOwnership = false)]
-    public void SpawnCardServerRpc(ulong clientId, Vector3 targetedPosition, Quaternion rot , int cardIndex, bool IsFirstCard = false)
+    public void SpawnCardServerRpc(ulong clientId, Vector3 targetedPosition, Quaternion rot , int cardIndex, bool isFirstCard = false)
     {
         //Major error (can't use int in a string): Debug.Log($"Spawning card {cardIndex}");
         GameObject newCardObject = Instantiate(cardPrefab, transform.position, rot);
@@ -152,7 +153,7 @@ public class CardDeck : NetworkBehaviour
         {
             Send = new ClientRpcSendParams
             {
-                TargetClientIds = new ulong[] { clientId }
+                TargetClientIds = new[] { clientId }
             }
         };
         ClientRpcParams othersParams = new()
@@ -167,7 +168,7 @@ public class CardDeck : NetworkBehaviour
 
         int artworkIndex = Random.Range(0, cardDeck[cardIndex - 1].artworks.Length);
         SpawnCardClientRpc(newCardObject.GetComponent<NetworkObject>().NetworkObjectId, cardIndex, artworkIndex, targetedPosition, true, onlyPlayerParams);
-        SpawnCardClientRpc(newCardObject.GetComponent<NetworkObject>().NetworkObjectId, cardIndex, artworkIndex, targetedPosition, IsFirstCard, othersParams);
+        SpawnCardClientRpc(newCardObject.GetComponent<NetworkObject>().NetworkObjectId, cardIndex, artworkIndex, targetedPosition, isFirstCard, othersParams);
         
     }
 
@@ -183,14 +184,15 @@ public class CardDeck : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void SpawnCardClientRpc(ulong networkObjectId, int cardIndex, int artworkIndex, Vector3 targetedPos, bool IsFirstCard = false, ClientRpcParams clientRpcParams = default)
+    public void SpawnCardClientRpc(ulong networkObjectId, int cardIndex, int artworkIndex, Vector3 targetedPos, bool isFirstCard = false, ClientRpcParams clientRpcParams = default)
     {
+        _ = clientRpcParams;
         StopAllCoroutines();
 
         NetworkObject networkObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId];
         networkObject.GetComponent<MeshFilter>().mesh = cardDeck[cardIndex - 1].artworks[artworkIndex];
 
-        if (!IsFirstCard)
+        if (!isFirstCard)
         {
             networkObject.transform.Rotate(0, 0, 180); // Flip the card
         }
@@ -231,15 +233,18 @@ public class CardDeck : NetworkBehaviour
             CheckIfAllPlayersDoneServerRpc();
         }
 
-        turnsText.text = $"Turn: {GameManager.Instance.GetPlayerNickname(playerTurn.Value)}";
+        TrySetTurnText();
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void CheckIfAllPlayersDoneServerRpc()
     {
-        if (playerInCurrentGameList.Values.Any(value => value.Item1 == false))
+        if (GameManager.Instance == null)
         {
-            return;
+            Debug.LogWarning("CardDeck: GameManager.Instance is not ready yet.");
+        }
+        else if (playerInCurrentGameList.Values.Any(value => value.Item1 == false))
+        {
         }
         else
         {
@@ -290,7 +295,7 @@ public class CardDeck : NetworkBehaviour
         {
             Send = new ClientRpcSendParams
             {
-                TargetClientIds = new ulong[] { clientId }
+                TargetClientIds = new[] { clientId }
             }
         };
         DrawFirstCardClientRpc(clientRpcParams);
@@ -299,11 +304,23 @@ public class CardDeck : NetworkBehaviour
     [ClientRpc]
     private void DrawFirstCardClientRpc(ClientRpcParams clientRpcParams = default)
     {
-        if (!NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<BlackJack>().drawnFirstCard)
+        _ = clientRpcParams;
+        if (NetworkManager.Singleton?.LocalClient?.PlayerObject == null)
         {
-            NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<BlackJack>().DrawCard(true);
+            return;
         }
-        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<BlackJack>().drawnFirstCard = true;
+
+        var blackJack = NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<BlackJack>();
+        if (blackJack == null)
+        {
+            return;
+        }
+
+        if (!blackJack.drawnFirstCard)
+        {
+            blackJack.DrawCard(true);
+        }
+        blackJack.drawnFirstCard = true;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -328,9 +345,36 @@ public class CardDeck : NetworkBehaviour
     [ClientRpc]
     public void SendMsgClientRpc(string msgToSend, ClientRpcParams clientRpcParams = default)
     {
+        _ = clientRpcParams;
         Debug.Log(msgToSend);
+        if (message == null || messageHolder == null)
+        {
+            return;
+        }
+
         GameObject msg = Instantiate(message, messageHolder.transform);
         msg.GetComponent<TMPro.TextMeshProUGUI>().text = msgToSend;
         Destroy(msg, 3f);
+    }
+
+    private bool TrySetTurnText()
+    {
+        if (turnsText == null || GameManager.Instance == null)
+        {
+            return false;
+        }
+
+        turnsText.text = $"Turn: {GameManager.Instance.GetPlayerNickname(playerTurn.Value)}";
+        return true;
+    }
+
+    private IEnumerator WaitForGameManagerAndRefreshTurnText()
+    {
+        while (GameManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        TrySetTurnText();
     }
 }

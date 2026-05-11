@@ -9,37 +9,41 @@ using UnityEngine.UI;
 
 public class SettingsManager : MonoBehaviour
 {
-    private static string settingsFilePath;
-    private FileIniDataParser parser;
-    private IniData data;
+    private static string _settingsFilePath;
+    private FileIniDataParser _parser;
+    private IniData _data;
     public static SettingsManager Instance { get; private set; }
 
     public AudioMixer audioMixer;
     public bool startInactive = true;
+    private bool _initialized = false;
 
     void Start()
     {
         // Implement Singleton Pattern
-        if (Instance == null)
+        if (Instance == null &&  !_initialized)
         {
             Instance = this;
         }
-        else
-        {
-            return;
-        }
 
-        settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
-        parser = new FileIniDataParser();
+        if (!_initialized)
+        {
+            _settingsFilePath = Path.Combine(Application.persistentDataPath, "Settings.ini");
+            _parser = new FileIniDataParser();
+        }
         LoadSettings();
-        gameObject.SetActive(!startInactive);
+        if (!_initialized)
+        {
+            _initialized = true;
+            gameObject.SetActive(!startInactive);
+        }
     }
 
     public void LoadSettings()
     {
-        if (File.Exists(settingsFilePath))
+        if (File.Exists(_settingsFilePath))
         {
-            data = parser.ReadFile(settingsFilePath);
+            _data = _parser.ReadFile(_settingsFilePath);
 
             if (float.TryParse(GetSetting("Audio", "MasterVolume"), out float value))
             {
@@ -61,27 +65,27 @@ public class SettingsManager : MonoBehaviour
         else
         {
             // Create default settings if the file does not exist
-            data = new IniData();
+            _data = new IniData();
             ResetDefaultSettings();
         }
     }
 
     public void SaveSettings()
     {
-        parser.WriteFile(settingsFilePath, data);
+        _parser.WriteFile(_settingsFilePath, _data);
     }
 
     public string GetSetting(string section, string key, string defaultValue = "")
     {
-        return data[section][key] ?? defaultValue;
+        return _data[section][key] ?? defaultValue;
     }
 
     public void SetSetting(string section, string key, string value)
     {
-        if (!data.Sections.ContainsSection(section))
-            data.Sections.AddSection(section);
+        if (!_data.Sections.ContainsSection(section))
+            _data.Sections.AddSection(section);
 
-        data[section][key] = value;
+        _data[section][key] = value;
     }
 
     private void SetDefaultSettings()
@@ -126,9 +130,9 @@ public class SettingsManager : MonoBehaviour
 
     public void LoadSlider(Slider slider, string section, string key)
     {
-        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        if (_data.Sections.ContainsSection(section) && _data[section].ContainsKey(key))
         {
-            if (float.TryParse(data[section][key], out float value))
+            if (float.TryParse(_data[section][key], out float value))
             {
                 slider.value = value;
             }
@@ -141,9 +145,9 @@ public class SettingsManager : MonoBehaviour
 
     public void LoadDropdown(TMP_Dropdown dropdown, string section, string key)
     {
-        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        if (_data.Sections.ContainsSection(section) && _data[section].ContainsKey(key))
         {
-            if (int.TryParse(data[section][key], out int value))
+            if (int.TryParse(_data[section][key], out int value))
             {
                 dropdown.value = value;
             }
@@ -156,9 +160,9 @@ public class SettingsManager : MonoBehaviour
 
     public void LoadToggle(Toggle toggle, string section, string key)
     {
-        if (data.Sections.ContainsSection(section) && data[section].ContainsKey(key))
+        if (_data.Sections.ContainsSection(section) && _data[section].ContainsKey(key))
         {
-            if (bool.TryParse(data[section][key], out bool isOn))
+            if (bool.TryParse(_data[section][key], out bool isOn))
             {
                 toggle.isOn = isOn;
             }
