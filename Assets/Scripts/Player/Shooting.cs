@@ -52,7 +52,7 @@ public class Shooting : NetworkBehaviour
         haveGun.Value = false;
     }
 
-    [Obsolete]
+    [Obsolete("This is a necessary Update method for handling input. Do not remove.")]
     void Update()
     {
         Reload();
@@ -105,44 +105,32 @@ public class Shooting : NetworkBehaviour
     {
         if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered)
         {
-            //if (!GameManager.Instance.powerGunIsActive.Value)
-            {
-                if (GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value)
-                {
-                    foreach (Animator animator in animators)
-                    {
-                        animator.Play("Shooting");
-                    }
-                    OnGunShot?.Invoke();
-                    
-                    // Notify the server to shoot and update hasShot on all clients
-                    ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
-                    
-                    shotCounter++;
-                }
-                hasShot.Value = true;
-            }
-            // else
-            // {
-            //     foreach (Animator animator in animators)
-            //     {
-            //         animator.Play("Shooting");
-            //     }
-            //     OnGunShot?.Invoke();
-                
-            //     // Notify the server to shoot and update hasShot on all clients
-            //     ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position, false);
-                
-            //     shotCounter++;
-            // }
-
-            for (int i = 0; i < animators.Length - 1; i++)
-            {
-                animators[i].Play("Shooting");
-            }
-            StartCoroutine(Triggering());
+            // Check if this is a valid hit
+            bool isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
             
-            emptyShots++;
+            // Play shooting animation once
+            foreach (Animator animator in animators)
+            {
+                animator.Play("Shooting");
+            }
+            
+            if (isValidShot)
+            {
+                OnGunShot?.Invoke();
+                
+                // Notify the server to shoot and update hasShot on all clients
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+                
+                shotCounter++;
+            }
+            else
+            {
+                // This was an empty shot
+                emptyShots++;
+            }
+            
+            hasShot.Value = true;
+            StartCoroutine(Triggering());
         }
     }
     private System.Collections.IEnumerator Triggering()

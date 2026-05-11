@@ -41,6 +41,13 @@ public class BlackJack : NetworkBehaviour
 
     public void DrawCard(bool isFirstCard = false)
     {
+        // Null check
+        if (CardDeck.instance == null)
+        {
+            Debug.LogError("CardDeck instance is null!");
+            return;
+        }
+
         if (CardDeck.instance.playerTurn.Value == OwnerClientId || isFirstCard)
         {
             Card newCard = CardDeck.instance.GetRandomCard();

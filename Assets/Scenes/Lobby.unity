@@ -615,6 +615,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -958,6 +968,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -1389,6 +1400,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -1584,6 +1605,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -2540,6 +2562,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2708,6 +2731,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2962,6 +2986,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -3079,6 +3104,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -3321,7 +3347,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8151820358433423605, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 207.17993
+      value: 207.17969
       objectReference: {fileID: 0}
     - target: {fileID: 8151820358433423605, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -3561,6 +3587,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_Transition
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
+      propertyPath: m_Interactable
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
@@ -4063,6 +4093,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &399620012
 MeshFilter:
@@ -4206,14 +4237,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 420689032}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 17.528582
   m_SpotAngle: 106.8
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 1
     m_Resolution: -1
@@ -5063,6 +5094,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -5427,6 +5459,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -6630,6 +6663,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -8438,6 +8481,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -9053,6 +9106,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &913789187
 MeshFilter:
@@ -9403,6 +9457,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &922843679
 MeshFilter:
@@ -9955,6 +10010,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -10355,6 +10411,10 @@ PrefabInstance:
       value: Challenges
       objectReference: {fileID: 0}
     - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
+      propertyPath: m_Interactable
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 4
       objectReference: {fileID: 0}
@@ -10606,7 +10666,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -177.91826, y: -315.927}
+  m_AnchoredPosition: {x: -177.91846, y: -315.927}
   m_SizeDelta: {x: -605.336, y: 2.467}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1049948871
@@ -10731,6 +10791,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -12600,6 +12670,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1145763713
 MeshFilter:
@@ -13142,6 +13213,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -13625,7 +13706,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -28.000122}
+  m_AnchoredPosition: {x: 0, y: -28}
   m_SizeDelta: {x: -676, y: -370}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1229632920
@@ -13799,7 +13880,7 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -14150,6 +14231,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -15288,6 +15379,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -15899,6 +16000,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -16236,6 +16347,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1434314566
 MeshFilter:
@@ -16650,6 +16762,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -16836,6 +16958,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -16915,7 +17038,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -251.69995, y: -109.650024}
+  m_AnchoredPosition: {x: -251.7002, y: -109.650024}
   m_SizeDelta: {x: 100, y: 481.15497}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1497184456
@@ -17132,6 +17255,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -17745,6 +17878,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -18250,7 +18393,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -27.3042, y: -36.952515}
+  m_AnchoredPosition: {x: -27.3042, y: -36.952637}
   m_SizeDelta: {x: -437.79968, y: -450.9286}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1574930462
@@ -18400,6 +18543,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -18949,6 +19093,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1648685276
 MeshFilter:
@@ -19161,6 +19306,10 @@ PrefabInstance:
     - target: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_Name
       value: Join
+      objectReference: {fileID: 0}
+    - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
+      propertyPath: m_Interactable
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3262805491271609391, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
       propertyPath: m_Navigation.m_Mode
@@ -19745,6 +19894,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0
@@ -20287,6 +20446,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -20521,7 +20681,7 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -20591,7 +20751,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 1.2651367, y: 1.4385986}
+  m_AnchoredPosition: {x: 1.2651367, y: 1.4384766}
   m_SizeDelta: {x: 2.5302734, y: 1.4213867}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1857787673
@@ -21743,6 +21903,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1922859057
 MeshFilter:
@@ -23614,6 +23775,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -23721,7 +23883,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 39.43504, y: 0.000061035156}
+  m_AnchoredPosition: {x: 39.43504, y: 0}
   m_SizeDelta: {x: -39.435, y: -615.66266}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2080020876
@@ -25610,7 +25772,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -645.2777, y: 37.5365}
+  m_AnchoredPosition: {x: -645.27783, y: 37.53662}
   m_SizeDelta: {x: 1341.299, y: 75.073}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &927545956865286593
@@ -26654,7 +26816,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 197
+      value: 198.5
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26662,7 +26824,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 98.5
+      value: 99.25
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -26722,7 +26884,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 160
+      value: 160.5
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26730,7 +26892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 80
+      value: 80.25
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -26826,7 +26988,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8688164460331282739, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 37.5365
+      value: 37.536377
       objectReference: {fileID: 0}
     - target: {fileID: 8688164460331282739, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -28212,7 +28374,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -575.1616, y: 37.5365}
+  m_AnchoredPosition: {x: -575.1616, y: 37.53662}
   m_SizeDelta: {x: 1181.474, y: 75.073}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &5553824701828040366
@@ -28644,6 +28806,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1276153730}
     m_Modifications:
+    - target: {fileID: 183034603899465310, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -327
+      objectReference: {fileID: 0}
+    - target: {fileID: 183034603899465310, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 89.248535
+      objectReference: {fileID: 0}
     - target: {fileID: 456942836948734017, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0.969
@@ -28939,6 +29109,10 @@ PrefabInstance:
     - target: {fileID: 4717912095691747529, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4834170235563102473, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 228.2998
       objectReference: {fileID: 0}
     - target: {fileID: 5342594996494043259, guid: 12ac3e7c0b0d81e4995fe680969b7f78, type: 3}
       propertyPath: m_AnchorMax.y

@@ -69,13 +69,28 @@ public class LobbyManager : MonoBehaviour
 
     public void SendToChat()
     {
+        if (inputField == null)
+        {
+            Debug.LogWarning("Input field is null!");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(inputField.text))
         {
             inputField.text = "";
             inputField.DeactivateInputField();
             return;
         }
-        NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
+
+        if (NetworkTransmission.instance != null)
+        {
+            NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
+        }
+        else
+        {
+            Debug.LogWarning("NetworkTransmission instance is null!");
+        }
+        
         inputField.text = "";
     }
 
@@ -87,30 +102,50 @@ public class LobbyManager : MonoBehaviour
 
     public void SendMessageToChat(string _text, ulong _fromwho, bool _server)
     {
+        // Safety checks
+        if (messageList == null)
+        {
+            messageList = new();
+        }
+
         if(messageList.Count >= maxMessages)
         {
-            Destroy(messageList[0].textObject.gameObject);
+            if (messageList[0]?.textObject != null)
+            {
+                Destroy(messageList[0].textObject.gameObject);
+            }
             messageList.Remove(messageList[0]);
         }
+        
         Message newMessage = new();
         string _name = "Server";
 
         if (!_server)
         {
-            if (playerInfo.ContainsKey(_fromwho))
+            if (playerInfo != null && playerInfo.ContainsKey(_fromwho))
             {
-                _name = playerInfo[_fromwho].GetComponent<PlayerInfo>().steamName;
+                var playerCard = playerInfo[_fromwho];
+                if (playerCard != null && playerCard.TryGetComponent(out PlayerInfo playerInfoComponent))
+                {
+                    _name = playerInfoComponent.steamName;
+                }
             }
         }
 
         newMessage.text = _name + ": " + _text;
 
-        GameObject newText = Instantiate(textObject, chatPanel.transform);
-        newMessage.textObject = newText.GetComponent<TMP_Text>();
-        newMessage.textObject.text = newMessage.text;
-        if (_server)
+        if (textObject != null && chatPanel != null)
         {
-            newMessage.textObject.color = Color.red;
+            GameObject newText = Instantiate(textObject, chatPanel.transform);
+            newMessage.textObject = newText.GetComponent<TMP_Text>();
+            if (newMessage.textObject != null)
+            {
+                newMessage.textObject.text = newMessage.text;
+                if (_server)
+                {
+                    newMessage.textObject.color = Color.red;
+                }
+            }
         }
 
         messageList.Add(newMessage);

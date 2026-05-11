@@ -49,8 +49,10 @@ public class GameManager : NetworkBehaviour
             Destroy(gameObject);
         }
 
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
-        NetworkManager.Singleton.OnClientDisconnectCallback += UpdatePlayerStateServerRpc;
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        }
     }
 
 
@@ -341,6 +343,9 @@ public class GameManager : NetworkBehaviour
             OnClientShotChangedServerRpc(clientId, true);
             Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         }
+        
+        // Also update player state when client disconnects
+        UpdatePlayerStateServerRpc(clientId);
     }
 
     public void OnDisable()
@@ -350,8 +355,11 @@ public class GameManager : NetworkBehaviour
             OnHostDisconnected?.Invoke();
             LeaveGame();
         }
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
-        NetworkManager.Singleton.OnClientDisconnectCallback -= UpdatePlayerStateServerRpc;
+        
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+        }
     }
 
     public void LeaveGame()

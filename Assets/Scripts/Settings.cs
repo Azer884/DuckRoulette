@@ -9,9 +9,14 @@ public class Settings : MonoBehaviour
     private List<bool> isMenusActivated = new();
     private bool isFriendsActive;
     private Animator animator;
-    private void Awake() 
+
+    private void Awake()
     {
         animator = GetComponent<Animator>();
+        if (animator == null)
+        {
+            Debug.LogError("Settings: Animator component not found on this GameObject!");
+        }
     }
 
     public void OnClick()
@@ -28,10 +33,16 @@ public class Settings : MonoBehaviour
 
     public void OnSettingsClick()
     {
+        if (animator == null)
+        {
+            Debug.LogError("Settings: Animator is null!");
+            return;
+        }
+
         settingsMenu.SetActive(true);
 
         animator.ResetTrigger("OnSettings"); // Reset any existing trigger
-        if (menus[0].activeSelf)
+        if (menus.Count > 0 && menus[0].activeSelf)
         {
             animator.Play("Settings");
             animator.SetTrigger("OnSettings");
@@ -62,17 +73,25 @@ public class Settings : MonoBehaviour
         }
         friends.SetActive(isFriendsActive);
 
-        if (menus[3].activeSelf)
+        // Check if menus list has enough elements before accessing index 3
+        if (menus.Count > 3 && menus[3].activeSelf)
         {
             friends.GetComponent<Animator>().Play("FriendListOtherWay");
         }
-        if (menus[0].activeSelf)
+        
+        if (menus.Count > 0 && menus[0].activeSelf)
         {
-            animator.Play("SettingsAndOthers");
+            if (animator != null)
+            {
+                animator.Play("SettingsAndOthers");
+            }
         }
         else
         {
-            animator.Play("ExiitToSettings");
+            if (animator != null)
+            {
+                animator.Play("ExiitToSettings");
+            }
         }
     }
 

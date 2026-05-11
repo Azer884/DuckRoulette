@@ -11,7 +11,11 @@ public class MusicManager : MonoBehaviour
     [SerializeField] private float fadeDuration = 2f; // Duration for the crossfade effect
     private AudioSource musicSource;
     [SerializeField] private AudioClip[] musicClips; // Array to hold different music clips
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    
+    // Store delegate references to allow proper unsubscription
+    private Action pauseHandler;
+    private Action unpauseHandler;
+    
     void Awake()
     {
         if (Instance == null)
@@ -28,8 +32,12 @@ public class MusicManager : MonoBehaviour
 
     void OnEnable()
     {
-        PauseMenu.OnPause += () => PauseMusic(.5f);
-        PauseMenu.OnUnPause += () => UnPauseMusic(.5f);
+        // Create and store delegate references instead of using lambdas
+        pauseHandler = () => PauseMusic(.5f);
+        unpauseHandler = () => UnPauseMusic(.5f);
+        
+        PauseMenu.OnPause += pauseHandler;
+        PauseMenu.OnUnPause += unpauseHandler;
         SceneManager.sceneLoaded += PlayMusic;
     }
 
@@ -73,18 +81,24 @@ public class MusicManager : MonoBehaviour
 
     private void PauseMusic(float delay = 0.1f)
     {
-        audioMixer.FindSnapshot("Paused").TransitionTo(delay);
+        if (audioMixer != null)
+            audioMixer.FindSnapshot("Paused")?.TransitionTo(delay);
     }
 
     private void UnPauseMusic(float delay = 0.1f)
     {
-        audioMixer.FindSnapshot("Unpaused").TransitionTo(delay);
+        if (audioMixer != null)
+            audioMixer.FindSnapshot("Unpaused")?.TransitionTo(delay);
     }
 
     void OnDisable()
     {
-        PauseMenu.OnPause -= () => PauseMusic();
-        PauseMenu.OnUnPause -= () => UnPauseMusic();
+        // Now properly unsubscribe using stored references
+        if (pauseHandler != null)
+            PauseMenu.OnPause -= pauseHandler;
+        if (unpauseHandler != null)
+            PauseMenu.OnUnPause -= unpauseHandler;
+            
         SceneManager.sceneLoaded -= PlayMusic;
     }
 }

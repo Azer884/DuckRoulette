@@ -1,6 +1,5 @@
 using Steamworks;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using UnityEngine;
 
 public static class SaveSystem
@@ -9,14 +8,12 @@ public static class SaveSystem
 
     public static void Save(Coin coin)
     {
-        BinaryFormatter formatter = new();
-        using (MemoryStream memoryStream = new())
+        try
         {
             CoinData data = new(coin);
-            formatter.Serialize(memoryStream, data);
-
-            // Write the data to Steam Cloud
-            byte[] byteArray = memoryStream.ToArray();
+            string jsonData = JsonUtility.ToJson(data);
+            byte[] byteArray = Encoding.UTF8.GetBytes(jsonData);
+            
             bool success = SteamRemoteStorage.FileWrite(steamCloudFileName, byteArray);
             
             if (success)
@@ -28,29 +25,40 @@ public static class SaveSystem
                 Debug.LogError("Failed to save file to Steam Cloud.");
             }
         }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error saving to Steam Cloud: {e.Message}");
+        }
     }
 
     public static CoinData LoadCoin()
     {
         if (SteamRemoteStorage.FileExists(steamCloudFileName))
         {
-            Debug.Log("Found save file in Steam Cloud.");
-
-            byte[] byteArray = SteamRemoteStorage.FileRead(steamCloudFileName);
-
-            using MemoryStream memoryStream = new(byteArray);
-            BinaryFormatter formatter = new();
-            CoinData data = formatter.Deserialize(memoryStream) as CoinData;
-
-            if (data != null)
+            try
             {
-                Debug.Log("File loaded successfully from Steam Cloud.");
+                Debug.Log("Found save file in Steam Cloud.");
+
+                byte[] byteArray = SteamRemoteStorage.FileRead(steamCloudFileName);
+                string jsonData = Encoding.UTF8.GetString(byteArray);
+                
+                CoinData data = JsonUtility.FromJson<CoinData>(jsonData);
+
+                if (data != null)
+                {
+                    Debug.Log("File loaded successfully from Steam Cloud.");
+                }
+                return data;
             }
-            return data;
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error loading from Steam Cloud: {e.Message}");
+                return null;
+            }
         }
         else
         {
-            Debug.LogError($"Save file not found in Steam Cloud: {steamCloudFileName}");
+            Debug.LogWarning($"Save file not found in Steam Cloud: {steamCloudFileName}");
             return null;
         }
     }

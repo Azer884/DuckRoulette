@@ -41,7 +41,10 @@ public class TeamUp : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.X))
             {
-                MessageBox.Informate("You have ended the team up with player " + GameManager.Instance.GetPlayerNickname((ulong)teamMateId), Color.red, MessagePriority.High);
+                if (GameManager.Instance != null)
+                {
+                    MessageBox.Informate("You have ended the team up with player " + GameManager.Instance.GetPlayerNickname((ulong)teamMateId), Color.red, MessagePriority.High);
+                }
                 OnExitTeamUp?.Invoke();
 
                 EndTeamUpOnServer();
@@ -77,28 +80,34 @@ public class TeamUp : NetworkBehaviour
         {
             if (Input.GetKeyDown(KeyCode.E))
             {
-                if (!isTeamedUp && Time.time >= lastTeamUpTime + teamUpCooldown && !haveRequest)
+                if (GameManager.Instance != null)
                 {
-                    GameManager.Instance.TeamUpRequestServerRpc(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId);
-                    lastTeamUpTime = Time.time;
+                    if (!isTeamedUp && Time.time >= lastTeamUpTime + teamUpCooldown && !haveRequest)
+                    {
+                        GameManager.Instance.TeamUpRequestServerRpc(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId);
+                        lastTeamUpTime = Time.time;
+                    }
+                    else if (haveRequest)
+                    {
+                        isTeamedUp = true;
+                        haveRequest = false;
+                        teamMateId = requesterId;
+                        perfectDap = UnityEngine.Random.Range(0, 2);
+                        //Play the dap animation and sound
+
+                        GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
+                        MessageBox.Informate("You have teamed up with player " + requesterId, Color.green, MessagePriority.High);
+
+                        // Change the color of the player
+                        AddTeamMate();
+                    }
                 }
-                else if (haveRequest)
-                {
-                    isTeamedUp = true;
-                    haveRequest = false;
-                    teamMateId = requesterId;
-                    perfectDap = UnityEngine.Random.Range(0, 2);
-                    //Play the dap animation and sound
-
-                    GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
-                    MessageBox.Informate("You have teamed up with player " + requesterId, Color.green, MessagePriority.High);
-
-                    // Change the color of the player
-                    AddTeamMate();
-                }
-
             }
-            MessageBox.Informate("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId), Color.white, MessagePriority.Low, 0.5f);
+            
+            if (GameManager.Instance != null && validPlayers.Count > 0)
+            {
+                MessageBox.Informate("Press E to team up with player " + GameManager.Instance.GetPlayerNickname(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId), Color.white, MessagePriority.Low, 0.5f);
+            }
         }
         else if (haveRequest)
         {
@@ -112,10 +121,12 @@ public class TeamUp : NetworkBehaviour
         {
             return;
         }
-        MessageBox.Informate("Player " + GameManager.Instance.GetPlayerNickname(requesterId) + " wants to team up with you. Press E to accept.", Color.yellow, MessagePriority.Medium);
+        if (GameManager.Instance != null)
+        {
+            MessageBox.Informate("Player " + GameManager.Instance.GetPlayerNickname(requesterId) + " wants to team up with you. Press E to accept.", Color.yellow, MessagePriority.Medium);
+        }
         this.requesterId = (int)requesterId; // Store the requesterId
         haveRequest = true;
-        
     }
 
     public void EndTeamUpOnServer()

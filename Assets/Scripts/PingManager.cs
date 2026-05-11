@@ -3,7 +3,7 @@ using UnityEngine;
 using TMPro;
 using Steamworks.Data;
 
-public class StatsManager : MonoBehaviour
+public class PingManager : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI pingText;
     [SerializeField] private TextMeshProUGUI fpsText;
@@ -17,13 +17,17 @@ public class StatsManager : MonoBehaviour
     private void UpdateFps()
     {
         // Update the UI Text
-        if (fpsText != null)
+        if (fpsText != null && StatTracker.Instance != null)
         {
             fpsText.text = $"FPS: {StatTracker.Instance.currentFPS:F0}";
         }
     }
+    
     private void UpdatePing()
     {
-        pingText.text = $"Ping: {StatTracker.Instance.currentPing:F0} ms";
+        if (pingText != null && StatTracker.Instance != null)
+        {
+            pingText.text = $"Ping: {StatTracker.Instance.currentPing:F0} ms";
+        }
     }
 }

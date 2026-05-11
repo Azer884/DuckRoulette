@@ -56,8 +56,27 @@ public class PlayerSpawner : NetworkBehaviour
 
     private void GoBackToLobby(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        if (sceneName != "Lobby" || LobbySaver.instance == null || LobbySaver.instance.currentLobby == null ||  GameNetworkManager.Instance == null ||  NetworkTransmission.instance == null)
+        if (sceneName != "Lobby")
             return;
+            
+        // Check all required components exist
+        if (LobbySaver.instance == null || LobbySaver.instance.currentLobby == null)
+        {
+            Debug.LogWarning("LobbySaver or current lobby is null");
+            return;
+        }
+        
+        if (GameNetworkManager.Instance == null)
+        {
+            Debug.LogWarning("GameNetworkManager is null");
+            return;
+        }
+        
+        if (NetworkTransmission.instance == null)
+        {
+            Debug.LogWarning("NetworkTransmission is null");
+            return;
+        }
 
         if (IsHost)
         {

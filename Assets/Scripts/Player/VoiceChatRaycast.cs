@@ -45,6 +45,13 @@ public class VoiceChatRaycast : NetworkBehaviour
             float distanceToOtherPlayer = Vector3.Distance(transform.position, otherPlayer.position);
             AudioSource voiceAudio = otherPlayer.GetComponent<AudioSource>();
 
+            // Safety check for AudioSource
+            if (voiceAudio == null)
+            {
+                Debug.LogWarning($"VoiceChatRaycast: No AudioSource found on {otherPlayer.name}");
+                continue;
+            }
+
             if (distanceToOtherPlayer <= maxDistance)
             {
                 float proximityVolume = 1f - (distanceToOtherPlayer / maxDistance);  // Closer = louder
@@ -115,16 +122,38 @@ public class VoiceChatRaycast : NetworkBehaviour
     // This method is called when a new player connects to the game
     private void OnPlayerConnect(ulong clientId)
     {
-        GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId).gameObject;
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+        {
+            Debug.LogWarning("VoiceChatRaycast: NetworkManager or SpawnManager is null!");
+            return;
+        }
+
+        var playerNetObj = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+        if (playerNetObj == null)
+        {
+            Debug.LogWarning($"VoiceChatRaycast: Player network object not found for clientId {clientId}");
+            return;
+        }
+
+        GameObject playerObject = playerNetObj.gameObject;
         if (playerObject != null && playerObject.CompareTag("Player") && playerObject != gameObject)
         {
             // Add the new player to the list
             otherPlayers.Add(playerObject.transform);
         }
     }
+    
     private void OnPlayerDisconnect(ulong clientId)
     {
-        GameObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId)?.gameObject;
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+        {
+            Debug.LogWarning("VoiceChatRaycast: NetworkManager or SpawnManager is null!");
+            return;
+        }
+
+        var playerNetObj = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+        GameObject playerObject = playerNetObj?.gameObject;
+        
         if (playerObject != null && playerObject.CompareTag("Player"))
         {
             // Remove the disconnected player from the list

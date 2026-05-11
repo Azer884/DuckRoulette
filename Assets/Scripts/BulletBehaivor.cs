@@ -7,24 +7,37 @@ public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
     private float speed = 15f;
-    public NetworkVariable<Vector3> initialVelocity;
+    public NetworkVariable<Vector3> initialVelocity = new();
+    
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.isKinematic = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        if (rb != null)
+        {
+            rb.useGravity = false;
+            rb.isKinematic = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        }
+        else
+        {
+            Debug.LogError("Bullet missing Rigidbody component!");
+        }
         
         DestroyServerRpc(5);
         initialVelocity.OnValueChanged += MoveBullet;
     }
+    
     private void MoveBullet(Vector3 previousValue, Vector3 newValue) 
     {
-        transform.rotation = Quaternion.LookRotation(newValue);
-        rb.linearVelocity = newValue * speed;
+        if (rb != null)
+        {
+            transform.rotation = Quaternion.LookRotation(newValue);
+            rb.linearVelocity = newValue * speed;
+        }
     }
+    
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
@@ -40,7 +53,13 @@ public class BulletBehavior : NetworkBehaviour
     private IEnumerator DestroyAfterDelay(float waitingTime)
     {
         yield return new WaitForSeconds(waitingTime);
-        gameObject.GetComponent<NetworkObject>().Despawn();
-        Destroy(gameObject);
+        if (gameObject != null && TryGetComponent<NetworkObject>(out var netObj))
+        {
+            netObj.Despawn();
+        }
+        if (gameObject != null)
+        {
+            Destroy(gameObject);
+        }
     }
 }

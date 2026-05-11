@@ -35,6 +35,19 @@ public class NetworkTransmission : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void AddMeToDictionaryServerRPC(ulong _steamId, string _steamName, ulong _clientId)
     {
+        // Check for null instances
+        if (LobbyManager.instance == null)
+        {
+            Debug.LogError("LobbyManager instance is null!");
+            return;
+        }
+        
+        if (GameNetworkManager.Instance == null || GameNetworkManager.Instance.playerObj == null)
+        {
+            Debug.LogError("GameNetworkManager Instance or playerObj is null!");
+            return;
+        }
+
         LobbyManager.instance.SendMessageToChat($"{_steamName} has joined", _clientId, true);
         _ = LobbyManager.instance.AddPlayerToDictionaryAsync(_clientId, _steamName, _steamId);
         LobbyManager.instance.UpdateClients();
@@ -45,7 +58,11 @@ public class NetworkTransmission : NetworkBehaviour
         if (playerObj.TryGetComponent(out NetworkObject networkObject))
         {
             networkObject.SpawnAsPlayerObject(_clientId, true);
-            GridManager.Instance.AddCharacter(networkObject);
+            
+            if (GridManager.Instance != null)
+            {
+                GridManager.Instance.AddCharacter(networkObject);
+            }
         }
     }
 

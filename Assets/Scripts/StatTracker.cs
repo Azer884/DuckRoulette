@@ -65,15 +65,20 @@ public class StatTracker : MonoBehaviour
         }
         if (playerObj.TryGetComponent(out Slap slapComponent))
         {
-            slapComponent.OnSlapTriggered += () => slapsCount++;
-            slapComponent.OnSlapRecived += () => slapsRecivedCount++;
+            slapComponent.OnSlapTriggered += OnSlapTriggered;
+            slapComponent.OnSlapRecived += OnSlapReceived;
         }
         if (playerObj.TryGetComponent(out teamUpComponent))
         {
-            teamUpComponent.OnTeamUp += () => teamUpsCount++;
-            teamUpComponent.OnExitTeamUp += () => exitTeamUpCount++;
+            teamUpComponent.OnTeamUp += OnTeamUp;
+            teamUpComponent.OnExitTeamUp += OnExitTeamUp;
         }
     }
+    
+    private void OnSlapTriggered() => slapsCount++;
+    private void OnSlapReceived() => slapsRecivedCount++;
+    private void OnTeamUp() => teamUpsCount++;
+    private void OnExitTeamUp() => exitTeamUpCount++;
     private void OnEnable()
     {
         StartCoroutine(WaitForPlayerSpawn());
@@ -168,13 +173,13 @@ public class StatTracker : MonoBehaviour
             }
             if (playerObj.TryGetComponent(out Slap slapComponent))
             {
-                slapComponent.OnSlapTriggered -= () => slapsCount++;
-                slapComponent.OnSlapRecived -= () => slapsRecivedCount++;
+                slapComponent.OnSlapTriggered -= OnSlapTriggered;
+                slapComponent.OnSlapRecived -= OnSlapReceived;
             }
             if (playerObj.TryGetComponent(out teamUpComponent))
             {
-                teamUpComponent.OnTeamUp -= () => teamUpsCount++;
-                teamUpComponent.OnExitTeamUp -= () => exitTeamUpCount++;
+                teamUpComponent.OnTeamUp -= OnTeamUp;
+                teamUpComponent.OnExitTeamUp -= OnExitTeamUp;
             }
         }
     }

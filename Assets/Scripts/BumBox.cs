@@ -14,18 +14,25 @@ public class BumBox : NetworkBehaviour, IInteractable
         if (IsHeld) return;
         PickUpServerRpc(clientId);
 
-        Interact interact = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<Interact>();
-        interact.fakeBox.gameObject.SetActive(true);
-        interact.fakeboxShadow.gameObject.SetActive(true);
+        var localPlayer = NetworkManager.Singleton?.SpawnManager?.GetLocalPlayerObject();
+        if (localPlayer != null && localPlayer.TryGetComponent<Interact>(out var interact))
+        {
+            interact.fakeBox.gameObject.SetActive(true);
+            interact.fakeboxShadow.gameObject.SetActive(true);
+        }
     }
+    
     public void Drop()
     {
         if (!IsHeld) return;
         DropServerRpc();
 
-        Interact interact = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<Interact>();
-        interact.fakeBox.gameObject.SetActive(false);
-        interact.fakeboxShadow.gameObject.SetActive(false);
+        var localPlayer = NetworkManager.Singleton?.SpawnManager?.GetLocalPlayerObject();
+        if (localPlayer != null && localPlayer.TryGetComponent<Interact>(out var interact))
+        {
+            interact.fakeBox.gameObject.SetActive(false);
+            interact.fakeboxShadow.gameObject.SetActive(false);
+        }
     }
 
     public void Mute()
@@ -64,9 +71,20 @@ public class BumBox : NetworkBehaviour, IInteractable
     private void DropClientRpc()
     {
         IsHeld = false;
-        GetComponent<Collider>().isTrigger = false;
-        Rigidbody rb = gameObject.AddComponent<Rigidbody>();
-        rb.AddForce(NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject((ulong)holderId).transform.forward * 5f, ForceMode.Impulse);
+        
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+        {
+            col.isTrigger = false;
+        }
+        
+        var playerObj = NetworkManager.Singleton?.SpawnManager?.GetPlayerNetworkObject((ulong)holderId);
+        if (playerObj != null)
+        {
+            Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+            rb.AddForce(playerObj.transform.forward * 5f, ForceMode.Impulse);
+        }
+        
         holderId = -1;
     }
 
@@ -79,14 +97,16 @@ public class BumBox : NetworkBehaviour, IInteractable
     [ClientRpc]
     private void MuteClientRpc()
     {
-        AudioSource audioSource = GetComponent<AudioSource>();
-        if (audioSource.isPlaying)
+        if (TryGetComponent<AudioSource>(out var audioSource))
         {
-            audioSource.Pause();
-        }
-        else
-        {
-            audioSource.UnPause();
+            if (audioSource.isPlaying)
+            {
+                audioSource.Pause();
+            }
+            else
+            {
+                audioSource.UnPause();
+            }
         }
     }
 }

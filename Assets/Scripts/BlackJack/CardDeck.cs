@@ -37,6 +37,20 @@ public class CardDeck : NetworkBehaviour
     }
     public override void OnNetworkSpawn()
     {
+        // Safety checks before accessing components
+        if (turnsText == null)
+        {
+            Debug.LogError("CardDeck: turnsText is not assigned!");
+            return;
+        }
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("CardDeck: GameManager.Instance is null!");
+            turnsText.text = "Turn: Unknown";
+            return;
+        }
+
         turnsText.text = $"Turn: {GameManager.Instance.GetPlayerNickname(playerTurn.Value)}";
     }
     public void EnterGame(ulong clientId)

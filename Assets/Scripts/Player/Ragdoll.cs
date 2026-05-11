@@ -188,7 +188,12 @@ public class Ragdoll : NetworkBehaviour
         foreach (var anim in otherAnimators)
             anim.enabled = false;
 
-        GetComponent<SFXHandler>().PainSound();
+        // Safely get and call SFXHandler
+        if (TryGetComponent<SFXHandler>(out var sfxHandler))
+        {
+            sfxHandler.PainSound();
+        }
+        
         shootingStates = shooting.enabled;
 
         SetScriptsEnabled(false);
