@@ -48,6 +48,11 @@ public class Movement : NetworkBehaviour
     
     private bool isOnIce = false; // Check if the player is on ice
     private bool isSliding = false;
+    private float slideStartTime = 0f;
+    private float slideEndTime = 0f; // When momentum depletes
+    private float slidePunishmentDuration = 0.6f; // Extra punishment time after momentum depletes
+    private Vector3 slideDirection = Vector3.zero;
+    
     [SerializeField] private float iceFriction = 0.98f; // Ice friction (less than 1 for sliding)
     [SerializeField] private float slidingSpeedMultiplier = 7f; // Speed boost during tobogganing
     [SerializeField] private float slidingFriction = 0.95f; // Friction for sliding deceleration
@@ -83,8 +88,14 @@ public class Movement : NetworkBehaviour
             thirdPersonCam.SetActive(false);
             camHolder.gameObject.SetActive(true);
             secondCamHolder.SetActive(true);
-            slidingCam.SetActive(true);
+            slidingCam.SetActive(false);
             rig.gameObject.SetActive(true);
+            rig.weight = 1f;
+            isSliding = false;
+            isOnIce = false;
+            slideStartTime = 0f;
+            slideEndTime = 0f;
+            slideDirection = Vector3.zero;
             ChangeLayerRecursively(fullBody, 2);
             ChangeLayerRecursively(legs, 3);
             ChangeLayerRecursively(FPShadow, 3);
@@ -182,13 +193,12 @@ public class Movement : NetworkBehaviour
         Vector2 movement = GetPlayerMovement();
         speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched ? 2.0f : 1.0f;
 
-        if (isSliding && isOnIce)
+        if (isSliding)
         {
             HandleSliding();
         }
         else
         {
-            EndSliding();
             Vector3 move = transform.right * movement.x + transform.forward * movement.y;
 
             if (isOnIce)
@@ -206,7 +216,7 @@ public class Movement : NetworkBehaviour
         }
 
         // Handle jumping
-        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
+        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding && !IsHoldingGun())
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpImpulseSource.GenerateImpulse();
@@ -219,6 +229,8 @@ public class Movement : NetworkBehaviour
 
         // Apply gravity
         velocity.y += gravity * Time.deltaTime;
+        
+        // Apply movement
         controller.Move(velocity * Time.deltaTime);
 
         // Update animator
@@ -229,37 +241,72 @@ public class Movement : NetworkBehaviour
 
     private void HandleSliding()
     {
+        float slideElapsed = Time.time - slideStartTime;
+        
+        // Check if slide momentum is depleted (below threshold)
+        float momentumMagnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;
+        if (momentumMagnitude < slidingStopThreshold && slideEndTime == 0f)
+        {
+            slideEndTime = Time.time; // Mark when momentum ended
+        }
+        
+        // Calculate total lock duration: (momentum duration) + punishment
+        float momentumDuration = slideEndTime > 0f ? slideEndTime - slideStartTime : slideElapsed;
+        float totalLockDuration = momentumDuration + slidePunishmentDuration;
+        
+        // End slide when total duration is reached
+        if (slideElapsed >= totalLockDuration)
+        {
+            EndSliding();
+            return;
+        }
+        
+        // Decay the slide direction smoothly until it reaches near-zero
+        float decayRate = 1.5f; // Slower decay so the slide travels farther
+        slideDirection = Vector3.Lerp(slideDirection, Vector3.zero, Time.deltaTime * decayRate);
+        
+        velocity.x = slideDirection.x;
+        velocity.z = slideDirection.z;
+        
+        // Apply slight downward force to keep grounded
         if (velocity.y <= 0.5f)
         {
-            if (velocity.x < slidingStopThreshold && velocity.z < slidingStopThreshold)
-            {
-                EndSliding();
-                return;
-            }
-            // Decelerate sliding
-            velocity.x *= slidingFriction * slidingSpeedMultiplier;
-            velocity.z *= slidingFriction * slidingSpeedMultiplier;
-            rig.weight = Mathf.Lerp(rig.weight, 0.1f, Time.deltaTime * 5f);
-
-            slidingSpeedMultiplier = 1f;
+            velocity.y -= 0.1f;
         }
     }
+    
     private void StartSliding()
     {
         isSliding = true;
+        slideStartTime = Time.time;
+        slideEndTime = 0f; // Reset
+        
+        // Capture current momentum direction
+        float horizontalSpeed = new Vector3(velocity.x, 0, velocity.z).magnitude;
+        if (horizontalSpeed > 0.1f)
+        {
+            slideDirection = new Vector3(velocity.x, 0, velocity.z).normalized * horizontalSpeed * 2.5f;
+        }
+        else
+        {
+            slideDirection = transform.forward * 3.5f;
+        }
+        
+        // Give slight upward velocity for jump effect
+        velocity.y = Mathf.Sqrt(jumpHeight * 0.5f * -2f * gravity);
 
         controller.height = slidingHeight;
         legs.SetActive(false);
         FPShadow.SetActive(false);
         Hands.SetActive(false);
-        GetComponent<Shooting>().enabled = false;
+        
         slidingCam.SetActive(true);
     }
+    
     private void EndSliding()
     {
         isSliding = false;
-        slidingSpeedMultiplier = 2.5f;
-
+        
         rig.weight = Mathf.Lerp(rig.weight, 1, Time.deltaTime * 5f);
         legs.SetActive(true);
         FPShadow.SetActive(true);
@@ -322,5 +369,11 @@ public class Movement : NetworkBehaviour
         {
             ChangeLayerRecursively(child.gameObject, newLayer);
         }
+    }
+
+    private bool IsHoldingGun()
+    {
+        Shooting shooting = GetComponent<Shooting>();
+        return shooting != null && shooting.haveGun.Value;
     }
 }
