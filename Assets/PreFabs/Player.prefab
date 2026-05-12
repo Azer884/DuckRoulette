@@ -3668,7 +3668,7 @@ MonoBehaviour:
   secondCamHolder: {fileID: 997031592226788083}
   cam: {fileID: 8813567206117873541}
   movementSpeed: 3
-  lookSensitivity: 5
+  spinRig: {fileID: 1053368495529338142}
   gravity: -30
   speedMultiplier: 1
   jumpHeight: 1.5

@@ -15,7 +15,7 @@ public class Movement : NetworkBehaviour
     [SerializeField] private GameObject secondCamHolder;
     [SerializeField] private GameObject cam;
     [SerializeField] private float movementSpeed = 2.0f;
-    [SerializeField] public float lookSensitivity = 1.0f;
+    [SerializeField] private Rig spinRig;
     private float xRotation = 0f;
 
     [Header("Movement Variables"), Space]
@@ -299,6 +299,8 @@ public class Movement : NetworkBehaviour
         legs.SetActive(false);
         FPShadow.SetActive(false);
         Hands.SetActive(false);
+
+        spinRig.weight = 0f; // Disable spin rig for sliding
         
         slidingCam.SetActive(true);
     }
@@ -312,6 +314,8 @@ public class Movement : NetworkBehaviour
         FPShadow.SetActive(true);
         Hands.SetActive(true);
         slidingCam.SetActive(false);
+        
+        spinRig.weight = 1f;
     }
 
     private void UpdateAnimator(float xVelocity, float yVelocity)
