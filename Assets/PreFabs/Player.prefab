@@ -3755,10 +3755,10 @@ MonoBehaviour:
   shotCounter: 0
   emptyShots: 0
   vfxPrefab: {fileID: 5277833064454356266, guid: eede70b7f9c52cb46a111b92aaa290fa, type: 3}
-  reloadClip: {fileID: 0}
-  triggerClip: {fileID: 0}
-  shootClip: {fileID: 8300000, guid: 7980f1c6b4517e84c9d8a7a76719cf9f, type: 3}
-  emptyShotClip: {fileID: 8300000, guid: ec001663444a8e34ba169b9f392e62e7, type: 3}
+  reloadClip: {fileID: 8300000, guid: 76dbbc6404367ea4cb22751ea6935e48, type: 3}
+  triggerClip: {fileID: 8300000, guid: 17b6c5c039fb95b4fb4846f7ef0d9ed8, type: 3}
+  shootClip: {fileID: 8300000, guid: 3db7fa953f92caf46a2ea5364d148583, type: 3}
+  emptyShotClip: {fileID: 8300000, guid: 9cd5972a549b12f4bba2af12b0964ff7, type: 3}
   sfxMixerGroup: {fileID: -6730983486251991596, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
 --- !u!114 &8323436409233549481
 MonoBehaviour:
