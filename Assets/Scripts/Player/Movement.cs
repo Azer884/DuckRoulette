@@ -116,8 +116,27 @@ public class Movement : NetworkBehaviour
     private void DoLooking()
     {
         Vector2 looking = GetPlayerLook();
-        float lookX = looking.x * lookSensitivity * Time.deltaTime;
-        float lookY = looking.y * lookSensitivity * Time.deltaTime;
+        bool isGamepadLook = IsGamepadLookInput();
+
+        float sensitivityX = 1f;
+        float sensitivityY = 1f;
+
+        if (SettingsManager.Instance != null)
+        {
+            if (isGamepadLook)
+            {
+                sensitivityX = SettingsManager.Instance.ControllerSensitivityX;
+                sensitivityY = SettingsManager.Instance.ControllerSensitivityY;
+            }
+            else
+            {
+                sensitivityX = SettingsManager.Instance.MouseSensitivityX;
+                sensitivityY = SettingsManager.Instance.MouseSensitivityY;
+            }
+        }
+
+        float lookX = looking.x * sensitivityX * Time.deltaTime;
+        float lookY = looking.y * sensitivityY * Time.deltaTime;
 
         xRotation -= lookY;
         xRotation = Mathf.Clamp(xRotation, -85f, 75f);
@@ -127,6 +146,13 @@ public class Movement : NetworkBehaviour
 
         mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x / 20, 4 * Time.deltaTime);
         mouseXSmooth = Mathf.Clamp(mouseXSmooth, -1, 1);
+    }
+
+    private bool IsGamepadLookInput()
+    {
+        var lookAction = inputActions.FindAction("Look");
+        var activeControl = lookAction != null ? lookAction.activeControl : null;
+        return activeControl != null && activeControl.device is Gamepad;
     }
 
 

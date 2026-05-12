@@ -119,13 +119,14 @@ public class Shooting : NetworkBehaviour
             bool isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
             
             // Play shooting animation once
-            foreach (Animator animator in animators)
-            {
-                animator.Play("Shooting");
-            }
             
             if (isValidShot)
             {
+                foreach (Animator animator in animators)
+                {
+                    animator.Play("Shooting");
+                }
+                
                 OnGunShot?.Invoke();
                 if (!CanUseNetcode())
                 {
@@ -139,6 +140,11 @@ public class Shooting : NetworkBehaviour
             }
             else
             {
+                for (int i = 0; i < 3; i++)
+                {
+                    animators[i].Play("Shooting");
+                }
+                
                 // This was an empty shot
                 emptyShots++;
                 PlayEmptyShotSound(spawnPt != null ? spawnPt.position : transform.position);
@@ -151,7 +157,7 @@ public class Shooting : NetworkBehaviour
     private System.Collections.IEnumerator Triggering()
     {
         // Wait until the "Shooting" animation has finished playing
-        while (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
+        while (animators[4].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
         {
             yield return null;
         }

@@ -38,11 +38,8 @@ public class InpToSlider : MonoBehaviour
             {
                 SettingsManager.Instance.audioMixer.SetFloat(sectionName, Mathf.Log10(number) * 20);
             }
-            // Clamp the value between 0 and 1
-            number = Mathf.Clamp(number, 0f, 1f);
-
-            // Adjust for the specific rules
-            if (number > 0.99f) number = 1f;
+            // Clamp the value to slider's min and max
+            number = Mathf.Clamp(number, sliderSens.minValue, sliderSens.maxValue);
 
             // Format the value to ensure proper display
             value = number.ToString("F2");
@@ -69,11 +66,8 @@ public class InpToSlider : MonoBehaviour
         {
             SettingsManager.Instance.audioMixer.SetFloat(sectionName, Mathf.Log10(value) * 20);
         }
-        // Clamp the slider value between 0 and 1
-        value = Mathf.Clamp(value, 0f, 1f);
-
-        // Adjust for specific rules
-        if (value > 0.99f) value = 1f;
+        // Clamp the slider value to its min and max range
+        value = Mathf.Clamp(value, sliderSens.minValue, sliderSens.maxValue);
 
         // Update the input field and format the value
         sliderSensInp.text = value.ToString("F2");
