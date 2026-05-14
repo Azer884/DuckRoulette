@@ -11,46 +11,80 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8e3cb98b-6c1f-4c15-8eaa-884e912b130a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkOneShotAudio.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkOneShotAudio.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CODE_REVIEW_AND_OPTIMIZATION.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/COMPLETE_CODE_REVIEW_FINAL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CRITICAL_BUGS_FIXED.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/FIXES_APPLIED_SUMMARY.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/OPTIMIZATION_AND_BEST_PRACTICES.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README_CODE_REVIEW.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/REVIEW_COMPLETION_SUMMARY.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SUBFOLDER_ANALYSIS_SUPPLEMENT.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkFootstepVfx.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkFootstepVfx.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/RunVfxNetworkFollower.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/RunVfxNetworkFollower.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Animation/Gun/Gun.controller" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Animation/Gun/Gun.controller" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Source 3D.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Source 3D.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/BlackJack/CardDeck.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/BlackJack/CardDeck.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Ragdoll.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Shooting.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Shooting.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Slap.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Slap.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SFXWithAnimation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SFXWithAnimation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/FootStepScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/FootStepScript.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/NoiseHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NoiseHandler.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="CopilotChats">
+    <option name="panelChat">
+      <chat>
+        <option name="activeSessionId" value="460f470a-c4cb-416e-89f4-c519ac380618" />
+        <option name="sessions">
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="e33994e4-c547-47ad-baed-2812a05cb542" />
+            <option name="modeId" value="Ask" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="status" value="Completed" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="66af049a-f69b-42e6-9898-a5f40a58db52" />
+            <option name="modeId" value="Ask" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="460f470a-c4cb-416e-89f4-c519ac380618" />
+            <option name="modeId" value="Agent" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="status" value="Completed" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+        </option>
+        <option name="type" value="PANEL" />
+      </chat>
+    </option>
+  </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
       <entry key="_C:/Users/azerh/UnityProjects/DuckRoulette" value="35W6Alq2JfKNOD9hmMx3An4qjxl" />
     </persistenceIdMap>
   </component>
+  <component name="CopilotUserSelectedModel">
+    <selectedModels>
+      <entry key="agent-panel" value="Auto" />
+      <entry key="chat-panel" value="Auto" />
+    </selectedModels>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ee16c2cb688d4766af955c0ec92acd90573638/f9/b0edd0f6/IEnumerator.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Scripts/GameManager.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Scripts/HidingSpot.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.netcode.gameobjects@f2477a6c90fe/Runtime/Messaging/Messages/RpcMessages.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/Player/RunVfxNetworkFollower.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="McpProjectServerCommands">
     <commands />
@@ -60,6 +94,20 @@
   &quot;associatedIndex&quot;: 2
 }</component>
   <component name="ProjectId" id="35W6Alq2JfKNOD9hmMx3An4qjxl" />
+  <component name="ProjectSessionTemplates">
+    <option name="panelTemplate">
+      <template>
+        <option name="modeId" value="Agent" />
+        <option name="model">
+          <model>
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+          </model>
+        </option>
+        <option name="targetType" value="LOCAL" />
+      </template>
+    </option>
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -163,6 +211,7 @@
       <workItem from="1771692015913" duration="446000" />
       <workItem from="1772595420976" duration="32000" />
       <workItem from="1778509542405" duration="3450000" />
+      <workItem from="1778749297381" duration="9649000" />
     </task>
     <servers />
   </component>

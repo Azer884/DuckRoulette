@@ -3697,6 +3697,18 @@ MonoBehaviour:
   slidingHeight: 1.5
   slidingCam: {fileID: 2003941008710050662}
   rig: {fileID: 1053368495529338142}
+  walkFov: 60
+  runFov: 95
+  fovLerpSpeed: 2
+  runVfxOrigin: {fileID: 6926125661347908700}
+  defaultRunVfxPrefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
+  runVfxBySurface: []
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  runVfxRayDistance: 1.5
+  runVfxSurfaceOffset: 0.02
+  runVfxRequestCooldown: 0.1
 --- !u!114 &5993872244831146990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4602,6 +4614,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   virtualCamera: {fileID: 6690049341799254103}
+  walkShakeAmplitude: 0.05
+  walkShakeFrequency: 0.8
+  runShakeAmplitude: 0.12
+  runShakeFrequency: 1.6
+  movementSpeedThreshold: 1.2
+  movementSmoothing: 10
+  jumpShakeAmplitude: 0.35
+  jumpShakeFrequency: 2
+  jumpShakeDuration: 0.12
+  shootShakeAmplitude: 0.45
+  shootShakeFrequency: 1.8
+  shootShakeDuration: 0.1
+  slapShakeAmplitude: 0.55
+  slapShakeFrequency: 5
+  slapShakeDuration: 0.12
+  hitShakeAmplitude: 0.9
+  hitShakeFrequency: 3
+  hitShakeDuration: 0.15
   shootingNoise: {fileID: 11400000, guid: e9ce97b7a206dc64d90931ea044e0c72, type: 2}
 --- !u!114 &9008643366807559449
 MonoBehaviour:
@@ -10226,7 +10256,7 @@ Transform:
   m_GameObject: {fileID: 6284063702442879829}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.937, z: 0}
+  m_LocalPosition: {x: 0, y: -1.247, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10350,6 +10380,14 @@ MonoBehaviour:
   - {fileID: 8300000, guid: ba4a078066d9aae4cbc2362273873cbb, type: 3}
   - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
   impulseSource: {fileID: 7136494257465206030}
+  defaultFootstepVfxPrefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
+  footstepVfxBySurface: []
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundRayDistance: 1.25
+  surfaceOffset: 0.02
+  vfxLifetime: 1.25
 --- !u!1 &6308959954050169383
 GameObject:
   m_ObjectHideFlags: 0

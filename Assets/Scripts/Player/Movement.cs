@@ -8,6 +8,14 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class Movement : NetworkBehaviour
 {
+    [System.Serializable]
+    public class SurfaceRunVfxEntry
+    {
+        public string surfaceTag;
+        public string physicMaterialName;
+        public GameObject vfxPrefab;
+    }
+
     private InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
     private CharacterController controller;
     
@@ -61,6 +69,32 @@ public class Movement : NetworkBehaviour
     [SerializeField] private GameObject slidingCam;
     [SerializeField] private Rig rig;
 
+    [Header("Camera FOV"), Space]
+    [SerializeField] private float walkFov = 60f;
+    [SerializeField] private float runFov = 70f;
+    [SerializeField] private float fovLerpSpeed = 8f;
+
+    [Header("Run VFX"), Space]
+    [SerializeField] private Transform runVfxOrigin;
+    [SerializeField] private GameObject defaultRunVfxPrefab;
+    [SerializeField] private List<SurfaceRunVfxEntry> runVfxBySurface = new();
+    [SerializeField] private LayerMask groundLayerMask = ~0;
+    [SerializeField] private float runVfxRayDistance = 1.5f;
+    [SerializeField] private float runVfxSurfaceOffset = 0.02f;
+    [SerializeField] private float runVfxRequestCooldown = 0.1f;
+
+    private CinemachineCamera playerCamera;
+    private float targetFov;
+    private NoiseHandler noiseHandler;
+    private GameObject activeRunVfxPrefab;
+    private string activeRunSurfaceKey;
+    private bool runVfxActive;
+    private float lastRunVfxRequestTime;
+    private GameObject spawnedRunVfxPrefab;
+    private NetworkObject spawnedRunVfxObject;
+
+    public Transform RunVfxOrigin => runVfxOrigin;
+
     float mouseXSmooth = 0f;
 
     public override void OnNetworkSpawn()
@@ -103,12 +137,48 @@ public class Movement : NetworkBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        if (IsOwner)
+        {
+            RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+        }
+
+        StopRunVfx();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer)
+        {
+            StopRunVfxServer();
+        }
+
+        base.OnNetworkDespawn();
+    }
+
     private void Start()
     {
         controller = GetComponent<CharacterController>();
         inputActions = GetComponent<InputSystem>().inputActions;
+        noiseHandler = GetComponent<NoiseHandler>();
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
+
+        playerCamera = cam != null ? cam.GetComponentInChildren<CinemachineCamera>() : null;
+        if (playerCamera == null && camHolder != null)
+        {
+            playerCamera = camHolder.GetComponentInChildren<CinemachineCamera>();
+        }
+        if (playerCamera == null)
+        {
+            playerCamera = GetComponentInChildren<CinemachineCamera>();
+        }
+        if (playerCamera != null)
+        {
+            walkFov = playerCamera.Lens.FieldOfView;
+            targetFov = walkFov;
+        }
 
         lastPosition = transform.position;
     }
@@ -118,10 +188,23 @@ public class Movement : NetworkBehaviour
         DoMovement();
         DoCrouch();
         DoLooking();
+        UpdateFov();
         Vector3 currentPos = transform.position;
         Vector3 deltaPosition = currentPos - lastPosition;
         realMovementSpeed = deltaPosition.magnitude / Time.deltaTime;
         lastPosition = currentPos;
+    }
+
+    private void UpdateFov()
+    {
+        if (playerCamera == null)
+        {
+            return;
+        }
+
+        var lens = playerCamera.Lens;
+        lens.FieldOfView = Mathf.Lerp(lens.FieldOfView, targetFov, fovLerpSpeed * Time.deltaTime);
+        playerCamera.Lens = lens;
     }
 
     private void DoLooking()
@@ -191,7 +274,9 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        speedMultiplier = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched ? 2.0f : 1.0f;
+        bool isRunning = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched;
+        speedMultiplier = isRunning ? 2.0f : 1.0f;
+        targetFov = isRunning ? runFov : walkFov;
 
         if (isSliding)
         {
@@ -219,7 +304,14 @@ public class Movement : NetworkBehaviour
         if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding && !IsHoldingGun())
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            jumpImpulseSource.GenerateImpulse();
+            if (noiseHandler != null)
+            {
+                noiseHandler.TriggerJumpShake();
+            }
+            else if (jumpImpulseSource != null)
+            {
+                jumpImpulseSource.GenerateImpulse();
+            }
 
             if (isOnIce && !isSliding)
             {
@@ -232,6 +324,7 @@ public class Movement : NetworkBehaviour
         
         // Apply movement
         controller.Move(velocity * Time.deltaTime);
+
 
         // Update animator
         velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
@@ -316,6 +409,183 @@ public class Movement : NetworkBehaviour
         slidingCam.SetActive(false);
         
         spinRig.weight = 1f;
+    }
+
+    private void UpdateRunVfx(bool isRunning)
+    {
+        if (!isRunning || !grounded || isSliding)
+        {
+            if (runVfxActive)
+            {
+                RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                runVfxActive = false;
+            }
+
+            StopRunVfx();
+            return;
+        }
+
+        if (!TryGetGroundHit(out RaycastHit hit))
+        {
+            StopRunVfx();
+            return;
+        }
+
+        GameObject prefab = GetRunVfxPrefab(hit);
+        if (prefab == null)
+        {
+            if (runVfxActive)
+            {
+                RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                runVfxActive = false;
+            }
+
+            StopRunVfx();
+            return;
+        }
+
+        if (!runVfxActive || activeRunVfxPrefab != prefab || activeRunSurfaceKey != GetSurfaceKey(hit))
+        {
+            if (Time.time - lastRunVfxRequestTime >= runVfxRequestCooldown)
+            {
+                RequestRunVfxServerRpc(true, hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty);
+                lastRunVfxRequestTime = Time.time;
+                runVfxActive = true;
+            }
+
+            activeRunVfxPrefab = prefab;
+            activeRunSurfaceKey = GetSurfaceKey(hit);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestRunVfxServerRpc(bool isRunning, string surfaceTag, string physicMaterialName)
+    {
+        if (!isRunning)
+        {
+            StopRunVfxServer();
+            return;
+        }
+
+        GameObject prefab = ResolveRunVfxPrefab(surfaceTag, physicMaterialName);
+        if (prefab == null)
+        {
+            StopRunVfxServer();
+            return;
+        }
+
+        if (spawnedRunVfxObject != null && spawnedRunVfxPrefab == prefab)
+        {
+            return;
+        }
+
+        StopRunVfxServer();
+
+        GameObject instance = Instantiate(prefab);
+        spawnedRunVfxPrefab = prefab;
+        spawnedRunVfxObject = instance.GetComponent<NetworkObject>();
+
+        instance.SendMessage("SetTargetNetworkObjectId", NetworkObject.NetworkObjectId, SendMessageOptions.DontRequireReceiver);
+
+        spawnedRunVfxObject.Spawn(true);
+    }
+
+    private void StopRunVfx()
+    {
+        activeRunVfxPrefab = null;
+        activeRunSurfaceKey = null;
+    }
+
+    private void StopRunVfxServer()
+    {
+        if (spawnedRunVfxObject != null)
+        {
+            spawnedRunVfxObject.Despawn(true);
+        }
+
+        spawnedRunVfxObject = null;
+        spawnedRunVfxPrefab = null;
+    }
+
+    private GameObject ResolveRunVfxPrefab(string surfaceTag, string physicMaterialName)
+    {
+        for (int i = 0; i < runVfxBySurface.Count; i++)
+        {
+            SurfaceRunVfxEntry entry = runVfxBySurface[i];
+            if (entry == null || entry.vfxPrefab == null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(surfaceTag) && !string.IsNullOrWhiteSpace(entry.surfaceTag) &&
+                string.Equals(surfaceTag, entry.surfaceTag, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.vfxPrefab;
+            }
+
+            if (!string.IsNullOrWhiteSpace(physicMaterialName) && !string.IsNullOrWhiteSpace(entry.physicMaterialName) &&
+                string.Equals(physicMaterialName, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.vfxPrefab;
+            }
+        }
+
+        return defaultRunVfxPrefab;
+    }
+
+    private bool TryGetGroundHit(out RaycastHit hit)
+    {
+        Vector3 origin = runVfxOrigin != null ? runVfxOrigin.position : controller.bounds.center;
+        origin += Vector3.up * 0.1f;
+
+        float distance = controller.bounds.extents.y + runVfxRayDistance;
+        return Physics.Raycast(origin, Vector3.down, out hit, distance, groundLayerMask, QueryTriggerInteraction.Ignore);
+    }
+
+
+    private GameObject GetRunVfxPrefab(RaycastHit hit)
+    {
+        string surfaceKey = GetSurfaceKey(hit);
+        if (surfaceKey == activeRunSurfaceKey && activeRunVfxPrefab != null)
+        {
+            return activeRunVfxPrefab;
+        }
+
+        activeRunSurfaceKey = surfaceKey;
+
+        for (int i = 0; i < runVfxBySurface.Count; i++)
+        {
+            SurfaceRunVfxEntry entry = runVfxBySurface[i];
+            if (entry == null || entry.vfxPrefab == null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(entry.surfaceTag) && hit.collider.CompareTag(entry.surfaceTag))
+            {
+                return entry.vfxPrefab;
+            }
+
+            if (!string.IsNullOrWhiteSpace(entry.physicMaterialName) && hit.collider.sharedMaterial != null &&
+                string.Equals(hit.collider.sharedMaterial.name, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.vfxPrefab;
+            }
+        }
+
+        return defaultRunVfxPrefab;
+    }
+
+    private string GetSurfaceKey(RaycastHit hit)
+    {
+        if (hit.collider == null)
+        {
+            return string.Empty;
+        }
+
+        string tagKey = $"tag:{hit.collider.tag}";
+        string materialKey = hit.collider.sharedMaterial != null ? $"mat:{hit.collider.sharedMaterial.name}" : "mat:None";
+        return $"{tagKey}|{materialKey}";
     }
 
     private void UpdateAnimator(float xVelocity, float yVelocity)

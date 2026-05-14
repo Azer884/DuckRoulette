@@ -3,6 +3,7 @@ using System.IO;
 using IniParser;
 using IniParser.Model;
 using TMPro;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
@@ -40,6 +41,10 @@ public class SettingsManager : MonoBehaviour
         _settingsFilePath = Path.Combine(Application.persistentDataPath, SettingsFileName);
         _parser = new FileIniDataParser();
 
+    }
+
+    private void Start()
+    {
         LoadSettings();
     }
 
@@ -167,6 +172,7 @@ public class SettingsManager : MonoBehaviour
     {
         if (audioMixer == null)
         {
+            Debug.LogWarning("SettingsManager: AudioMixer is not assigned - cannot apply audio settings on start.");
             return;
         }
 
@@ -174,6 +180,27 @@ public class SettingsManager : MonoBehaviour
         ApplyMixerVolume("MusicVolume", GetFloatSetting("Audio", "MusicVolume", 0.8f));
         ApplyMixerVolume("SFXVolume", GetFloatSetting("Audio", "EffectsVolume", 0.8f));
         ApplyMixerVolume("VCVolume", GetFloatSetting("Audio", "VoiceChatVolume", 1f));
+    }
+
+    private IEnumerator WaitForAudioListenerThenApply(float timeoutSeconds)
+    {
+        float start = Time.realtimeSinceStartup;
+        while (Time.realtimeSinceStartup - start < timeoutSeconds)
+        {
+            if (FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length > 0)
+            {
+                // Apply settings once a listener is present
+                ApplyMixerVolume("MasterVolume", GetFloatSetting("Audio", "MasterVolume", 1f));
+                ApplyMixerVolume("MusicVolume", GetFloatSetting("Audio", "MusicVolume", 0.8f));
+                ApplyMixerVolume("SFXVolume", GetFloatSetting("Audio", "EffectsVolume", 0.8f));
+                ApplyMixerVolume("VCVolume", GetFloatSetting("Audio", "VoiceChatVolume", 1f));
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        Debug.LogWarning("SettingsManager: No AudioListener found within timeout; audio settings were not applied at audible time.");
     }
 
 
@@ -186,7 +213,10 @@ public class SettingsManager : MonoBehaviour
     private void ApplyMixerVolume(string exposedParam, float value)
     {
         float clamped = Mathf.Clamp(value, 0.0001f, 1f);
-        audioMixer.SetFloat(exposedParam, Mathf.Log10(clamped) * 20f);
+        float db = Mathf.Log10(clamped) * 20f;
+
+        // SetFloat returns a bool indicating whether the parameter was found/applied.
+        audioMixer.SetFloat(exposedParam, db);
     }
 
 
