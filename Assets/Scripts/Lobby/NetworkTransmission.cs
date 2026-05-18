@@ -20,6 +20,37 @@ public class NetworkTransmission : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnServerClientDisconnected;
+        }
+        base.OnNetworkSpawn();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer && NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnServerClientDisconnected;
+        }
+        base.OnNetworkDespawn();
+    }
+
+    private void OnServerClientDisconnected(ulong clientId)
+    {
+        if (!IsServer || GridManager.Instance == null)
+            return;
+
+        // Find and remove the player's character from the lobby grid
+        NetworkObject playerNetworkObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+        if (playerNetworkObject != null)
+        {
+            GridManager.Instance.RemoveCharacter(playerNetworkObject);
+        }
+    }
+
     [ServerRpc(RequireOwnership = false)]
     public void IWishToSendAChatServerRPC(string _message, ulong _fromWho, bool isServer)
     {
@@ -140,9 +171,10 @@ public class NetworkTransmission : NetworkBehaviour
     [ClientRpc]
     public void ChangeObjectPosClientRpc(ulong characterIndex, Vector3 pos, Quaternion rot)
     {
-        NetworkObject character = NetworkManager.Singleton.SpawnManager.SpawnedObjects[characterIndex];
-        
-        if (character != null)
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+            return;
+
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(characterIndex, out NetworkObject character) && character != null)
         {
             character.transform.position = pos;
             character.transform.rotation = rot;

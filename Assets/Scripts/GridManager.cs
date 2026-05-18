@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
@@ -8,35 +9,35 @@ public class GridManager : NetworkBehaviour
     public NetworkList<NetworkObjectReference> NetworkCharacters { get; private set; } = new NetworkList<NetworkObjectReference>();
 
     public static GridManager Instance { get; private set; }
+    public event Action OnLobbyLayoutChanged;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
             return;
         }
+
+        Destroy(gameObject);
     }
 
     public override void OnNetworkSpawn()
     {
+        NetworkCharacters.OnListChanged += OnCharactersListChanged;
+
         if (IsServer)
         {
             NetworkCharacters.Clear();
-            NetworkCharacters.OnListChanged += OnCharactersListChanged;
         }
+
+        RefreshCharacterCache();
     }
 
-    private void OnDisable()
+    public override void OnNetworkDespawn()
     {
-        if (IsServer)
-        {
-            NetworkCharacters.OnListChanged -= OnCharactersListChanged;
-        }
+        NetworkCharacters.OnListChanged -= OnCharactersListChanged;
+        base.OnNetworkDespawn();
     }
 
     public void AddCharacter(NetworkObject networkObject)
@@ -48,6 +49,20 @@ public class GridManager : NetworkBehaviour
             {
                 NetworkCharacters.Add(reference);
             }
+
+            RefreshCharacterCache();
+        }
+    }
+
+    public void RemoveCharacter(NetworkObject networkObject)
+    {
+        if (!IsServer || networkObject == null)
+            return;
+
+        NetworkObjectReference reference = new(networkObject);
+        if (NetworkCharacters.Remove(reference))
+        {
+            RefreshCharacterCache();
         }
     }
 
@@ -55,7 +70,13 @@ public class GridManager : NetworkBehaviour
     {
         Debug.Log($"NetworkList changed. Event type: {changeEvent.Type}");
 
+        RefreshCharacterCache();
+    }
+
+    private void RefreshCharacterCache()
+    {
         characters.Clear();
+        List<NetworkObjectReference> invalidReferences = null;
 
         foreach (var netObjRef in NetworkCharacters)
         {
@@ -67,10 +88,29 @@ public class GridManager : NetworkBehaviour
             else
             {
                 Debug.LogWarning("Failed to resolve NetworkObjectReference.");
+
+                if (IsServer)
+                {
+                    invalidReferences ??= new List<NetworkObjectReference>();
+                    invalidReferences.Add(netObjRef);
+                }
             }
         }
 
-        ReassignCharactersToPrioritizedSlots();
+        if (IsServer && invalidReferences != null)
+        {
+            foreach (var invalidReference in invalidReferences)
+            {
+                NetworkCharacters.Remove(invalidReference);
+            }
+        }
+
+        if (IsServer)
+        {
+            ReassignCharactersToPrioritizedSlots();
+        }
+
+        OnLobbyLayoutChanged?.Invoke();
     }
 
     public void ReassignCharactersToPrioritizedSlots()
@@ -86,8 +126,14 @@ public class GridManager : NetworkBehaviour
                 Transform character = characters[characterIndex];
                 if (character != null)
                 {
-                    // Call the RPC to update the character's position and rotation
-                    NetworkTransmission.instance.ChangeObjectPosServerRpc(character.GetComponent<NetworkObject>().NetworkObjectId, slot.position, slot.rotation);
+                    NetworkObject networkObject = character.GetComponent<NetworkObject>();
+                    if (networkObject != null && NetworkTransmission.instance != null)
+                    {
+                        // Update the character's position and rotation for every client.
+                        NetworkTransmission.instance.ChangeObjectPosClientRpc(networkObject.NetworkObjectId, slot.position, slot.rotation);
+                    }
+
+                    character.SetPositionAndRotation(slot.position, slot.rotation);
                     characterIndex++;
                 }
             }
@@ -96,6 +142,8 @@ public class GridManager : NetworkBehaviour
         // Remove any null references that might still be in the list
         characters.RemoveAll(item => item == null);
     }
+
+    public int CurrentCharacterCount => NetworkCharacters.Count;
 
 
 }

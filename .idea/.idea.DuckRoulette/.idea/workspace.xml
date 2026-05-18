@@ -11,20 +11,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8e3cb98b-6c1f-4c15-8eaa-884e912b130a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkFootstepVfx.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NetworkFootstepVfx.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/RunVfxNetworkFollower.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Player/RunVfxNetworkFollower.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.DuckRoulette/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/DefaultNetworkPrefabs.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Anteb-ExtraBlack SDF.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Font/Comic Sans MS SDF.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Source 3D.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Source 3D.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/PreFabs/Player.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/FootStepScript.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/FootStepScript.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/Movement.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Player/NoiseHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Player/NoiseHandler.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SettingsManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/CamPosChanger.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/CamPosChanger.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/GridManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GridManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Lobby/NetworkTransmission.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Lobby/NetworkTransmission.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/PingManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/PingManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/StatTracker.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/StatTracker.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +27,7 @@
   <component name="CopilotChats">
     <option name="panelChat">
       <chat>
-        <option name="activeSessionId" value="460f470a-c4cb-416e-89f4-c519ac380618" />
+        <option name="activeSessionId" value="16aa7c8e-c9d4-4c62-a9fd-359e7e2e1189" />
         <option name="sessions">
           <session>
             <option name="chatType" value="PANEL" />
@@ -56,6 +49,15 @@
           <session>
             <option name="chatType" value="PANEL" />
             <option name="id" value="460f470a-c4cb-416e-89f4-c519ac380618" />
+            <option name="modeId" value="Agent" />
+            <option name="modelType" value="builtin_family" />
+            <option name="modelValue" value="auto" />
+            <option name="status" value="Completed" />
+            <option name="targetType" value="LOCAL" />
+          </session>
+          <session>
+            <option name="chatType" value="PANEL" />
+            <option name="id" value="16aa7c8e-c9d4-4c62-a9fd-359e7e2e1189" />
             <option name="modeId" value="Agent" />
             <option name="modelType" value="builtin_family" />
             <option name="modelValue" value="auto" />
@@ -212,6 +214,7 @@
       <workItem from="1772595420976" duration="32000" />
       <workItem from="1778509542405" duration="3450000" />
       <workItem from="1778749297381" duration="9649000" />
+      <workItem from="1779105685444" duration="4297000" />
     </task>
     <servers />
   </component>

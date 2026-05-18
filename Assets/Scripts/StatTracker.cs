@@ -129,10 +129,44 @@ public class StatTracker : MonoBehaviour
     }
     private void SumPing()
     {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        if (NetworkManager.Singleton == null)
+            return;
+
+        // First try transport RTT (many transports return ms)
+        try
         {
-            currentPing = (NetworkManager.Singleton.ServerTime - NetworkManager.Singleton.LocalTime).Tick;
+            var transport = NetworkManager.Singleton.NetworkConfig?.NetworkTransport;
+            if (transport != null && NetworkManager.Singleton.IsClient)
+            {
+                ulong rtt = transport.GetCurrentRtt(NetworkManager.Singleton.LocalClientId);
+                currentPing = (float)rtt;
+                pingSum += currentPing;
+                return;
+            }
+        }
+        catch
+        {
+            // ignore and fall back to server/local time diff
+        }
+
+        // Fallback: compute difference between server and local network time.
+        // NetworkTime.Tick may be in 100ns ticks (TimeSpan ticks). Convert to milliseconds by dividing by 10000.
+        try
+        {
+            var serverTime = NetworkManager.Singleton.ServerTime;
+            var localTime = NetworkManager.Singleton.LocalTime;
+            long tickDiff = 0;
+            unchecked
+            {
+                tickDiff = (long)serverTime.Tick - (long)localTime.Tick;
+            }
+            float ms = Mathf.Abs(tickDiff) / 10000f;
+            currentPing = ms;
             pingSum += currentPing;
+        }
+        catch
+        {
+            // unable to measure ping; leave currentPing unchanged
         }
     }
     private void SampleExploration()
