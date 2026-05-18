@@ -8,6 +8,7 @@ using TMPro;
 using System.Threading.Tasks;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Threading;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -17,12 +18,10 @@ public class GameNetworkManager : MonoBehaviour
 
     public List<Lobby> Lobbies { get; private set; } = new List<Lobby>(capacity: 100);
 
-    public ulong hostId;
     public NetworkObject playerObj;
-    public Transform characters;
     private int mapIndex = 2;
 
-    private bool actionInProgress = false;
+    private readonly SemaphoreSlim actionLock = new SemaphoreSlim(1, 1);
 
     private void Awake()
     {
@@ -177,8 +176,13 @@ public class GameNetworkManager : MonoBehaviour
     {
         await PerformActionWithLock(async () =>
         {
+            if (NetworkManager.Singleton == null)
+            {
+                Debug.LogError("NetworkManager not found");
+                return;
+            }
+            
             NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
-            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
             NetworkManager.Singleton.StartHost();
             LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(int.Parse(_maxMembers.text));
         });
@@ -188,16 +192,21 @@ public class GameNetworkManager : MonoBehaviour
     {
         await PerformActionWithLock(async () =>
         {
+            if (NetworkManager.Singleton == null)
+            {
+                Debug.LogError("NetworkManager not found");
+                return;
+            }
+            
             NetworkManager.Singleton.OnServerStarted += Singleton_OnServerStarted;
-            LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
             NetworkManager.Singleton.StartHost();
             LobbySaver.instance.currentLobby = await SteamMatchmaking.CreateLobbyAsync(_maxMembers);
         });
     }
 
-    public async void JoinById(TMP_InputField input)
+    public async Task JoinByIdAsync(TMP_InputField input)
     {
-        await PerformActionWithLock(async () =>
+        try
         {
             if (!ulong.TryParse(input.text, out ulong ID) || string.IsNullOrWhiteSpace(input.text))
                 return;
@@ -222,12 +231,22 @@ public class GameNetworkManager : MonoBehaviour
                 LobbyManager.instance.ConnectedAsClient();
                 Debug.Log("Joined Private Lobby.");
             }
-        });
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
     }
 
-    public async void JoinLobby(Lobby lobby)
+    // Compatibility wrapper for UI callbacks
+    public async void JoinById(TMP_InputField input)
     {
-        await PerformActionWithLock(async () =>
+        await JoinByIdAsync(input);
+    }
+
+    public async Task JoinLobbyAsync(Lobby lobby)
+    {
+        try
         {
             RoomEnter joinedLobby = await lobby.Join();
 
@@ -241,13 +260,35 @@ public class GameNetworkManager : MonoBehaviour
                 LobbyManager.instance.ConnectedAsClient();
                 Debug.Log("Joined Lobby.");
             }
-        });
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+    }
+
+    // Compatibility wrapper for UI callbacks
+    public async void JoinLobby(Lobby lobby)
+    {
+        await JoinLobbyAsync(lobby);
     }
 
     public void StartClient(SteamId _sId)
     {
         PerformActionWithLock(() =>
         {
+            if (NetworkManager.Singleton == null)
+            {
+                Debug.LogError("NetworkManager not found");
+                return;
+            }
+            
+            if (transport == null)
+            {
+                Debug.LogError("FacepunchTransport not found");
+                return;
+            }
+            
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             transport.targetSteamId = _sId;
@@ -256,6 +297,10 @@ public class GameNetworkManager : MonoBehaviour
             if (NetworkManager.Singleton.StartClient())
             {
                 Debug.Log("Client has started.");
+            }
+            else
+            {
+                Debug.LogError("Failed to start client");
             }
         });
     }
@@ -273,6 +318,7 @@ public class GameNetworkManager : MonoBehaviour
                 }
 
                 NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
             }
 
             if (LobbyManager.instance != null)
@@ -282,38 +328,45 @@ public class GameNetworkManager : MonoBehaviour
             }
             Debug.Log("Disconnected.");
 
-            LobbySaver.instance.currentLobby?.Leave();
-            LobbySaver.instance.currentLobby = null;
+            if (LobbySaver.instance != null)
+            {
+                LobbySaver.instance.currentLobby?.Leave();
+                LobbySaver.instance.currentLobby = null;
+            }
         });
     }
 
     private async Task PerformActionWithLock(System.Func<Task> action)
     {
-        if (actionInProgress) return;
-
-        actionInProgress = true;
+        if (!await actionLock.WaitAsync(0)) return;
         try
         {
             await action();
         }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
         finally
         {
-            actionInProgress = false;
+            actionLock.Release();
         }
     }
 
     private void PerformActionWithLock(System.Action action)
     {
-        if (actionInProgress) return;
-
-        actionInProgress = true;
+        if (!actionLock.Wait(0)) return;
         try
         {
             action();
         }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
         finally
         {
-            actionInProgress = false;
+            actionLock.Release();
         }
     }
 
@@ -328,12 +381,26 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Singleton_OnClientConnectedCallback(ulong _clientId)
     {
+        if (NetworkTransmission.instance == null)
+        {
+            Debug.LogError("NetworkTransmission not found");
+            return;
+        }
+        
+        if (LobbyManager.instance == null)
+        {
+            Debug.LogError("LobbyManager not found");
+            return;
+        }
+        
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _clientId);
         LobbyManager.instance.myClientId = _clientId;
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, Coin.Instance.amount >= 5, _clientId);
+        
+        bool hasEnoughCoins = Coin.Instance != null && Coin.Instance.amount >= 5;
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, hasEnoughCoins, _clientId);
         Debug.Log($"Client has connected: {SteamClient.Name}");
 
-        if (LobbySaver.instance.currentLobby?.MemberCount >= 6)
+        if (LobbySaver.instance != null && LobbySaver.instance.currentLobby?.MemberCount >= 6)
         {
             LobbyManager.instance.friendList.SetTrigger("Hide");
         }
@@ -341,6 +408,13 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Singleton_OnServerStarted()
     {
+        if (LobbyManager.instance == null)
+        {
+            Debug.LogError("LobbyManager not found");
+            return;
+        }
+        
+        LobbyManager.instance.myClientId = NetworkManager.Singleton.LocalClientId;
         Debug.Log("Host started.");
         LobbyManager.instance.HostCreated();
     }
@@ -364,7 +438,12 @@ public class GameNetworkManager : MonoBehaviour
     }
     public void StartGame()
     {
-    
+        if (mapIndex < 0 || mapIndex >= SceneManager.sceneCountInBuildSettings)
+        {
+            Debug.LogError($"mapIndex {mapIndex} is out of valid range [0, {SceneManager.sceneCountInBuildSettings - 1}]");
+            return;
+        }
+
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 
@@ -431,9 +510,10 @@ public class GameNetworkManager : MonoBehaviour
 
             lobbyObj.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = lobby.GetData("name");
             lobbyObj.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = lobby.MemberCount + "/" + lobby.MaxMembers;
-            Button joinButton = lobbyObj.transform.GetComponent<Button>();
+            Button joinButton = lobbyObj.GetComponent<Button>();
 
-            joinButton.onClick.AddListener(() => JoinLobby(lobby));
+            var capturedLobby = lobby; // capture loop variable to avoid closure issues
+            joinButton.onClick.AddListener(() => JoinLobby(capturedLobby));
         }
     }
 
@@ -441,23 +521,35 @@ public class GameNetworkManager : MonoBehaviour
     {
         await PerformActionWithLock(async () =>
         {
-            if (Lobbies.Count == 0)
+            try
             {
-                Debug.Log("No available lobbies to join.");
-                return;
-            }
+                if (Lobbies.Count == 0)
+                {
+                    Debug.Log("No available lobbies to join.");
+                    return;
+                }
 
-            int randomIndex = Random.Range(0, Lobbies.Count);
-            RoomEnter result = await Lobbies[randomIndex].Join();
+                int randomIndex = Random.Range(0, Lobbies.Count);
+                RoomEnter result = await Lobbies[randomIndex].Join();
 
-            if (result != RoomEnter.Success)
-            {
-                Debug.Log("Failed to join random lobby.");
+                if (result != RoomEnter.Success)
+                {
+                    Debug.Log("Failed to join random lobby.");
+                }
+                else
+                {
+                    if (LobbyManager.instance == null)
+                    {
+                        Debug.LogError("LobbyManager not found");
+                        return;
+                    }
+                    LobbyManager.instance.ConnectedAsClient();
+                    Debug.Log("Joined Random Lobby");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                LobbyManager.instance.ConnectedAsClient();
-                Debug.Log("Joined Random Lobby");
+                Debug.LogException(ex);
             }
         });
     }

@@ -13364,7 +13364,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainMenu: {fileID: 492885578}
-  delayDuration: 0.2
+  activePriority: 100
+  inactivePriority: 0
 --- !u!1 &1209974032
 GameObject:
   m_ObjectHideFlags: 0
@@ -20591,9 +20592,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36cc8b7ac9d886549abcc8b62f55bd4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hostId: 0
   playerObj: {fileID: 7382590518925509427, guid: f7bc998da0594b04cb0aec0fb43aeeed, type: 3}
-  characters: {fileID: 1252817645}
 --- !u!4 &1812358778
 Transform:
   m_ObjectHideFlags: 0
@@ -26816,7 +26815,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 198.5
+      value: 197
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26824,7 +26823,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 99.25
+      value: 98.5
       objectReference: {fileID: 0}
     - target: {fileID: 5843425890945736022, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -26884,7 +26883,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 160.5
+      value: 160
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26892,7 +26891,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 80.25
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 8323565212025098909, guid: 5a07fdc5318fba04796731245ee71920, type: 3}
       propertyPath: m_AnchoredPosition.y

@@ -91,6 +91,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!136 &3668105301228654770
 CapsuleCollider:
@@ -111,7 +112,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.058515582
+  m_Radius: 0.035
   m_Height: 0.17972313
   m_Direction: 1
   m_Center: {x: 0.000013425946, y: 0.08667067, z: -0.001530325}
