@@ -4,7 +4,7 @@ using Unity.Netcode;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.Audio;
-//buged?
+
 public class Slap : NetworkBehaviour 
 {
     public event System.Action OnSlap, OnSlapTriggered;
@@ -24,6 +24,8 @@ public class Slap : NetworkBehaviour
     private Dictionary<GameObject, Coroutine> slapCoroutines = new();
     public AudioSource slapAudio;
     [SerializeField] private AudioClip slapClip;
+    [SerializeField] private GameObject impactVfxPrefab;
+    [SerializeField] private float impactVfxLifetime = 1.5f;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     public override void OnNetworkSpawn()
@@ -145,7 +147,7 @@ public class Slap : NetworkBehaviour
     {
         if (CanUseNetcode())
         {
-            PlaySlapSoundServerRpc(position);
+            PlaySlapVfxServerRpc(position);
             return;
         }
 
@@ -153,15 +155,40 @@ public class Slap : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlaySlapSoundServerRpc(Vector3 position)
+    private void PlaySlapVfxServerRpc(Vector3 position)
     {
         PlaySlapSoundClientRpc(position);
+        SpawnImpactVfxClientRpc(position);
     }
 
     [ClientRpc]
     private void PlaySlapSoundClientRpc(Vector3 position)
     {
         PlayLocalOneShot(GetSlapClip(), position);
+    }
+
+    [ClientRpc]
+    private void SpawnImpactVfxClientRpc(Vector3 position)
+    {
+        SpawnImpactVfx(position);
+    }
+
+    private void SpawnImpactVfx(Vector3 position)
+    {
+        if (impactVfxPrefab == null)
+        {
+            return;
+        }
+
+        GameObject instance = Instantiate(impactVfxPrefab, position, Quaternion.identity);
+
+        if (instance.TryGetComponent(out ParticleSystem impactParticleSystem))
+        {
+            impactParticleSystem.Clear(true);
+            impactParticleSystem.Play(true);
+        }
+
+        Destroy(instance, impactVfxLifetime);
     }
 
     private AudioClip GetSlapClip()

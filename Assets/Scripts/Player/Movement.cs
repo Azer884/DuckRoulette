@@ -29,6 +29,9 @@ public class Movement : NetworkBehaviour
     [Header("Movement Variables"), Space]
     private Vector3 velocity;
     public float gravity = -9.81f;
+    [Header("Jumping"), Space]
+    [SerializeField] private float coyoteTime = 0.2f; // Grace period after leaving ground to still allow jump
+    private float lastGroundedTime = -Mathf.Infinity;
     private bool grounded;
     public float speedMultiplier = 1.0f;
     [SerializeField] private float jumpHeight = 1.5f;
@@ -266,6 +269,11 @@ public class Movement : NetworkBehaviour
     private void DoMovement()
     {
         grounded = controller.isGrounded;
+        // Record the last time we were on ground to allow coyote-time jumps
+        if (grounded)
+        {
+            lastGroundedTime = Time.time;
+        }
 
         // Handle gravity and grounded state
         if (grounded && velocity.y < 0)
@@ -300,8 +308,9 @@ public class Movement : NetworkBehaviour
             }
         }
 
-        // Handle jumping
-        if (grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding && !IsHoldingGun())
+        // Handle jumping (allow coyote time)
+        bool canUseCoyote = Time.time - lastGroundedTime <= coyoteTime;
+        if ((grounded || canUseCoyote) && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding && !IsHoldingGun())
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             if (noiseHandler != null)
@@ -481,7 +490,7 @@ public class Movement : NetworkBehaviour
 
         StopRunVfxServer();
 
-        GameObject instance = Instantiate(prefab);
+        GameObject instance = Instantiate(prefab, runVfxOrigin.position, runVfxOrigin.rotation);
         spawnedRunVfxPrefab = prefab;
         spawnedRunVfxObject = instance.GetComponent<NetworkObject>();
 

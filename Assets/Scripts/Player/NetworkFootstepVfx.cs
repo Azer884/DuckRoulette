@@ -34,8 +34,19 @@ namespace Player
 
             if (footstepParticleSystem != null)
             {
-                footstepParticleSystem.Clear(true);
-                footstepParticleSystem.Play(true);
+                try
+                {
+                    var main = footstepParticleSystem.main;
+                    main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+
+                    footstepParticleSystem.Clear(true);
+                    footstepParticleSystem.Play(true);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogException(ex, this);
+                }
             }
 
             if (IsServer)
@@ -55,6 +66,3 @@ namespace Player
         }
     }
 }
-
-
-
