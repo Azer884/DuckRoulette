@@ -6,32 +6,29 @@ using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.SocialPlatforms;
 
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
-    public NetworkVariable<int> playerWithGun = new(-1);
+    public NetworkVariable<ulong> playerWithGun = new(ulong.MaxValue);
     public NetworkVariable<int> bulletPosition = new();
     public NetworkVariable<int> randomBulletPosition = new();
     public NetworkVariable<bool> isReloaded = new(false);
     public NetworkVariable<bool> canShoot = new(true),
-    powerGunIsActive = new(false);
+        powerGunIsActive = new(false);
 
-    private NetworkVariable<int> alivePlayersCount = new(0);
-    private Dictionary<ulong, bool> playerStates = new();
-    public List<int> playersKills = new();
-    private int coinsToWin;
-    private bool isGameEnded = false, hasRained = false;
-    private List<(ulong, ulong)> teams = new();
-    
-    private Dictionary<ulong, List<PlayerTask>> allPlayersTasks = new();
-
-    private int round = 0;
+    private NetworkVariable<int> _alivePlayersCount = new(0);
+    private readonly Dictionary<ulong, bool> _playerStates = new();
+    private readonly Dictionary<ulong, int> _playersKills = new();
+    private int _coinsToWin;
+    private bool _isGameEnded;
+    private bool _hasRained;
+    private bool _isLeavingGame;
+    private readonly List<(ulong, ulong)> _teams = new();
+    private readonly Dictionary<ulong, List<PlayerTask>> _allPlayersTasks = new();
+    private Coroutine _switchPlayerRoutine;
 
     #region Events
-    public delegate void OnPowerGunActive();
-    public static event OnPowerGunActive OnPowerGunActived;
     public delegate void OnWheaterChange();
     public static event OnWheaterChange OnWeatherChange;
     public delegate void OnHostDisconnect();
@@ -55,41 +52,47 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            playerStates[clientId] = true;
+            _playerStates[clientId] = true;
+            if (!_playersKills.ContainsKey(clientId))
+            {
+                _playersKills[clientId] = 0;
+            }
         }
-        playersKills = new(new int[NetworkManager.Singleton.ConnectedClientsIds.Count]);
+
         if (IsServer)
         {
-            alivePlayersCount.Value = NetworkManager.Singleton.ConnectedClientsIds.Count;
-            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            CheckPlayerGunScript();
+            _alivePlayersCount.Value = NetworkManager.Singleton.ConnectedClientsIds.Count;
+            if (_alivePlayersCount.Value > 0)
+            {
+                playerWithGun.Value = GetRandomClientId();
+                UpdatePlayerShootingScripts();
+                CheckPlayerGunScript();
+            }
         }
 
-        coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
-
+        _coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void OnClientShotChangedServerRpc(ulong clientId, bool hasShot)
     {
-        if (hasShot)
+        if (!hasShot)
         {
-            playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-            while (playerWithGun.Value == (int)clientId && NetworkManager.Singleton.ConnectedClientsIds.Count > 1)
-            {
-                playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-                CheckPlayerGunScript();
-            }
-            bulletPosition.Value++;
-            bulletPosition.Value %= 6;
+            return;
         }
+
+        RoundManager.Instance?.EndRound();
+
+        playerWithGun.Value = GetRandomClientId(clientId);
+        UpdatePlayerShootingScripts();
+        bulletPosition.Value = (bulletPosition.Value + 1) % 6;
+        CheckPlayerGunScript();
     }
 
     [ClientRpc]
@@ -106,67 +109,32 @@ public class GameManager : NetworkBehaviour
 
     private void CheckPlayerGunScript()
     {
-        StartCoroutine(SwitchPlayerAfterDelay(5f));
-        round++;
+        RoundManager.Instance?.StartRound();
+
+        if (_switchPlayerRoutine != null)
+        {
+            StopCoroutine(_switchPlayerRoutine);
+        }
+
+        _switchPlayerRoutine = StartCoroutine(SwitchPlayerAfterDelay(5f));
     }
 
     // ReSharper disable Unity.PerformanceAnalysis
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
-        canShoot.Value = false;
-
-        yield return new WaitForSeconds(waitTime); // Wait for 5 seconds before switching players
-        
+        yield return new WaitForSeconds(waitTime);
         canShoot.Value = true;
-        
         StartRain();
 
         if (!powerGunIsActive.Value)
         {
-            //powerGunIsActive.Value = Percentage(1);
-
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
-            }
+            UpdatePlayerShootingScripts();
         }
 
-        DistrubuteTasks();
-        //TODO else
-        // {
-        //     ActivatePowerGun();
-        // }
+        DistributeTasks();
+        _switchPlayerRoutine = null;
     }
 
-    private void ActivatePowerGun()
-    {
-        NotifyPlayersClientRpc("Power gun is active!", true, 10);
-        playerWithGun.Value = Random.Range(0, NetworkManager.Singleton.ConnectedClientsIds.Count);
-
-        // Wait for 10 seconds, then notify and assign gun
-        Invoke(nameof(AssignGun), 10f);
-        OnPowerGunActived?.Invoke();
-    }
-
-    private void AssignGun()
-    {
-        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            PlayerShootingScriptClientRpc(clientId, (int)clientId == playerWithGun.Value);
-        }
-        NotifyPlayersClientRpc($"{GetPlayerNickname((ulong)playerWithGun.Value)} has the gun now.", true, 5);
-
-        // Wait for 5 seconds, then deactivate the power gun
-        Invoke(nameof(DeactivatePowerGun), 5f);
-    }
-
-    private void DeactivatePowerGun()
-    {
-        powerGunIsActive.Value = false;
-        OnClientShotChangedServerRpc((ulong)playerWithGun.Value, true);
-
-        NotifyPlayersClientRpc("Power gun is no longer active!");
-    }
     public void Reload()
     {
         randomBulletPosition.Value = Random.Range(0, 6);
@@ -176,27 +144,7 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void UpdatePlayerStateServerRpc(ulong clientId)
     {
-        if (playerStates.ContainsKey(clientId))
-        {
-            playerStates[clientId] = false;
-
-            // Update alive player count
-            alivePlayersCount.Value--;
-
-            if (alivePlayersCount.Value <= 1)
-            {
-                ulong winnerId = 10;
-                foreach (var playerState in playerStates)
-                {
-                    if (playerState.Value) // Player is alive
-                    {
-                        winnerId = playerState.Key;
-                        break;
-                    }
-                }
-                EndGameServerRpc(winnerId);
-            }
-        }
+        MarkPlayerInactive(clientId, reassignGun: false);
     }
 
     [ServerRpc]
@@ -204,12 +152,12 @@ public class GameManager : NetworkBehaviour
     {
         StunPlayerClientRpc(clientId);
     }
+
     [ClientRpc]
     private void StunPlayerClientRpc(ulong clientId)
     {
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
-            // Get the player's object and trigger the ragdoll
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
@@ -218,11 +166,25 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void EndGameServerRpc(ulong winnerId)
+    private void EndGame(ulong winnerId)
     {
+        if (_isGameEnded)
+        {
+            return;
+        }
+
+        RoundManager.Instance?.EndRound();
         UpdateStatsClientRpc();
-        EndGameClientRpc(winnerId, playersKills.ToArray());
+
+        var playerIds = new List<ulong>();
+        var killCounts = new List<int>();
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            playerIds.Add(clientId);
+            killCounts.Add(_playersKills.TryGetValue(clientId, out var killCount) ? killCount : 0);
+        }
+
+        EndGameClientRpc(winnerId, playerIds.ToArray(), killCounts.ToArray());
     }
 
     [ClientRpc]
@@ -237,10 +199,10 @@ public class GameManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void EndGameClientRpc(ulong winnerId, int[] playersKills)
+    private void EndGameClientRpc(ulong winnerId, ulong[] playerIds, int[] killCounts)
     {
-        if (isGameEnded) return;
-        isGameEnded = true;
+        if (_isGameEnded) return;
+        _isGameEnded = true;
 
         Cursor.lockState = CursorLockMode.Confined;
         PlayerSpawner.Instance.isStarted = false;
@@ -249,11 +211,15 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
         {
             pauseMenu.End();
-            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            int localCoinReward = 0;
+
+            for (int i = 0; i < playerIds.Length; i++)
             {
+                ulong clientId = playerIds[i];
+                int playerKillCount = i < killCounts.Length ? killCounts[i] : 0;
+
                 GameObject currentPlayer = Instantiate(pauseMenu.playerStatsObj, pauseMenu.endGamePanel.transform.GetChild(0).GetChild(6));
 
-                //PlayerName
                 TextMeshProUGUI stat = currentPlayer.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
                 stat.text = GetPlayerNickname(clientId);
                 if (clientId == winnerId)
@@ -261,65 +227,69 @@ public class GameManager : NetworkBehaviour
                     stat.color = Color.yellow;
                 }
 
-                //PlayerKills
                 stat = currentPlayer.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
-                stat.text = playersKills[(int)clientId].ToString();
+                stat.text = playerKillCount.ToString();
 
                 if (clientId == NetworkManager.Singleton.LocalClientId)
-                    StatTracker.Instance.kills = playersKills[(int)clientId];
+                    StatTracker.Instance.kills = playerKillCount;
 
-                //CoinsToWin
-                int coins = playersKills[(int)clientId] * 2 + 1;
+                int coins = playerKillCount * 2 + 1;
                 if (clientId == winnerId)
                 {
-                    coins += coinsToWin;
+                    coins += _coinsToWin;
                 }
 
                 stat = currentPlayer.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
                 stat.text = $"{coins}";
-                Coin.Instance.UpdateCoinAmount(coins);
 
                 if (clientId == NetworkManager.Singleton.LocalClientId)
+                {
+                    localCoinReward = coins;
                     StatTracker.Instance.coinsWon = coins;
-
-                //PlayerSurvivalTime
-                int minutes = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value / 60f);
-                int seconds = Mathf.FloorToInt(pauseMenu.GetComponent<Stats>().timeSurvived.Value % 60f);
-
-                string formattedTime = $"{minutes:D2}m {seconds:D2}s";
-
-                stat = currentPlayer.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
-                stat.text = formattedTime;
-
-                //PlayerAccuracy
-                stat = currentPlayer.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
-                stat.text = "0%";
-                if (pauseMenu.GetComponent<Stats>().shotCounter.Value > 0)
-                {
-                    stat.text = (playersKills[(int)clientId] / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
                 }
 
-                //Luck
-                string luck = "0%";
-                if (pauseMenu.GetComponent<Stats>().emptyShots.Value > 0)
+                if (TryGetPlayerStats(clientId, out var playerStats))
                 {
-                    luck = (pauseMenu.GetComponent<Stats>().shotCounter.Value / pauseMenu.GetComponent<Stats>().shotCounter.Value * 100).ToString() + "%";
-                }
+                    int minutes = Mathf.FloorToInt(playerStats.timeSurvived.Value / 60f);
+                    int seconds = Mathf.FloorToInt(playerStats.timeSurvived.Value % 60f);
+                    string formattedTime = $"{minutes:D2}m {seconds:D2}s";
 
-                //stat = currentPlayer.transform.GetChild(5).GetComponent<TextMeshProUGUI>();
-                //stat.text = luck;
+                    stat = currentPlayer.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
+                    stat.text = formattedTime;
+
+                    stat = currentPlayer.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
+                    stat.text = "0%";
+                    if (playerStats.shotCounter.Value > 0)
+                    {
+                        stat.text = ((playerKillCount / (float)playerStats.shotCounter.Value) * 100f).ToString("0") + "%";
+                    }
+
+                    if (currentPlayer.transform.childCount > 5)
+                    {
+                        float luck = playerStats.emptyShots.Value > 0
+                            ? (playerStats.emptyShots.Value / (float)playerStats.shotCounter.Value) * 100f
+                            : 0f;
+
+                        stat = currentPlayer.transform.GetChild(5).GetComponent<TextMeshProUGUI>();
+                        stat.text = $"{luck:0}%";
+                    }
+                }
             }
-        }
 
-        if (winnerId == OwnerClientId)
-        {
-            Debug.Log($"Won {coinsToWin}");
-            Coin.Instance.UpdateCoinAmount(coinsToWin);
+            if (Coin.Instance != null && localCoinReward > 0)
+            {
+                Coin.Instance.UpdateCoinAmount(localCoinReward);
+            }
         }
     }
 
     public string GetPlayerNickname(ulong clientId)
     {
+        if (NetworkManager.Singleton == null)
+        {
+            return "Unknown Player";
+        }
+
         foreach (var playerObject in NetworkManager.Singleton.ConnectedClientsList)
         {
             if (playerObject.ClientId == clientId && playerObject.PlayerObject != null)
@@ -331,21 +301,18 @@ public class GameManager : NetworkBehaviour
             }
         }
 
-        // Return a placeholder if the player is not found
         return "Unknown Player";
     }
 
     private void OnClientDisconnect(ulong clientId)
     {
-        bool haveTheGun = (int)clientId == playerWithGun.Value;
-        if (haveTheGun && !IsHost)
+        if (!IsServer)
         {
-            OnClientShotChangedServerRpc(clientId, true);
-            Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
+            return;
         }
-        
-        // Also update player state when client disconnects
-        UpdatePlayerStateServerRpc(clientId);
+
+        Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
+        MarkPlayerInactive(clientId, reassignGun: true);
     }
 
     public void OnDisable()
@@ -353,9 +320,13 @@ public class GameManager : NetworkBehaviour
         if (this == Instance)
         {
             OnHostDisconnected?.Invoke();
-            LeaveGame();
+
+            if (!_isLeavingGame)
+            {
+                LeaveGame();
+            }
         }
-        
+
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
@@ -364,6 +335,12 @@ public class GameManager : NetworkBehaviour
 
     public void LeaveGame()
     {
+        if (_isLeavingGame)
+        {
+            return;
+        }
+
+        _isLeavingGame = true;
         LeaveSteamLobby();
 
         PlayerSpawner.Instance.isStarted = false;
@@ -378,11 +355,15 @@ public class GameManager : NetworkBehaviour
 
     public void LeaveSteamLobby()
     {
-        if (SteamClient.IsValid && LobbySaver.instance.currentLobby != null)
+        if (SteamClient.IsValid && LobbySaver.instance != null && LobbySaver.instance.currentLobby != null)
         {
             LobbySaver.instance.currentLobby?.Leave();
 
-            LobbyManager.instance.playerInfo.Remove(OwnerClientId);
+            if (LobbyManager.instance != null)
+            {
+                LobbyManager.instance.playerInfo.Remove(OwnerClientId);
+            }
+
             Debug.Log("Left Steam lobby successfully.");
         }
     }
@@ -390,7 +371,12 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void UpdateKillsServerRpc(ulong shooterId, int killAmount)
     {
-        playersKills[(int)shooterId] += killAmount;
+        if (!_playersKills.ContainsKey(shooterId))
+        {
+            _playersKills[shooterId] = 0;
+        }
+
+        _playersKills[shooterId] += killAmount;
     }
 
     #region TeamUp
@@ -411,6 +397,7 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void SendTeamUpRequestClientRpc(ulong senderId, ClientRpcParams clientRpcParams = default)
     {
+        _ = clientRpcParams;
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
             if (teamUp.isTeamedUp)
@@ -435,13 +422,14 @@ public class GameManager : NetworkBehaviour
         bool isPerfectDapBool = isPerfectDap == 1;
         PlayDapSoundClientRpc(soundPosition, isPerfectDapBool);
 
-        teams.Add((requesterId, teamMateId));
+        _teams.Add((requesterId, teamMateId));
         SendTeamUpResponseClientRpc(teamMateId, clientRpcParams);
     }
 
     [ClientRpc]
     private void SendTeamUpResponseClientRpc(ulong teamMateId, ClientRpcParams clientRpcParams = default)
     {
+        _ = clientRpcParams;
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
             teamUp.isTeamedUp = true;
@@ -462,15 +450,15 @@ public class GameManager : NetworkBehaviour
             }
         };
 
-        // Remove the team regardless of the order of the tuple elements
-        teams.RemoveAll(team => (team.Item1 == serverRpcParams.Receive.SenderClientId && team.Item2 == teamMateId) ||
-                                (team.Item1 == teamMateId && team.Item2 == serverRpcParams.Receive.SenderClientId));
+        _teams.RemoveAll(team => (team.Item1 == serverRpcParams.Receive.SenderClientId && team.Item2 == teamMateId) ||
+                                 (team.Item1 == teamMateId && team.Item2 == serverRpcParams.Receive.SenderClientId));
         SendEndTeamUpClientRpc(clientRpcParams);
     }
 
     [ClientRpc]
     private void SendEndTeamUpClientRpc(ClientRpcParams clientRpcParams = default)
     {
+        _ = clientRpcParams;
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
         {
             teamUp.EndTeamUp();
@@ -504,7 +492,6 @@ public class GameManager : NetworkBehaviour
             }
         }
 
-        // Return a placeholder if the player is not found
         return null;
     }
 
@@ -514,7 +501,7 @@ public class GameManager : NetworkBehaviour
     {
         if (percentageChance < 100)
         {
-            int randomValue = Random.Range(0, 100); // Generates a number between 0 and 99
+            int randomValue = Random.Range(0, 100);
             return randomValue < percentageChance;
         }
         return true;
@@ -538,56 +525,160 @@ public class GameManager : NetworkBehaviour
 
     private void StartRain()
     {
-        if (!hasRained)
+        if (!_hasRained)
         {
             float percentageChance = Mathf.Pow(1.0155f, Time.timeSinceLevelLoad);
             Debug.Log(percentageChance);
-            
+
             bool shouldRain = Percentage(percentageChance);
             Debug.Log(shouldRain);
-            
+
             if (shouldRain)
             {
-                hasRained = true;
-                //Start bad weather
+                _hasRained = true;
                 OnWeatherChanged();
             }
         }
     }
 
     #region Tasks
-    
 
-    private void DistrubuteTasks()
+    private void DistributeTasks()
     {
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            if (!playerStates[clientId])
+            if (!_playerStates.TryGetValue(clientId, out var isAlive) || !isAlive)
                 continue;
 
-            // If player already has tasks
-            if (allPlayersTasks.TryGetValue(clientId, out var existingTasks))
+            if (_allPlayersTasks.TryGetValue(clientId, out var existingTasks))
             {
-                // Remove completed tasks
                 existingTasks.RemoveAll(t => t.completed);
-
-                // Add new tasks
                 existingTasks.AddRange(TaskManager.Instance.GenerateTasks());
             }
             else
             {
-                // First round
-                allPlayersTasks[clientId] = TaskManager.Instance.GenerateTasks();
+                _allPlayersTasks[clientId] = TaskManager.Instance.GenerateTasks();
             }
         }
     }
-
 
     #endregion
 
     public int AlivePlayersCount()
     {
-        return alivePlayersCount.Value;
+        return _alivePlayersCount.Value;
+    }
+
+    private void UpdatePlayerShootingScripts()
+    {
+        if (NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            PlayerShootingScriptClientRpc(clientId, clientId == playerWithGun.Value);
+        }
+    }
+
+    private ulong GetRandomClientId(ulong excludedClientId = ulong.MaxValue)
+    {
+        if (NetworkManager.Singleton == null)
+        {
+            return ulong.MaxValue;
+        }
+
+        List<ulong> eligibleClientIds = new();
+
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (clientId == excludedClientId)
+            {
+                continue;
+            }
+
+            if (_playerStates.TryGetValue(clientId, out bool isAlive) && isAlive)
+            {
+                eligibleClientIds.Add(clientId);
+            }
+        }
+
+        if (eligibleClientIds.Count == 0)
+        {
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                if (clientId != excludedClientId)
+                {
+                    eligibleClientIds.Add(clientId);
+                }
+            }
+        }
+
+        if (eligibleClientIds.Count == 0)
+        {
+            return excludedClientId;
+        }
+
+        return eligibleClientIds[Random.Range(0, eligibleClientIds.Count)];
+    }
+
+    private bool TryGetPlayerStats(ulong clientId, out Stats stats)
+    {
+        stats = null;
+
+        if (NetworkManager.Singleton == null)
+        {
+            return false;
+        }
+
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) && client.PlayerObject != null)
+        {
+            return client.PlayerObject.TryGetComponent(out stats);
+        }
+
+        return false;
+    }
+
+    private void MarkPlayerInactive(ulong clientId, bool reassignGun)
+    {
+        if (!_playerStates.TryGetValue(clientId, out bool isAlive) || !isAlive)
+        {
+            return;
+        }
+
+        _playerStates[clientId] = false;
+        _alivePlayersCount.Value = Mathf.Max(0, _alivePlayersCount.Value - 1);
+
+        if (reassignGun && playerWithGun.Value == clientId)
+        {
+            RoundManager.Instance?.EndRound();
+            playerWithGun.Value = GetRandomClientId(clientId);
+            UpdatePlayerShootingScripts();
+
+            if (playerWithGun.Value != clientId && playerWithGun.Value != ulong.MaxValue)
+            {
+                CheckPlayerGunScript();
+            }
+        }
+
+        if (_alivePlayersCount.Value <= 1)
+        {
+            EndGame(GetAlivePlayerId());
+        }
+    }
+
+    private ulong GetAlivePlayerId()
+    {
+        foreach (var playerState in _playerStates)
+        {
+            if (playerState.Value)
+            {
+                return playerState.Key;
+            }
+        }
+
+        return ulong.MaxValue;
     }
 }
 

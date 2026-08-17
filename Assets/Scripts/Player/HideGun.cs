@@ -7,17 +7,17 @@ public class HideGun : MonoBehaviour
 {
     public bool haveGun;
     [SerializeField]private Shooting gunScript;
-    private InputActionAsset inputActions;
-    [HideInInspector] public  float survivedTime = 0f;
+    private InputActionAsset _inputActions;
+    [HideInInspector] public float survivedTime;
     private void Awake() 
     {
-        inputActions = GetComponent<InputSystem>().inputActions;
+        _inputActions = GetComponent<InputSystem>().inputActions;
     }
 
 
     private void Update() 
     {
-        haveGun = (int)GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun.Value;
+        haveGun = GetComponent<NetworkObject>().OwnerClientId == GameManager.Instance.playerWithGun.Value;
         if(!haveGun)
         {
             survivedTime += Time.deltaTime;
@@ -26,7 +26,7 @@ public class HideGun : MonoBehaviour
         haveGun = haveGun && GameManager.Instance.canShoot.Value && gunScript.canTrigger && gunScript.canShoot;
         if (haveGun)
         {
-            if (inputActions.FindAction("Change Weapon").triggered)
+            if (_inputActions.FindAction("Change Weapon").triggered)
             {
                 gunScript.enabled = !gunScript.enabled;
             }

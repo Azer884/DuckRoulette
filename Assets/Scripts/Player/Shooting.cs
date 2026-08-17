@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -28,6 +28,7 @@ public class Shooting : NetworkBehaviour
     [SerializeField] private AudioClip shootClip;
     [SerializeField] private AudioClip emptyShotClip;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
+    private bool _shotExecuted;
 
     public override void OnNetworkSpawn()
     {
@@ -44,12 +45,14 @@ public class Shooting : NetworkBehaviour
     private void OnEnable()
     {
         hasShot.Value = false;
+        _shotExecuted = false;
 
         hasShot.OnValueChanged += OnHasShotChangedServerRpc;
 
         HandsState(true);
         haveGun.Value = true;
     }
+
     private void OnDisable()
     {
         hasShot.OnValueChanged -= OnHasShotChangedServerRpc;
@@ -115,45 +118,56 @@ public class Shooting : NetworkBehaviour
     {
         if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered)
         {
-            // Check if this is a valid hit
-            bool isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
-            
-            // Play shooting animation once
-            
-            if (isValidShot)
-            {
-                foreach (Animator animator in animators)
-                {
-                    animator.Play("Shooting");
-                }
-                
-                OnGunShot?.Invoke();
-                if (!CanUseNetcode())
-                {
-                    PlayShootSound(spawnPt != null ? spawnPt.position : transform.position);
-                }
-                
-                // Notify the server to shoot and update hasShot on all clients
-                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
-                
-                shotCounter++;
-            }
-            else
-            {
-                for (int i = 0; i < 3; i++)
-                {
-                    animators[i].Play("Shooting");
-                }
-                
-                // This was an empty shot
-                emptyShots++;
-                PlayEmptyShotSound(spawnPt != null ? spawnPt.position : transform.position);
-            }
-            
-            hasShot.Value = true;
-            StartCoroutine(Triggering());
+            ExecuteShot();
         }
     }
+
+    public void ForceShoot(int roundId)
+    {
+        if (!IsOwner || RoundManager.Instance == null || RoundManager.Instance.CurrentRoundId != roundId)
+        {
+            return;
+        }
+        ExecuteShot();
+    }
+
+    private void ExecuteShot()
+    {
+        if (_shotExecuted)
+        {
+            return;
+        }
+
+        _shotExecuted = true;
+        bool isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
+        if (isValidShot)
+        {
+            foreach (Animator animator in animators)
+            {
+                animator.Play("Shooting");
+            }
+            OnGunShot?.Invoke();
+            if (!CanUseNetcode())
+            {
+                PlayShootSound(spawnPt != null ? spawnPt.position : transform.position);
+            }
+            ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+            shotCounter++;
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                animators[i].Play("Shooting");
+            }
+            emptyShots++;
+            PlayEmptyShotSound(spawnPt != null ? spawnPt.position : transform.position);
+        }
+
+        hasShot.Value = true;
+        StartCoroutine(Triggering());
+    }
+
     private System.Collections.IEnumerator Triggering()
     {
         // Wait until the "Shooting" animation has finished playing
