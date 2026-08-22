@@ -17,6 +17,7 @@ public class CustomSliderControl : MonoBehaviour
     }
     private void OnEnable()
     {
+        if (rightStickInput == null) return;
 
         rightStickInput.action.performed += OnRightStickMoved;
         rightStickInput.action.canceled += OnRightStickReleased;
@@ -24,6 +25,8 @@ public class CustomSliderControl : MonoBehaviour
 
     private void OnDisable()
     {
+        if (rightStickInput == null) return;
+
         rightStickInput.action.performed -= OnRightStickMoved;
         rightStickInput.action.canceled -= OnRightStickReleased;
     }

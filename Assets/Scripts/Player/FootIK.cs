@@ -53,10 +53,6 @@ public class FootIK : MonoBehaviour {
 	private void SolveIK(ref Transform foot)
 	{
 		string footName = foot.name;
-        _ = new RaycastHit();
-        _ = new
-        Vector3();
-        _ = Quaternion.identity;
         if (Physics.Linecast(CheckOrigin(foot.position), CheckTarget(foot.position), out RaycastHit floorHit, layerMask))
         {
             Vector3 newPosition = FootPosition(floorHit);

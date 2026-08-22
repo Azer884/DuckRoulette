@@ -9530,7 +9530,6 @@ Transform:
   - {fileID: 1434314567}
   - {fileID: 1648685277}
   - {fileID: 1913872386}
-  - {fileID: 2134556224}
   - {fileID: 1207432626}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -13344,6 +13343,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 2134556224}
   - {fileID: 1634091478}
   - {fileID: 1919733816}
   - {fileID: 1209974034}
@@ -13361,9 +13361,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 851bff6fea8966a4ab211c6fa698c8fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainMenu: {fileID: 492885578}
+  m_Name:
+  m_EditorClassIdentifier:
+  lobbyMenu: {fileID: 492885578}
   activePriority: 100
   inactivePriority: 0
 --- !u!1 &1209974032
@@ -24995,7 +24995,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 932648228}
+  m_Father: {fileID: 1207432626}
   m_LocalEulerAnglesHint: {x: 18.522, y: 32.421, z: 0}
 --- !u!1001 &135876182570907022
 PrefabInstance:

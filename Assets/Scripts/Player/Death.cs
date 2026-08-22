@@ -5,16 +5,21 @@ public class Death : NetworkBehaviour
 {
     public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false);
 
-    [ServerRpc(RequireOwnership = false)]
+    // RequireOwnership (the default) means only this player's own client can report their own
+    // death - collision physics runs locally on every client, including the victim's own, so
+    // the victim's client always sees its own DeathTrigger.OnTriggerEnter fire too. Previously
+    // RequireOwnership=false with a client-supplied clientId let any connected client kill (or
+    // revive) any other player on demand.
+    [ServerRpc]
     public void DieServerRpc(bool died = true)
     {
         isDead.Value = died;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void KillPlayerServerRpc(ulong clientId, bool died = true)
+    [ServerRpc]
+    public void KillPlayerServerRpc(bool died = true)
     {
-        KillPlayerClientRpc(clientId, died);
+        KillPlayerClientRpc(OwnerClientId, died);
     }
     [ClientRpc]
     private void KillPlayerClientRpc(ulong clientId, bool died = true)

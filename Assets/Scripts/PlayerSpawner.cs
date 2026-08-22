@@ -33,6 +33,15 @@ public class PlayerSpawner : NetworkBehaviour
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += GoBackToLobby;
     }
 
+    public override void OnNetworkDespawn()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+        {
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= SceneLoaded;
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= GoBackToLobby;
+        }
+    }
+
 
     private void SceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {

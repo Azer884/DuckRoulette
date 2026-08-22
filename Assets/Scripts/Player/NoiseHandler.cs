@@ -70,10 +70,15 @@ public class NoiseHandler : MonoBehaviour
             return;
         }
 
-        // Store the default noise values
-        defaultAmplitude = noise.AmplitudeGain;
-        defaultFrequency = noise.FrequencyGain;
+        // Idle/no-shake baseline is always zero gain - every effect below is meant to be extra
+        // shake layered on top of stillness. Reading noise.AmplitudeGain/FrequencyGain here instead
+        // would pick up whatever value was last left on the component in the Inspector (e.g. from
+        // scrubbing while testing), which silently makes bursts weaker than the "resting" noise.
+        defaultAmplitude = 0f;
+        defaultFrequency = 0f;
         defaultNoiseSettings = noise.NoiseProfile;
+        noise.AmplitudeGain = defaultAmplitude;
+        noise.FrequencyGain = defaultFrequency;
 
         _targetAmplitude = defaultAmplitude;
         _targetFrequency = defaultFrequency;
@@ -226,9 +231,10 @@ public class NoiseHandler : MonoBehaviour
         yield return new WaitForSeconds(duration);
 
         _isBurstActive = false;
-        _targetNoiseProfile = defaultNoiseSettings;
-        _targetAmplitude = defaultAmplitude;
-        _targetFrequency = defaultFrequency;
+        // Recompute immediately instead of snapping to the idle baseline - if a burst (e.g. a
+        // footstep) ends while still running, the shake should fall back to the run-shake level,
+        // not to zero for a frame.
+        UpdateMovementShake();
 
         _activeBurstRoutine = null;
     }

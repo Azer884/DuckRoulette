@@ -192,7 +192,8 @@ public class StatTracker : MonoBehaviour
             shotsCount = shootingComponent.shotCounter;
             emptyShotsCount = shootingComponent.emptyShots;
             accuracy = shotsCount > 0 ? kills / (float)shotsCount * 100f : 0f;
-            luck = emptyShotsCount > 0 ? shotsCount / (float)emptyShotsCount * 100f : 0f;
+            int totalTriggerPulls = shotsCount + emptyShotsCount;
+            luck = totalTriggerPulls > 0 ? emptyShotsCount / (float)totalTriggerPulls * 100f : 0f;
         }
         percMapExplored = totalCells > 0 ? visitedCells.Count / (float)totalCells * 100f : 0f;
     }

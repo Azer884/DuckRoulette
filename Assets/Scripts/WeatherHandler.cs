@@ -47,7 +47,10 @@ public class WeatherHandler : NetworkBehaviour
         StopBadWeather();
     }
 
-    [ServerRpc (RequireOwnership = false)]
+    // The only legitimate caller is this object's own server/host instance (non-owners get
+    // disabled entirely in OnNetworkSpawn above) - RequireOwnership (the default) closes off
+    // any other client calling this directly to spam weather changes / rock spawns.
+    [ServerRpc]
     private void HandleWeatherServerRpc()
     {
         HandleWeatherClientRpc();
@@ -60,7 +63,7 @@ public class WeatherHandler : NetworkBehaviour
         StartBadWeather();
     }
 
-    [ServerRpc (RequireOwnership = false)]
+    [ServerRpc]
     private void SpawnRocksServerRpc()
     {
         int rockCount = Random.Range(10, 20);

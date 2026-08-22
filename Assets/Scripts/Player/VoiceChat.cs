@@ -29,12 +29,39 @@ public class VoiceChat : NetworkBehaviour
 
     #region Input Things
     private InputActionAsset inputActions;
+    private InputAction talkAction;
     #endregion
+
+    // NetworkVariable instead of an edge-triggered ServerRpc/ClientRpc: Netcode syncs a
+    // NetworkVariable's current value to newly-connected observers automatically, so a client
+    // who joins mid-talk still sees the correct mic UI state immediately. Setting .Value every
+    // frame is still cheap - Netcode only sends a delta when the value actually changes.
+    public NetworkVariable<bool> isTalking = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public override void OnNetworkSpawn()
+    {
+        isTalking.OnValueChanged += HandleTalkingChanged;
+        HandleTalkingChanged(false, isTalking.Value);
+        base.OnNetworkSpawn();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        isTalking.OnValueChanged -= HandleTalkingChanged;
+        base.OnNetworkDespawn();
+    }
+
+    private void HandleTalkingChanged(bool oldValue, bool newValue)
+    {
+        micUI.SetActive(newValue);
+        spit.SetActive(newValue);
+    }
 
     private void Start()
     {
         inputActions = GetComponent<InputSystem>().inputActions;
-        
+        talkAction = inputActions.FindAction("Talk");
+
         // Initialize streams
         optimalRate = (int)SteamUser.OptimalSampleRate;
 
@@ -55,12 +82,13 @@ public class VoiceChat : NetworkBehaviour
     {
         if (IsOwner) // Push-to-Talk, and ensure only the owner sends data
         {
-            if (inputActions.FindAction("Talk").triggered)
+            if (talkAction.triggered)
             {
                 toggleActive = !toggleActive; // Toggle the state on key press
             }
-            SteamUser.VoiceRecord = (pushToTalk && inputActions.FindAction("Talk").ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
-            ActivateTalkUIServerRpc(OwnerClientId, SteamUser.VoiceRecord);
+            SteamUser.VoiceRecord = (pushToTalk && talkAction.ReadValue<float>() > 0) || (toggleToTalk && toggleActive) || openMic;
+
+            isTalking.Value = SteamUser.VoiceRecord;
 
             if (SteamUser.HasVoiceData)
             {
@@ -154,19 +182,4 @@ public class VoiceChat : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
-    private void ActivateTalkUIServerRpc(ulong clientId, bool isTalking)
-    {
-        ActivateTalkUIClientRpc(clientId, isTalking);
-    }
-
-    [ClientRpc]
-    private void ActivateTalkUIClientRpc(ulong clientId, bool isTalking)
-    {
-        if (OwnerClientId == clientId)
-        {
-            micUI.SetActive(isTalking);
-            spit.SetActive(isTalking);
-        }
-    }
 }

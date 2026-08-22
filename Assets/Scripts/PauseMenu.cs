@@ -7,6 +7,7 @@ public class PauseMenu : NetworkBehaviour
 {
 
     private InputActionAsset inputActions;
+    private InputAction pauseAction;
     [SerializeField] private GameObject pauseMenu, crosshair;
     public GameObject endGamePanel, playerStatsObj;
     private bool menuIsOpen = false;
@@ -21,13 +22,14 @@ public class PauseMenu : NetworkBehaviour
         ended = false;
 
         inputActions = GetComponent<InputSystem>().inputActions;
+        pauseAction = inputActions.FindAction("Pause");
     }
 
 
     // Update is called once per frame
     void Update()
     {
-        if (inputActions.FindAction("Pause").triggered && !ended)
+        if (pauseAction.triggered && !ended)
         {
             if (!menuIsOpen)
             {
@@ -42,7 +44,10 @@ public class PauseMenu : NetworkBehaviour
 
     public void Leave()
     {
-        GameManager.Instance.LeaveGame();
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.LeaveGame();
+        }
     }
 
     public void Resume()

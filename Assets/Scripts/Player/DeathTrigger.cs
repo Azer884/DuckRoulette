@@ -1,6 +1,8 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Unity.Netcode;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Cinemachine;
 
 public class DeathTrigger : MonoBehaviour
@@ -9,41 +11,85 @@ public class DeathTrigger : MonoBehaviour
     private ulong spectatedPlayerId;
     private CinemachineCamera spectatorCamera;
     private Death death;
+    private NetworkObject parentNetworkObject;
+    private InputAction spectateNextAction;
+
+    // Only true once the camera has actually cut to spectate (after the dramatic death delay
+    // below) - guards Update() so cycling/auto-retarget can't run against spectatedPlayerId
+    // before the initial "watch your killer" call has even happened.
+    private bool isSpectating;
+    private float spectateValidityCheckTimer;
 
     private void Awake()
     {
         death = GetComponentInParent<Death>();
+        parentNetworkObject = GetComponentInParent<NetworkObject>();
+
+        InputSystem inputSystem = GetComponentInParent<InputSystem>();
+        if (inputSystem != null)
+        {
+            spectateNextAction = inputSystem.inputActions.FindAction("SpectateNext");
+        }
     }
 
-    public void OnTriggerEnter(Collider other) 
+    private void Start()
     {
-        victimId = GetComponentInParent<NetworkObject>().OwnerClientId;
+        death.isDead.OnValueChanged += HandleIsDeadChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (death != null)
+        {
+            death.isDead.OnValueChanged -= HandleIsDeadChanged;
+        }
+    }
+
+    private void HandleIsDeadChanged(bool oldValue, bool newValue)
+    {
+        if (parentNetworkObject == null || !parentNetworkObject.IsOwner || newValue)
+        {
+            return;
+        }
+
+        // Respawned/round reset - clear spectate state so a stale camera/HUD doesn't linger.
+        isSpectating = false;
+        EndSpectate(spectatedPlayerId);
+        SpectateHUD.HideSpectating();
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        victimId = parentNetworkObject.OwnerClientId;
 
         if (other.transform.parent.TryGetComponent(out BulletBehavior bullet))
         {
-            if (bullet.OwnerClientId != victimId && !death.isDead.Value)
+            bool isFriendlyFire = GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId;
+
+            if (bullet.OwnerClientId != victimId && !death.isDead.Value && !isFriendlyFire)
             {
-                if (GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId)
-                {
-                    return;
-                }
                 death.DieServerRpc();
-                death.KillPlayerServerRpc(victimId);
-    
+                death.KillPlayerServerRpc();
+
                 ulong shooterId = bullet.OwnerClientId;
                 spectatedPlayerId = shooterId;
-    
+
                 // Fetch player names from the Username component
                 string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
                 string victimName = GameManager.Instance.GetPlayerNickname(victimId);
-    
+
                 Debug.Log($"{shooterName} killed {victimName}");
                 GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
-    
+
                 // Notify GameManager about the death
                 GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
                 Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
-    
+
+                if (parentNetworkObject.IsOwner)
+                {
+                    SpectateHUD.ShowDeathBanner(shooterName);
+                }
+
                 StartCoroutine(WaitBeforeSpctate(5f));
             }
             bullet.DestroyServerRpc(0);
@@ -55,6 +101,13 @@ public class DeathTrigger : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         Spectate(spectatedPlayerId);
+
+        if (parentNetworkObject.IsOwner)
+        {
+            isSpectating = true;
+            spectateValidityCheckTimer = 0f;
+            ShowSpectateHud();
+        }
     }
 
     private void Spectate(ulong playerId)
@@ -75,14 +128,90 @@ public class DeathTrigger : MonoBehaviour
         spectatorCamera.Priority = 0;
     }
 
-    private void Update() {
-        if (death.isDead.Value &&
-            Input.GetKeyDown(KeyCode.Space))
+    private void Update()
+    {
+        if (!parentNetworkObject.IsOwner || !death.isDead.Value || !isSpectating)
         {
-            EndSpectate(spectatedPlayerId);
-            spectatedPlayerId++;
-            spectatedPlayerId %= (ulong)NetworkManager.Singleton.ConnectedClientsList.Count;
-            Spectate(spectatedPlayerId);
+            return;
         }
+
+        if (spectateNextAction != null && spectateNextAction.triggered)
+        {
+            CycleSpectateTarget();
+            return;
+        }
+
+        // If whoever we're currently watching died (or disconnected) in the meantime, hop to
+        // the next alive target automatically instead of leaving the player staring at a corpse.
+        spectateValidityCheckTimer += Time.deltaTime;
+        if (spectateValidityCheckTimer >= 0.5f)
+        {
+            spectateValidityCheckTimer = 0f;
+            if (!IsAlive(spectatedPlayerId))
+            {
+                CycleSpectateTarget();
+            }
+        }
+    }
+
+    private void CycleSpectateTarget()
+    {
+        List<ulong> targets = GetAliveSpectateTargets();
+        if (targets.Count == 0)
+        {
+            return;
+        }
+
+        // Previously this incremented spectatedPlayerId (a raw clientId) and wrapped it modulo
+        // ConnectedClientsList.Count - clientIds aren't small sequential integers (especially
+        // over a Steam transport), so that almost never landed on a real, let alone alive,
+        // player. Cycling through an explicit alive-target list fixes both problems at once.
+        int currentIndex = targets.IndexOf(spectatedPlayerId);
+        int nextIndex = (currentIndex + 1) % targets.Count;
+
+        EndSpectate(spectatedPlayerId);
+        spectatedPlayerId = targets[nextIndex];
+        Spectate(spectatedPlayerId);
+        ShowSpectateHud();
+    }
+
+    private void ShowSpectateHud()
+    {
+        string targetName = GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(spectatedPlayerId) : "";
+        string hint = spectateNextAction != null ? $"[{spectateNextAction.GetBindingDisplayString()}] Next" : "";
+        SpectateHUD.ShowSpectating(targetName, hint);
+    }
+
+    private List<ulong> GetAliveSpectateTargets()
+    {
+        var targets = new List<ulong>();
+        if (NetworkManager.Singleton == null)
+        {
+            return targets;
+        }
+
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (client.ClientId == victimId || client.PlayerObject == null)
+            {
+                continue;
+            }
+
+            if (client.PlayerObject.TryGetComponent(out Death otherDeath) && !otherDeath.isDead.Value)
+            {
+                targets.Add(client.ClientId);
+            }
+        }
+
+        return targets;
+    }
+
+    private bool IsAlive(ulong clientId)
+    {
+        return NetworkManager.Singleton != null &&
+               NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) &&
+               client.PlayerObject != null &&
+               client.PlayerObject.TryGetComponent(out Death otherDeath) &&
+               !otherDeath.isDead.Value;
     }
 }

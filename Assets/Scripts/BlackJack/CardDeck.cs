@@ -14,6 +14,12 @@ public class CardDeck : NetworkBehaviour
 
     public NetworkVariable<ulong> playerTurn = new(0);
 
+    // Tracks which players have already consumed their one legitimate isFirstCard=true draw
+    // (the automatic deal triggered by EnterGameServerRpc) - isFirstCard is otherwise a
+    // client-supplied bool with no other server-side guard, so without this a modified client
+    // could keep claiming isFirstCard=true to skip the turn check indefinitely.
+    private readonly HashSet<ulong> _hasDrawnFirstCard = new();
+
     public GameObject cardPrefab;
     public float moveDuration = 0.5f;
     public AnimationCurve movementCurve;
@@ -78,6 +84,98 @@ public class CardDeck : NetworkBehaviour
             playerInCurrentGameList.Remove(clientId);
         }
         playerInGameList.Remove(clientId);
+        _hasDrawnFirstCard.Remove(clientId);
+    }
+
+    // Server-authoritative draw: picks the card, decrements the real deck count, and tracks the
+    // player's running hand sum here (not on the client's own BlackJack.handSum field, which
+    // never updates on the server for anyone but the host - see RequestDrawCardServerRpc).
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestDrawCardServerRpc(bool isFirstCard, ServerRpcParams serverRpcParams = default)
+    {
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+
+        if (!playerInCurrentGameList.TryGetValue(clientId, out var entry))
+        {
+            return;
+        }
+
+        bool grantsFirstCardBypass = isFirstCard && !_hasDrawnFirstCard.Contains(clientId);
+        if (grantsFirstCardBypass)
+        {
+            _hasDrawnFirstCard.Add(clientId);
+        }
+
+        if (!grantsFirstCardBypass && playerTurn.Value != clientId)
+        {
+            SendMsgServerRpc("It's not your turn!", clientId);
+            return;
+        }
+
+        ClientRpcParams targetParams = new()
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new[] { clientId }
+            }
+        };
+
+        Card newCard = GetRandomCard();
+        if (newCard == null)
+        {
+            SendMsgServerRpc("Deck is empty!");
+            DealCardClientRpc(0, entry.Item2, true, isFirstCard, targetParams);
+            return;
+        }
+
+        cardDictionary[newCard]--;
+
+        int newSum = entry.Item2 + newCard.cardValue;
+        playerInCurrentGameList[clientId] = (entry.Item1, newSum);
+
+        if (!grantsFirstCardBypass)
+        {
+            GetNextPlayerServerRpc();
+        }
+
+        int cardListIndex = cardDeck.IndexOf(newCard);
+        DealCardClientRpc(cardListIndex, newSum, false, isFirstCard, targetParams);
+    }
+
+    [ClientRpc]
+    private void DealCardClientRpc(int cardListIndex, int newHandSum, bool deckEmpty, bool isFirstCard, ClientRpcParams clientRpcParams = default)
+    {
+        _ = clientRpcParams;
+        if (NetworkManager.Singleton?.LocalClient?.PlayerObject == null)
+        {
+            return;
+        }
+
+        if (NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent(out BlackJack blackJack))
+        {
+            blackJack.ReceiveDealtCard(cardListIndex, newHandSum, deckEmpty, isFirstCard);
+        }
+    }
+
+    // Only accepts the win if the server's own tracked hand sum for this player actually hit 21 -
+    // a client can no longer just self-report a blackjack.
+    [ServerRpc(RequireOwnership = false)]
+    public void BlackjackServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+
+        if (!playerInCurrentGameList.TryGetValue(clientId, out var entry) || entry.Item2 != 21)
+        {
+            return;
+        }
+
+        if (playerInGameList.ContainsKey(clientId))
+        {
+            playerInGameList[clientId]++;
+        }
+
+        SendMsgServerRpc($"{(GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(clientId) : clientId.ToString())} got a Blackjack!");
+        ResetGameServerRpc();
     }
 
     public Card GetRandomCard()
@@ -139,8 +237,15 @@ public class CardDeck : NetworkBehaviour
     }
 
     [ServerRpc (RequireOwnership = false)]
-    public void SpawnCardServerRpc(ulong clientId, Vector3 targetedPosition, Quaternion rot , int cardIndex, bool isFirstCard = false)
+    public void SpawnCardServerRpc(ulong clientId, Vector3 targetedPosition, Quaternion rot , int cardIndex, bool isFirstCard = false, ServerRpcParams serverRpcParams = default)
     {
+        // A client can only ever legitimately spawn its own dealt card, and cardIndex must be a
+        // valid cardDeck slot - both are otherwise unvalidated client-supplied values.
+        if (clientId != serverRpcParams.Receive.SenderClientId || cardIndex < 0 || cardIndex >= cardDeck.Count)
+        {
+            return;
+        }
+
         //Major error (can't use int in a string): Debug.Log($"Spawning card {cardIndex}");
         GameObject newCardObject = Instantiate(cardPrefab, transform.position, rot);
 
@@ -166,7 +271,7 @@ public class CardDeck : NetworkBehaviour
             }
         };
 
-        int artworkIndex = Random.Range(0, cardDeck[cardIndex - 1].artworks.Length);
+        int artworkIndex = Random.Range(0, cardDeck[cardIndex].artworks.Length);
         SpawnCardClientRpc(newCardObject.GetComponent<NetworkObject>().NetworkObjectId, cardIndex, artworkIndex, targetedPosition, true, onlyPlayerParams);
         SpawnCardClientRpc(newCardObject.GetComponent<NetworkObject>().NetworkObjectId, cardIndex, artworkIndex, targetedPosition, isFirstCard, othersParams);
         
@@ -187,10 +292,9 @@ public class CardDeck : NetworkBehaviour
     public void SpawnCardClientRpc(ulong networkObjectId, int cardIndex, int artworkIndex, Vector3 targetedPos, bool isFirstCard = false, ClientRpcParams clientRpcParams = default)
     {
         _ = clientRpcParams;
-        StopAllCoroutines();
 
         NetworkObject networkObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId];
-        networkObject.GetComponent<MeshFilter>().mesh = cardDeck[cardIndex - 1].artworks[artworkIndex];
+        networkObject.GetComponent<MeshFilter>().mesh = cardDeck[cardIndex].artworks[artworkIndex];
 
         if (!isFirstCard)
         {
@@ -220,6 +324,11 @@ public class CardDeck : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void GetNextPlayerServerRpc()
     {
+        if (playerInGameList.Count == 0)
+        {
+            return;
+        }
+
         playerTurn.Value = (playerTurn.Value + 1) % (ulong)playerInGameList.Count;
         if(playerInCurrentGameList.Values.Any(value => value.Item1 == false))
         {
@@ -285,7 +394,15 @@ public class CardDeck : NetworkBehaviour
     [ClientRpc]
     private void ResetHandsClientRpc()
     {
-        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<BlackJack>().RestartHand();
+        if (NetworkManager.Singleton?.LocalClient?.PlayerObject == null)
+        {
+            return;
+        }
+
+        if (NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent(out BlackJack blackJack))
+        {
+            blackJack.RestartHand();
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]

@@ -372,9 +372,9 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Singleton_OnClientDisconnectCallback(ulong _clientId)
     {
-        NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
         if (_clientId == 0)
         {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
             Disconnected();
         }
     }

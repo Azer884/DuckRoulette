@@ -148,33 +148,21 @@ public class LoadingManager : NetworkBehaviour
         // Hide loading UI on every client as soon as scene is active
         loadingScreen.SetActive(false);
 
-        if (scene.name == "GameScene" && IsHost)
-        {
-            // Host spawns one player object per client
-            foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                GameObject go = Instantiate(playerPrefab);
-                go.GetComponent<NetworkObject>()
-                  .SpawnAsPlayerObject(clientId, true);
-            }
-        }
+        // NOTE: player spawning and lobby-return setup used to also happen here, duplicating
+        // PlayerSpawner (which listens to Netcode's OnLoadEventCompleted, the properly
+        // network-synced equivalent of this raw Unity SceneManager.sceneLoaded event). That
+        // caused every client to get two player objects spawned per game start, and lobby
+        // setup (HostCreated/ConnectedAsClient/AddPlayersClientRpc) to run twice on return to
+        // the Lobby scene. PlayerSpawner is the live path (wired to GameNetworkManager.StartGame,
+        // which loads scenes through Netcode's NetworkSceneManager); this class's own StartGame/
+        // loading-screen pipeline above is currently unused by any UI, so only the redundant
+        // spawn/setup side effects were removed here.
 
         if (scene.name == "Lobby" && IsServer)
         {
             // Reset done‑flags for next round
             foreach (var key in new List<ulong>(clientsDone.Keys))
                 clientsDone[key] = false;
-
-            // Now run your lobby‑return logic
-            if (NetworkManager.Singleton.IsHost)
-            {
-                LobbyManager.instance.HostCreated();
-                AddPlayersClientRpc();
-            }
-            else
-            {
-                LobbyManager.instance.ConnectedAsClient();
-            }
         }
     }
 

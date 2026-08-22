@@ -13,6 +13,11 @@ public class PingManager : MonoBehaviour
         InvokeRepeating(nameof(UpdateFps), 1, 1);
     }
 
+    private void OnDisable()
+    {
+        CancelInvoke();
+    }
+
     private void UpdateFps()
     {
         // Update the UI Text

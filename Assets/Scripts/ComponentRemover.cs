@@ -12,9 +12,15 @@ public class ComponentRemover : NetworkBehaviour
     {
         if(!hasChanged)
         {
+            GameObject player6 = GameObject.Find("Player6");
+            if (player6 == null)
+            {
+                return;
+            }
+
             Destroy(GetComponent<NetworkObject>());
             Destroy(GetComponent<NetworkCosmetics>());
-            transform.parent = GameObject.Find("Player6").transform;
+            transform.parent = player6.transform;
             transform.localScale = Vector3.one;
             hasChanged = true;
         }

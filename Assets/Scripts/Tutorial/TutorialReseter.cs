@@ -14,8 +14,14 @@ public class TutorialReseter : MonoBehaviour
         else
         {
             TutorialManager tm = other.GetComponent<TutorialManager>();
+            CharacterController cc = other.GetComponent<CharacterController>();
+            if (tm == null || cc == null)
+            {
+                return;
+            }
+
             tm.enabled = false;
-            other.GetComponent<CharacterController>().enabled = false;
+            cc.enabled = false;
             other.transform.position = playerSpawnPoint.position;
             Debug.Log("Player respawned at: " + playerSpawnPoint.position);
             if (tm.pickedUpObject != null)

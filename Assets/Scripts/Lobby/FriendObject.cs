@@ -14,9 +14,12 @@ public class FriendObject : MonoBehaviour
 
     public void Invite()
     {
-        Animator settingsAnim = GameObject.FindGameObjectWithTag("SettingsBar").GetComponent<Animator>();
-        settingsAnim.Play("Settings");
-        
+        GameObject settingsBar = GameObject.FindGameObjectWithTag("SettingsBar");
+        if (settingsBar != null && settingsBar.TryGetComponent(out Animator settingsAnim))
+        {
+            settingsAnim.Play("Settings");
+        }
+
         // Check for an existing lobby, create if none exists
         if (LobbySaver.instance.currentLobby == null)
         {
@@ -34,8 +37,14 @@ public class FriendObject : MonoBehaviour
 
     private System.Collections.IEnumerator WaitForLobbyCreationAndInvite()
     {
+        float timeout = Time.time + 15f;
         while (LobbySaver.instance.currentLobby == null)
         {
+            if (Time.time >= timeout)
+            {
+                Debug.LogWarning("Timed out waiting for lobby creation; invite not sent.");
+                yield break;
+            }
             yield return null; // Wait until the lobby is initialized
         }
 

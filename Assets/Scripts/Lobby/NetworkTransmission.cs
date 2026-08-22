@@ -162,12 +162,6 @@ public class NetworkTransmission : NetworkBehaviour
         Coin.Instance.UpdateCoinAmount(-5);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void ChangeObjectPosServerRpc(ulong characterIndex, Vector3 pos, Quaternion rot)
-    {
-        ChangeObjectPosClientRpc(characterIndex, pos, rot);
-    }
-
     [ClientRpc]
     public void ChangeObjectPosClientRpc(ulong characterIndex, Vector3 pos, Quaternion rot)
     {

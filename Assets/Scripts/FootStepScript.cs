@@ -33,10 +33,12 @@ public class FootStepScript : NetworkBehaviour {
 
     #region Input Things
     private InputActionAsset inputActions;
+    private InputAction moveAction;
     private void Awake()
     {
         controller = movement.GetComponent<CharacterController>();
         inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
+        moveAction = inputActions.FindAction("Move");
         noiseHandler = GetComponent<NoiseHandler>() ?? movement.GetComponent<NoiseHandler>();
     }
     #endregion
@@ -62,7 +64,7 @@ public class FootStepScript : NetworkBehaviour {
     
             // Determine if the player is walking
             isWalking.Value =
-                (inputActions.FindAction("Move").ReadValue<Vector2>() != Vector2.zero)
+                (moveAction.ReadValue<Vector2>() != Vector2.zero)
                 && movement.realMovementSpeed > 1.2f  // Use movement speed instead of velocity magnitude
                 && controller.isGrounded;
         }

@@ -42,16 +42,27 @@ public class SteamFriendsManager : MonoBehaviour
 
     public static Texture2D GetTextureFromImage(Steamworks.Data.Image image)
     {
-        Texture2D texture = new((int)image.Width, (int)image.Height);
+        int width = (int)image.Width;
+        int height = (int)image.Height;
+        Texture2D texture = new(width, height);
 
-        for (int x = 0; x < image.Width; x++)
+        // Batch into a Color32[] and upload once instead of one SetPixel call per pixel
+        // (SetPixel is extremely slow - a 184x184 avatar was ~34k individual calls per friend).
+        Color32[] pixels = new Color32[width * height];
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < image.Height; y++)
+            for (int y = 0; y < height; y++)
             {
                 var p = image.GetPixel(x, y);
-                texture.SetPixel(x, (int)image.Height - y, new Color(p.r / 255.0f, p.g / 255.0f, p.b / 255.0f, p.a / 255.0f));
+                int destY = height - y; // preserves original SetPixel(x, height - y, ...) flip/bounds behavior
+                if (destY >= 0 && destY < height)
+                {
+                    pixels[destY * width + x] = new Color32(p.r, p.g, p.b, p.a);
+                }
             }
         }
+
+        texture.SetPixels32(pixels);
         texture.Apply();
         return texture;
     }
@@ -158,32 +169,47 @@ public class SteamFriendsManager : MonoBehaviour
     }
     private void OnFriendStateChange(Friend friend)
     {
+        // `friend` only ever lives in whichever of the three status dictionaries matched
+        // its status at InitFriendsAsync time - it must be moved to the new one here,
+        // otherwise the very first status change throws KeyNotFoundException.
+        if (!allFriends.TryGetValue(friend, out GameObject friendUI))
+        {
+            return;
+        }
+
+        inGameFriends.Remove(friend);
+        onlineFriends.Remove(friend);
+        offlineFriends.Remove(friend);
+
         // Update the text color based on the friend's new status
         if (friend.IsPlayingThisGame)
         {
-            inGameFriends[friend].GetComponent<Button>().interactable = true;
+            inGameFriends[friend] = friendUI;
+            friendUI.GetComponent<Button>().interactable = true;
             if (!alphaOrder)
             {
-                inGameFriends[friend].transform.SetAsFirstSibling();
+                friendUI.transform.SetAsFirstSibling();
             }
             //friendUI.GetComponent<FriendObject>().onlineStats.color = inGameColor;
         }
         else if (friend.IsOnline)
         {
-            onlineFriends[friend].GetComponent<Button>().interactable = true;
+            onlineFriends[friend] = friendUI;
+            friendUI.GetComponent<Button>().interactable = true;
             if (!alphaOrder)
             {
-                onlineFriends[friend].transform.SetAsFirstSibling();
+                friendUI.transform.SetAsFirstSibling();
             }
             //friendUI.GetComponent<FriendObject>().onlineStats.color = onlineColor;
         }
         else
         {
             //friendUI.GetComponent<FriendObject>().onlineStats.color = offlineColor;
-            offlineFriends[friend].GetComponent<Button>().interactable = false;
+            offlineFriends[friend] = friendUI;
+            friendUI.GetComponent<Button>().interactable = false;
             if (!alphaOrder)
             {
-                offlineFriends[friend].transform.SetAsFirstSibling();
+                friendUI.transform.SetAsFirstSibling();
             }
         }
     }

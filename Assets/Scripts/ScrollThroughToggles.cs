@@ -27,6 +27,11 @@ public class ScrollThroughToggles : MonoBehaviour
     }
     private void OnClick(InputAction.CallbackContext context)
     {
+        if (toggles == null || toggles.Length == 0)
+        {
+            return;
+        }
+
         index += (int)context.ReadValue<Vector2>().x;
         index %= toggles.Length;
         if (index < 0)

@@ -272,16 +272,18 @@ public class LobbyManager : MonoBehaviour
     public void RemovePlayerFromDictionary(ulong _steamId)
     {
         GameObject _value = null;
-        ulong _key = 100;
+        ulong _key = 0;
+        bool found = false;
         foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
             if(_player.Value.GetComponent<PlayerInfo>().steamId == _steamId)
             {
                 _value = _player.Value;
                 _key = _player.Key;
+                found = true;
             }
         }
-        if(_key != 100)
+        if(found)
         {
             playerInfo.Remove(_key);
         }

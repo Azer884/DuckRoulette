@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.InputSystem;
 
 public class TeamUp : NetworkBehaviour
 {
+    private InputAction interactAction, endTeamUpAction;
     private List<GameObject> validPlayers = new List<GameObject>();
     public bool isTeamedUp = false;
     public int teamMateId = -1;
@@ -32,14 +34,19 @@ public class TeamUp : NetworkBehaviour
         if (!IsOwner)
         {
             enabled = false;
+            return;
         }
+
+        InputActionAsset inputActions = GetComponent<InputSystem>().inputActions;
+        interactAction = inputActions.FindAction("Interact");
+        endTeamUpAction = inputActions.FindAction("EndTeamUp");
     }
 
     void Update()
     {
         if (isTeamedUp)
         {
-            if (Input.GetKeyDown(KeyCode.X))
+            if (endTeamUpAction.triggered)
             {
                 if (GameManager.Instance != null)
                 {
@@ -78,7 +85,7 @@ public class TeamUp : NetworkBehaviour
         }
         if (validPlayers?.Count > 0)
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            if (interactAction.triggered)
             {
                 if (GameManager.Instance != null)
                 {
@@ -95,7 +102,7 @@ public class TeamUp : NetworkBehaviour
                         perfectDap = UnityEngine.Random.Range(0, 2);
                         //Play the dap animation and sound
 
-                        GameManager.Instance.TeamUpResponseServerRpc(NetworkManager.Singleton.LocalClientId, (ulong)requesterId, dapPosition.position, perfectDap);
+                        GameManager.Instance.TeamUpResponseServerRpc((ulong)requesterId, dapPosition.position, perfectDap);
                         MessageBox.Informate("You have teamed up with player " + requesterId, Color.green, MessagePriority.High);
 
                         // Change the color of the player

@@ -26,7 +26,8 @@ public class PlayerPushObject : NetworkBehaviour
     [ServerRpc]
     private void ColliderHitServerRpc(Vector3 playerPosition, Vector3 hitColliderPosition, Vector3 hitPoint)
     {
-        Collider hitCollider = Physics.OverlapSphere(hitPoint, 0.1f)?[0]; // Get the first collider in the overlap sphere (should be the one hit)
+        Collider[] overlaps = Physics.OverlapSphere(hitPoint, 0.1f);
+        Collider hitCollider = overlaps.Length > 0 ? overlaps[0] : null; // Get the first collider in the overlap sphere (should be the one hit)
 
         if (hitCollider != null)
         {

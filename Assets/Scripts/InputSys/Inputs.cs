@@ -190,6 +190,69 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Mute"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000001"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""EndTeamUp"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000002"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SpectateNext"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000003"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Draw"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000004"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Done"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000005"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Blackjack"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000006"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""LeaveBlackjack"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000007"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -478,6 +541,160 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""action"": ""Reload"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000001"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Mute"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000002"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Mute"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000003"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""EndTeamUp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000004"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""EndTeamUp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000005"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""SpectateNext"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000006"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""SpectateNext"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000007"",
+                    ""path"": ""<Keyboard>/z"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Draw"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000008"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Draw"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000009"",
+                    ""path"": ""<Keyboard>/g"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Done"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000a"",
+                    ""path"": ""<Gamepad>/buttonEast"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Done"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000b"",
+                    ""path"": ""<Keyboard>/c"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Blackjack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000c"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Blackjack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000d"",
+                    ""path"": ""<Keyboard>/enter"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""LeaveBlackjack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000e"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""LeaveBlackjack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -753,6 +970,17 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-00000000000f"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""b753d809-6454-488e-925b-8186bf20d187"",
                     ""path"": ""<Gamepad>/buttonWest"",
                     ""interactions"": """",
@@ -819,6 +1047,13 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_PlayerControls_Talk = m_PlayerControls.FindAction("Talk", throwIfNotFound: true);
         m_PlayerControls_ChangeWeapon = m_PlayerControls.FindAction("Change Weapon", throwIfNotFound: true);
         m_PlayerControls_Look = m_PlayerControls.FindAction("Look", throwIfNotFound: true);
+        m_PlayerControls_Mute = m_PlayerControls.FindAction("Mute", throwIfNotFound: true);
+        m_PlayerControls_EndTeamUp = m_PlayerControls.FindAction("EndTeamUp", throwIfNotFound: true);
+        m_PlayerControls_SpectateNext = m_PlayerControls.FindAction("SpectateNext", throwIfNotFound: true);
+        m_PlayerControls_Draw = m_PlayerControls.FindAction("Draw", throwIfNotFound: true);
+        m_PlayerControls_Done = m_PlayerControls.FindAction("Done", throwIfNotFound: true);
+        m_PlayerControls_Blackjack = m_PlayerControls.FindAction("Blackjack", throwIfNotFound: true);
+        m_PlayerControls_LeaveBlackjack = m_PlayerControls.FindAction("LeaveBlackjack", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Pause = m_UI.FindAction("Pause", throwIfNotFound: true);
@@ -924,6 +1159,13 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Talk;
     private readonly InputAction m_PlayerControls_ChangeWeapon;
     private readonly InputAction m_PlayerControls_Look;
+    private readonly InputAction m_PlayerControls_Mute;
+    private readonly InputAction m_PlayerControls_EndTeamUp;
+    private readonly InputAction m_PlayerControls_SpectateNext;
+    private readonly InputAction m_PlayerControls_Draw;
+    private readonly InputAction m_PlayerControls_Done;
+    private readonly InputAction m_PlayerControls_Blackjack;
+    private readonly InputAction m_PlayerControls_LeaveBlackjack;
     /// <summary>
     /// Provides access to input actions defined in input action map "PlayerControls".
     /// </summary>
@@ -979,6 +1221,34 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "PlayerControls/Look".
         /// </summary>
         public InputAction @Look => m_Wrapper.m_PlayerControls_Look;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/Mute".
+        /// </summary>
+        public InputAction @Mute => m_Wrapper.m_PlayerControls_Mute;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/EndTeamUp".
+        /// </summary>
+        public InputAction @EndTeamUp => m_Wrapper.m_PlayerControls_EndTeamUp;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/SpectateNext".
+        /// </summary>
+        public InputAction @SpectateNext => m_Wrapper.m_PlayerControls_SpectateNext;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/Draw".
+        /// </summary>
+        public InputAction @Draw => m_Wrapper.m_PlayerControls_Draw;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/Done".
+        /// </summary>
+        public InputAction @Done => m_Wrapper.m_PlayerControls_Done;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/Blackjack".
+        /// </summary>
+        public InputAction @Blackjack => m_Wrapper.m_PlayerControls_Blackjack;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/LeaveBlackjack".
+        /// </summary>
+        public InputAction @LeaveBlackjack => m_Wrapper.m_PlayerControls_LeaveBlackjack;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1038,6 +1308,27 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
+            @Mute.started += instance.OnMute;
+            @Mute.performed += instance.OnMute;
+            @Mute.canceled += instance.OnMute;
+            @EndTeamUp.started += instance.OnEndTeamUp;
+            @EndTeamUp.performed += instance.OnEndTeamUp;
+            @EndTeamUp.canceled += instance.OnEndTeamUp;
+            @SpectateNext.started += instance.OnSpectateNext;
+            @SpectateNext.performed += instance.OnSpectateNext;
+            @SpectateNext.canceled += instance.OnSpectateNext;
+            @Draw.started += instance.OnDraw;
+            @Draw.performed += instance.OnDraw;
+            @Draw.canceled += instance.OnDraw;
+            @Done.started += instance.OnDone;
+            @Done.performed += instance.OnDone;
+            @Done.canceled += instance.OnDone;
+            @Blackjack.started += instance.OnBlackjack;
+            @Blackjack.performed += instance.OnBlackjack;
+            @Blackjack.canceled += instance.OnBlackjack;
+            @LeaveBlackjack.started += instance.OnLeaveBlackjack;
+            @LeaveBlackjack.performed += instance.OnLeaveBlackjack;
+            @LeaveBlackjack.canceled += instance.OnLeaveBlackjack;
         }
 
         /// <summary>
@@ -1082,6 +1373,27 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
+            @Mute.started -= instance.OnMute;
+            @Mute.performed -= instance.OnMute;
+            @Mute.canceled -= instance.OnMute;
+            @EndTeamUp.started -= instance.OnEndTeamUp;
+            @EndTeamUp.performed -= instance.OnEndTeamUp;
+            @EndTeamUp.canceled -= instance.OnEndTeamUp;
+            @SpectateNext.started -= instance.OnSpectateNext;
+            @SpectateNext.performed -= instance.OnSpectateNext;
+            @SpectateNext.canceled -= instance.OnSpectateNext;
+            @Draw.started -= instance.OnDraw;
+            @Draw.performed -= instance.OnDraw;
+            @Draw.canceled -= instance.OnDraw;
+            @Done.started -= instance.OnDone;
+            @Done.performed -= instance.OnDone;
+            @Done.canceled -= instance.OnDone;
+            @Blackjack.started -= instance.OnBlackjack;
+            @Blackjack.performed -= instance.OnBlackjack;
+            @Blackjack.canceled -= instance.OnBlackjack;
+            @LeaveBlackjack.started -= instance.OnLeaveBlackjack;
+            @LeaveBlackjack.performed -= instance.OnLeaveBlackjack;
+            @LeaveBlackjack.canceled -= instance.OnLeaveBlackjack;
         }
 
         /// <summary>
@@ -1431,6 +1743,55 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnLook(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Mute" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMute(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "EndTeamUp" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnEndTeamUp(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SpectateNext" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSpectateNext(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Draw" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDraw(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Done" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDone(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Blackjack" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnBlackjack(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "LeaveBlackjack" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLeaveBlackjack(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

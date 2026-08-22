@@ -17,7 +17,7 @@ public class ObjectSettings : MonoBehaviour
 
     private IEnumerator Wait()
     {
-        yield return SettingsManager.Instance;
+        yield return new WaitUntil(() => SettingsManager.Instance != null);
 
         if (TryGetComponent(out slider))
         {

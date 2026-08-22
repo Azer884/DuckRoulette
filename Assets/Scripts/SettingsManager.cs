@@ -15,6 +15,7 @@ public class SettingsManager : MonoBehaviour
     private string _settingsFilePath;
     private FileIniDataParser _parser;
     private IniData _data;
+    private Coroutine _pendingSaveCoroutine;
 
     public static SettingsManager Instance { get; private set; }
 
@@ -232,22 +233,97 @@ public class SettingsManager : MonoBehaviour
         return float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float result) ? result : defaultValue;
     }
 
+    // For controls (e.g. InpToSlider) that need to persist a value without owning a Slider/Dropdown/Toggle.
+    public void PersistSetting(string section, string key, string value)
+    {
+        SetSetting(section, key, value);
+        RequestDeferredSave();
+    }
+
     public void SaveSlider(Slider slider, string section, string key)
     {
         SetSetting(section, key, slider.value.ToString(CultureInfo.InvariantCulture));
-        SaveSettings();
+        ApplySettingsForSection(section);
+        RequestDeferredSave();
     }
 
     public void SaveDropdown(TMP_Dropdown dropdown, string section, string key)
     {
         SetSetting(section, key, dropdown.value.ToString(CultureInfo.InvariantCulture));
-        SaveSettings();
+        ApplySettingsForSection(section);
+        RequestDeferredSave();
     }
 
     public void SaveToggle(Toggle toggle, string section, string key)
     {
         SetSetting(section, key, toggle.isOn ? "true" : "false");
-        SaveSettings();
+        ApplySettingsForSection(section);
+        RequestDeferredSave();
+    }
+
+    private void ApplySettingsForSection(string section)
+    {
+        switch (section)
+        {
+            case "Audio":
+                ApplyAudioSettings();
+                break;
+            case "Graphics":
+                ApplyGraphicsSettings();
+                break;
+            case "Mouse":
+            case "Controller":
+                ApplyMouseSettings();
+                break;
+            default:
+                ApplyAllSettings();
+                break;
+        }
+    }
+
+    // Coalesces rapid-fire changes (e.g. dragging a slider fires onValueChanged every frame)
+    // into a single disk write instead of writing Settings.ini on every tick.
+    private void RequestDeferredSave()
+    {
+        if (_pendingSaveCoroutine != null)
+        {
+            StopCoroutine(_pendingSaveCoroutine);
+        }
+
+        if (gameObject.activeInHierarchy)
+        {
+            _pendingSaveCoroutine = StartCoroutine(SaveAfterDelay());
+        }
+        else
+        {
+            WriteSettingsToDisk();
+        }
+    }
+
+    private IEnumerator SaveAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(0.3f);
+        _pendingSaveCoroutine = null;
+        WriteSettingsToDisk();
+    }
+
+    private void WriteSettingsToDisk()
+    {
+        if (_data == null)
+        {
+            _data = new IniData();
+        }
+
+        _parser.WriteFile(_settingsFilePath, _data);
+    }
+
+    private void OnDisable()
+    {
+        if (_pendingSaveCoroutine != null)
+        {
+            _pendingSaveCoroutine = null;
+            WriteSettingsToDisk();
+        }
     }
 
     public void LoadSlider(Slider slider, string section, string key)

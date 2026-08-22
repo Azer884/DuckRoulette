@@ -10,6 +10,7 @@ public class Slap : NetworkBehaviour
     public event System.Action OnSlap, OnSlapTriggered;
     public event System.Action OnSlapRecived;
     private InputActionAsset inputActions;
+    private InputAction slapAction;
     [SerializeField] private Transform slapArea;
     [SerializeField] private float slapRaduis;
     [SerializeField] private float slapCoolDown = 1f;
@@ -36,11 +37,12 @@ public class Slap : NetworkBehaviour
 
     private void Awake() {
         inputActions = GetComponent<InputSystem>().inputActions;
+        slapAction = inputActions.FindAction("Slap");
     }
 
-    private void Update() 
+    private void Update()
     {
-        if (inputActions.FindAction("Slap").triggered && canSlap)
+        if (slapAction.triggered && canSlap)
         {
             foreach (Animator anim in animators)
             {

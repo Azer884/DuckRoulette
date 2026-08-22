@@ -21,9 +21,9 @@ public class NetworkCosmetics : NetworkBehaviour
             LoadCosmeticIndexes();
         }
 
-        hatIndex.OnValueChanged += (oldValue, newValue) => ChangeCosmetic(hats, shadowHat, hat, newValue);
-        accessorieIndex.OnValueChanged += (oldValue, newValue) => ChangeCosmetic(accessories, shadowAcc, accessorie, newValue);
-        shirtIndex.OnValueChanged += (oldValue, newValue) => ChangeCosmetic(shirts, shadowShirts, newValue);
+        hatIndex.OnValueChanged += OnHatIndexChanged;
+        accessorieIndex.OnValueChanged += OnAccessorieIndexChanged;
+        shirtIndex.OnValueChanged += OnShirtIndexChanged;
 
             ChangeCosmetic(hats, shadowHat, hat, hatIndex.Value);
             ChangeCosmetic(accessories, shadowAcc, accessorie, accessorieIndex.Value);
@@ -31,23 +31,46 @@ public class NetworkCosmetics : NetworkBehaviour
     }
 
     private void OnDisable() {
-        hatIndex.OnValueChanged -= (oldValue, newValue) => ChangeCosmetic(hats, shadowHat, hat, newValue);
-        accessorieIndex.OnValueChanged -= (oldValue, newValue) => ChangeCosmetic(accessories, shadowAcc, accessorie, newValue);
-        shirtIndex.OnValueChanged -= (oldValue, newValue) => ChangeCosmetic(shirts, shadowShirts, newValue);
+        hatIndex.OnValueChanged -= OnHatIndexChanged;
+        accessorieIndex.OnValueChanged -= OnAccessorieIndexChanged;
+        shirtIndex.OnValueChanged -= OnShirtIndexChanged;
     }
+
+    private void OnHatIndexChanged(int oldValue, int newValue) => ChangeCosmetic(hats, shadowHat, hat, newValue);
+    private void OnAccessorieIndexChanged(int oldValue, int newValue) => ChangeCosmetic(accessories, shadowAcc, accessorie, newValue);
+    private void OnShirtIndexChanged(int oldValue, int newValue) => ChangeCosmetic(shirts, shadowShirts, newValue);
 
     private void ChangeCosmetic(GameObject[] items, Transform shadowParent, Transform parent, int newValue)
     {
         Debug.Log($"Cosmetic index changed to {newValue}");
 
+        foreach (Transform child in parent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // shadowParent is unassigned on avatars that don't have a first-person "shadow double"
+        // rig (e.g. the lobby's Character prefab, which is only ever viewed from outside) - skip
+        // the shadow half instead of throwing and aborting the whole cosmetic apply.
+        if (shadowParent != null)
+        {
+            foreach (Transform child in shadowParent)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
         if (newValue == 0) return;
 
         GameObject mainItem = Instantiate(items[newValue - 1], parent);
-        GameObject shadowItem = Instantiate(items[newValue - 1], shadowParent);
-        
-        ApplyShadowOnlyMode(shadowItem);
         Movement.ChangeLayerRecursively(mainItem, IsOwner ? 2 : 3);
-        Movement.ChangeLayerRecursively(shadowItem, IsOwner ? 3 : 2);
+
+        if (shadowParent != null)
+        {
+            GameObject shadowItem = Instantiate(items[newValue - 1], shadowParent);
+            ApplyShadowOnlyMode(shadowItem);
+            Movement.ChangeLayerRecursively(shadowItem, IsOwner ? 3 : 2);
+        }
     }
     private void ChangeCosmetic(GameObject[] items, GameObject[] shadowitems, int newValue)
     {
@@ -56,14 +79,18 @@ public class NetworkCosmetics : NetworkBehaviour
         if (newValue == 0) return;
 
         GameObject mainItem = items[newValue - 1];
-        GameObject shadowItem = shadowitems[newValue - 1];
-        
-        ApplyShadowOnlyMode(shadowItem);
         Movement.ChangeLayerRecursively(mainItem, IsOwner ? 2 : 3);
-        Movement.ChangeLayerRecursively(shadowItem, IsOwner ? 3 : 2);
-
         mainItem.SetActive(true);
-        shadowItem.SetActive(true);
+
+        // Same as above: shadowitems can be shorter than items (or empty) on avatars without a
+        // shadow rig - skip the shadow half instead of indexing out of range.
+        if (shadowitems != null && newValue - 1 < shadowitems.Length && shadowitems[newValue - 1] != null)
+        {
+            GameObject shadowItem = shadowitems[newValue - 1];
+            ApplyShadowOnlyMode(shadowItem);
+            Movement.ChangeLayerRecursively(shadowItem, IsOwner ? 3 : 2);
+            shadowItem.SetActive(true);
+        }
     }
 
     private void LoadCosmeticIndexes()

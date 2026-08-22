@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using Unity.Netcode;
+﻿using Unity.Netcode;
 using UnityEngine;
 public class RoundManager : NetworkBehaviour
 {
     public static RoundManager Instance { get; private set; }
     [SerializeField] private float roundDuration = 30f;
     private readonly NetworkVariable<float> _remainingTime = new();
-    private readonly NetworkVariable<int> _currentRoundId = new();
+    // Networked mirror of _isRoundActive so clients can drive a shot-clock UI off it - the
+    // plain bool below is server-only bookkeeping and was never visible to clients before.
+    private readonly NetworkVariable<bool> _isRoundActiveNetworked = new(false);
     private bool _isRoundActive;
     private bool _isTimerRunning;
-    private bool _timeoutShotRequested;
+    private bool _timeoutHandled;
     private Shooting _currentShooting;
     public float RemainingTime => _remainingTime.Value;
-    public int CurrentRoundId => _currentRoundId.Value;
+    public bool IsRoundActive => _isRoundActiveNetworked.Value;
+    public float RoundDuration => roundDuration;
     private void Awake()
     {
         if (Instance == null)
@@ -30,7 +32,6 @@ public class RoundManager : NetworkBehaviour
         if (IsServer)
         {
             _remainingTime.Value = roundDuration;
-            _currentRoundId.Value = 0;
         }
     }
     private void Update()
@@ -46,12 +47,12 @@ public class RoundManager : NetworkBehaviour
         }
         _remainingTime.Value = 0f;
         StopTimer();
-        if (_timeoutShotRequested)
+        if (_timeoutHandled)
         {
             return;
         }
-        _timeoutShotRequested = true;
-        ForceTimeoutShot();
+        _timeoutHandled = true;
+        PassGunOnTimeout();
     }
     public void StartRound()
     {
@@ -64,10 +65,10 @@ public class RoundManager : NetworkBehaviour
             return;
         }
         UnsubscribeFromCurrentShot();
-        _currentRoundId.Value++;
         _remainingTime.Value = roundDuration;
         _isRoundActive = true;
-        _timeoutShotRequested = false;
+        _isRoundActiveNetworked.Value = true;
+        _timeoutHandled = false;
         SubscribeToCurrentShot();
         StartTimer();
     }
@@ -79,8 +80,21 @@ public class RoundManager : NetworkBehaviour
         }
         StopTimer();
         _isRoundActive = false;
-        _timeoutShotRequested = false;
+        _isRoundActiveNetworked.Value = false;
+        _timeoutHandled = false;
         UnsubscribeFromCurrentShot();
+    }
+    // Time's up: the gun holder didn't shoot, so nobody shoots - just hand the gun to another
+    // player. Handled directly on the server instead of round-tripping a forced-shot ClientRpc
+    // through the (possibly gone) gun holder's client, which was the previous approach.
+    private void PassGunOnTimeout()
+    {
+        if (!IsServer || GameManager.Instance == null)
+        {
+            return;
+        }
+        EndRound();
+        GameManager.Instance.PassGunOnTimeout();
     }
     public void StartTimer()
     {
@@ -130,44 +144,5 @@ public class RoundManager : NetworkBehaviour
             return;
         }
         EndRound();
-    }
-    private void ForceTimeoutShot()
-    {
-        if (!IsServer || GameManager.Instance == null || NetworkManager.Singleton == null)
-        {
-            return;
-        }
-        ulong gunHolderClientId = GameManager.Instance.playerWithGun.Value;
-        if (gunHolderClientId == ulong.MaxValue || !NetworkManager.Singleton.ConnectedClients.ContainsKey(gunHolderClientId))
-        {
-            return;
-        }
-        var clientRpcParams = new ClientRpcParams
-        {
-            Send = new ClientRpcSendParams
-            {
-                TargetClientIds = new List<ulong> { gunHolderClientId }
-            }
-        };
-        ForceTimeoutShotClientRpc(_currentRoundId.Value, clientRpcParams);
-    }
-    [ClientRpc]
-    private void ForceTimeoutShotClientRpc(int roundId, ClientRpcParams clientRpcParams = default)
-    {
-        _ = clientRpcParams;
-        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null || GameManager.Instance == null)
-        {
-            return;
-        }
-        var localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
-        if (localPlayerObject == null || !localPlayerObject.TryGetComponent<Shooting>(out var shooting))
-        {
-            return;
-        }
-        if (NetworkManager.Singleton.LocalClientId != GameManager.Instance.playerWithGun.Value)
-        {
-            return;
-        }
-        shooting.ForceShoot(roundId);
     }
 }

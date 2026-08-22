@@ -3,11 +3,11 @@ using UnityEngine;
 
 public class CamPosChanger : MonoBehaviour
 {
-    [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject lobbyMenu;
     [SerializeField] private int activePriority = 100;
     [SerializeField] private int inactivePriority = 0;
 
-    private bool lastMenuActive;
+    private bool lastLobbyActive;
     private int lastPlayerCount = -1;
 
     void Update()
@@ -17,42 +17,40 @@ public class CamPosChanger : MonoBehaviour
 
     private void RefreshCameraPriorities()
     {
-        bool menuActive = mainMenu != null && mainMenu.activeSelf;
+        bool lobbyActive = lobbyMenu != null && lobbyMenu.activeSelf;
         int playerCount = GridManager.Instance != null ? GridManager.Instance.CurrentCharacterCount : 0;
 
-        if (menuActive == lastMenuActive && playerCount == lastPlayerCount)
+        if (lobbyActive == lastLobbyActive && playerCount == lastPlayerCount)
             return;
 
-        lastMenuActive = menuActive;
+        lastLobbyActive = lobbyActive;
         lastPlayerCount = playerCount;
 
         int cameraCount = transform.childCount;
         if (cameraCount == 0)
             return;
 
-        // Child 0 is the menu camera. When the lobby is open, pick one lobby camera based on player count.
-        SetCameraPriority(0, menuActive ? activePriority : inactivePriority);
+        // Children are indexed by player count: child 0 = solo, child 1 = duo (2 players), etc.
+        // Solo is the default (main menu, join-lobby browser, anything else) - duo-and-up only
+        // kicks in once the lobby screen itself is actually open, even with just one player in it.
+        int selectedCameraIndex;
+        if (!lobbyActive)
+        {
+            selectedCameraIndex = 0;
+        }
+        else
+        {
+            int effectivePlayerCount = Mathf.Max(playerCount, 2);
+            selectedCameraIndex = Mathf.Clamp(effectivePlayerCount, 2, cameraCount) - 1;
+        }
 
-        for (int i = 1; i < cameraCount; i++)
+        for (int i = 0; i < cameraCount; i++)
         {
             CinemachineCamera camera = transform.GetChild(i).GetComponent<CinemachineCamera>();
             if (camera == null)
                 continue;
 
-            int selectedCameraIndex = playerCount > 0 ? Mathf.Clamp(playerCount, 1, cameraCount - 1) : -1;
-            camera.Priority = !menuActive && i == selectedCameraIndex ? activePriority + i : inactivePriority;
-        }
-    }
-
-    private void SetCameraPriority(int childIndex, int priority)
-    {
-        if (childIndex < 0 || childIndex >= transform.childCount)
-            return;
-
-        CinemachineCamera camera = transform.GetChild(childIndex).GetComponent<CinemachineCamera>();
-        if (camera != null)
-        {
-            camera.Priority = priority;
+            camera.Priority = i == selectedCameraIndex ? activePriority + i : inactivePriority;
         }
     }
 }

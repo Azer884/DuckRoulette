@@ -25,8 +25,15 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void HideServerRpc(ulong clientId)
+    private void HideServerRpc(ulong clientId, ServerRpcParams serverRpcParams = default)
     {
+        // clientId is otherwise a client-supplied value with no other check - without this, any
+        // connected client could force an arbitrary player into (or out of) hiding.
+        if (clientId != serverRpcParams.Receive.SenderClientId)
+        {
+            return;
+        }
+
         HideClientRpc(clientId);
     }
 
@@ -46,8 +53,13 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void ExitServerRpc(ulong clientId)
+    private void ExitServerRpc(ulong clientId, ServerRpcParams serverRpcParams = default)
     {
+        if (clientId != serverRpcParams.Receive.SenderClientId)
+        {
+            return;
+        }
+
         ExitClientRpc(clientId);
     }
 

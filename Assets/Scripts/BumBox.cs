@@ -41,8 +41,15 @@ public class BumBox : NetworkBehaviour, IInteractable
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PickUpServerRpc(ulong clientId)
+    private void PickUpServerRpc(ulong clientId, ServerRpcParams serverRpcParams = default)
     {
+        // clientId is otherwise a client-supplied value with no other check - without this, any
+        // connected client could assign the box to an arbitrary holderId, not just themselves.
+        if (clientId != serverRpcParams.Receive.SenderClientId)
+        {
+            return;
+        }
+
         PickUpClientRpc(clientId);
     }
 
@@ -62,8 +69,14 @@ public class BumBox : NetworkBehaviour, IInteractable
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void DropServerRpc()
+    private void DropServerRpc(ServerRpcParams serverRpcParams = default)
     {
+        // Only the player currently holding the box may drop it.
+        if ((ulong)holderId != serverRpcParams.Receive.SenderClientId)
+        {
+            return;
+        }
+
         DropClientRpc();
     }
 

@@ -25,6 +25,9 @@ public class GameManager : NetworkBehaviour
     private bool _hasRained;
     private bool _isLeavingGame;
     private readonly List<(ulong, ulong)> _teams = new();
+    // responderId -> requesterId, tracks requests the server actually sent out so a
+    // TeamUpResponseServerRpc call can be validated against a real pending request.
+    private readonly Dictionary<ulong, ulong> _pendingTeamUpRequests = new();
     private readonly Dictionary<ulong, List<PlayerTask>> _allPlayersTasks = new();
     private Coroutine _switchPlayerRoutine;
 
@@ -44,6 +47,7 @@ public class GameManager : NetworkBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         if (NetworkManager.Singleton != null)
@@ -79,10 +83,13 @@ public class GameManager : NetworkBehaviour
         _coinsToWin = NetworkManager.Singleton.ConnectedClientsIds.Count * 5;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void OnClientShotChangedServerRpc(ulong clientId, bool hasShot)
+    // Not a [ServerRpc] on purpose: its only legitimate caller is Shooting's own ownership-gated
+    // ServerRpc (Shooting.cs), which Netcode already verified came from the shooting player's own
+    // client. Exposing this directly as a client-callable RPC previously let any client report an
+    // arbitrary clientId's shot as "true" to force that player's gun/bullet state out of turn.
+    public void OnClientShotChanged(ulong clientId, bool hasShot)
     {
-        if (!hasShot)
+        if (!IsServer || !hasShot)
         {
             return;
         }
@@ -95,15 +102,27 @@ public class GameManager : NetworkBehaviour
         CheckPlayerGunScript();
     }
 
+    // Called by RoundManager when the gun holder's turn timer runs out - no shot happens, the
+    // gun just passes to another player (the bullet chamber doesn't advance either, since no
+    // trigger was pulled).
+    public void PassGunOnTimeout()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        playerWithGun.Value = GetRandomClientId(playerWithGun.Value);
+        UpdatePlayerShootingScripts();
+        CheckPlayerGunScript();
+    }
+
     [ClientRpc]
-    private void PlayerShootingScriptClientRpc(ulong clientId, bool activate)
+    private void PlayerShootingScriptClientRpc(ulong shooterClientId)
     {
         if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Shooting>(out var shootingScript))
         {
-            if (NetworkManager.Singleton.LocalClientId == clientId)
-            {
-                shootingScript.enabled = activate;
-            }
+            shootingScript.enabled = NetworkManager.Singleton.LocalClientId == shooterClientId;
         }
     }
 
@@ -122,6 +141,7 @@ public class GameManager : NetworkBehaviour
     // ReSharper disable Unity.PerformanceAnalysis
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
+        canShoot.Value = false;
         yield return new WaitForSeconds(waitTime);
         canShoot.Value = true;
         StartRain();
@@ -174,6 +194,13 @@ public class GameManager : NetworkBehaviour
         }
 
         RoundManager.Instance?.EndRound();
+
+        if (_switchPlayerRoutine != null)
+        {
+            StopCoroutine(_switchPlayerRoutine);
+            _switchPlayerRoutine = null;
+        }
+
         UpdateStatsClientRpc();
 
         var playerIds = new List<ulong>();
@@ -266,8 +293,9 @@ public class GameManager : NetworkBehaviour
 
                     if (currentPlayer.transform.childCount > 5)
                     {
-                        float luck = playerStats.emptyShots.Value > 0
-                            ? (playerStats.emptyShots.Value / (float)playerStats.shotCounter.Value) * 100f
+                        int totalTriggerPulls = playerStats.shotCounter.Value + playerStats.emptyShots.Value;
+                        float luck = totalTriggerPulls > 0
+                            ? (playerStats.emptyShots.Value / (float)totalTriggerPulls) * 100f
                             : 0f;
 
                         stat = currentPlayer.transform.GetChild(5).GetComponent<TextMeshProUGUI>();
@@ -313,6 +341,33 @@ public class GameManager : NetworkBehaviour
 
         Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         MarkPlayerInactive(clientId, reassignGun: true);
+
+        _pendingTeamUpRequests.Remove(clientId);
+        foreach (ulong responderId in new List<ulong>(_pendingTeamUpRequests.Keys))
+        {
+            if (_pendingTeamUpRequests[responderId] == clientId)
+            {
+                _pendingTeamUpRequests.Remove(responderId);
+            }
+        }
+
+        // Without this, a surviving teammate stays isTeamedUp = true pointing at a player who's
+        // gone - stuck "teamed up" with a ghost, unable to team up with anyone else.
+        var brokenTeams = _teams.FindAll(team => team.Item1 == clientId || team.Item2 == clientId);
+        foreach (var team in brokenTeams)
+        {
+            ulong survivorId = team.Item1 == clientId ? team.Item2 : team.Item1;
+            _teams.Remove(team);
+
+            var clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new List<ulong> { survivorId }
+                }
+            };
+            SendEndTeamUpClientRpc(clientRpcParams);
+        }
     }
 
     public void OnDisable()
@@ -371,6 +426,13 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void UpdateKillsServerRpc(ulong shooterId, int killAmount)
     {
+        // Only ever legitimately reported as 1 (one kill) per call; reject anything else
+        // so a modified client can't grant itself arbitrary kills/coins via this RPC.
+        if (killAmount != 1)
+        {
+            return;
+        }
+
         if (!_playersKills.ContainsKey(shooterId))
         {
             _playersKills[shooterId] = 0;
@@ -384,6 +446,9 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void TeamUpRequestServerRpc(ulong teamMateId, ServerRpcParams serverRpcParams = default)
     {
+        ulong requesterId = serverRpcParams.Receive.SenderClientId;
+        _pendingTeamUpRequests[teamMateId] = requesterId;
+
         var clientRpcParams = new ClientRpcParams
         {
             Send = new ClientRpcSendParams
@@ -391,7 +456,7 @@ public class GameManager : NetworkBehaviour
                 TargetClientIds = new List<ulong> { teamMateId }
             }
         };
-        SendTeamUpRequestClientRpc(serverRpcParams.Receive.SenderClientId, clientRpcParams);
+        SendTeamUpRequestClientRpc(requesterId, clientRpcParams);
     }
 
     [ClientRpc]
@@ -410,8 +475,18 @@ public class GameManager : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void TeamUpResponseServerRpc(ulong teamMateId, ulong requesterId, Vector3 soundPosition, int isPerfectDap, ServerRpcParams serverRpcParams = default)
+    public void TeamUpResponseServerRpc(ulong requesterId, Vector3 soundPosition, int isPerfectDap, ServerRpcParams serverRpcParams = default)
     {
+        ulong responderId = serverRpcParams.Receive.SenderClientId;
+
+        // Only accept a response to a request the server actually sent this responder - closes
+        // an exploit where a client could fabricate an arbitrary requesterId to fake a team-up.
+        if (!_pendingTeamUpRequests.TryGetValue(responderId, out ulong pendingRequesterId) || pendingRequesterId != requesterId)
+        {
+            return;
+        }
+        _pendingTeamUpRequests.Remove(responderId);
+
         var clientRpcParams = new ClientRpcParams
         {
             Send = new ClientRpcSendParams
@@ -422,8 +497,8 @@ public class GameManager : NetworkBehaviour
         bool isPerfectDapBool = isPerfectDap == 1;
         PlayDapSoundClientRpc(soundPosition, isPerfectDapBool);
 
-        _teams.Add((requesterId, teamMateId));
-        SendTeamUpResponseClientRpc(teamMateId, clientRpcParams);
+        _teams.Add((requesterId, responderId));
+        SendTeamUpResponseClientRpc(responderId, clientRpcParams);
     }
 
     [ClientRpc]
@@ -576,10 +651,10 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            PlayerShootingScriptClientRpc(clientId, clientId == playerWithGun.Value);
-        }
+        // One broadcast (each client compares against the synced gun-holder locally) instead of
+        // one broadcast per connected client - was O(N^2) network messages for N players since
+        // every one of those per-client RPCs still went out to all N clients.
+        PlayerShootingScriptClientRpc(playerWithGun.Value);
     }
 
     private ulong GetRandomClientId(ulong excludedClientId = ulong.MaxValue)
@@ -656,7 +731,8 @@ public class GameManager : NetworkBehaviour
             playerWithGun.Value = GetRandomClientId(clientId);
             UpdatePlayerShootingScripts();
 
-            if (playerWithGun.Value != clientId && playerWithGun.Value != ulong.MaxValue)
+            // Don't start a new round for the sole survivor - the game is about to end below.
+            if (playerWithGun.Value != clientId && playerWithGun.Value != ulong.MaxValue && _alivePlayersCount.Value > 1)
             {
                 CheckPlayerGunScript();
             }

@@ -1,13 +1,21 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
-public class TutorialManager : MonoBehaviour
+// This is the offline (non-networked) counterpart to the real player scripts
+// (Movement/Shooting/Slap/TeamUp/Interact/FootStepScript). Since the tutorial never uses
+// Netcode, those NetworkBehaviour scripts can't be reused directly - the logic is mirrored
+// here instead. Split across partial-class files by concern (see TutorialManager.*.cs) so it
+// isn't one monolithic file, while still being a single component so every reference already
+// wired up on the tutorial player prefab keeps working unchanged.
+//
+// MAINTENANCE WARNING: because the logic is duplicated rather than shared, any gameplay tuning
+// to Movement/Shooting/Slap/TeamUp/Interact (speeds, timings, input gating) must be re-applied
+// by hand to the matching TutorialManager.*.cs file, or the tutorial will silently diverge from
+// real gameplay. Check both sides whenever you touch either one.
+public partial class TutorialManager : MonoBehaviour
 {
     public event Action OnLook, OnMove, OnSprint, OnJump, OnPickUp, OnThrow, OnShutDown, OnCrouch, OnSlide, OnSwitchToGun, OnReload, OnTrigger, OnGunShot, OnTeamUp, OnTalk, OnEndTeamUp, OnSlap;
     [HideInInspector] public bool looked, moved, sprinted, jumped, pickedUp, thrown, shutDown, crouched, slid, switchedToGun, reloaded, triggered, gunShot, teamedUp, talked, endedTeamUp, slapped;
@@ -61,6 +69,11 @@ public class TutorialManager : MonoBehaviour
 
     float mouseXSmooth = 0f;
 
+    // Cached once in Start() instead of calling inputActions.FindAction(...) by string every
+    // frame - mirrors the same fix applied to Movement/Shooting/Slap/TeamUp/Interact in the
+    // real (networked) player scripts.
+    private InputAction changeWeaponAction, pauseAction, talkAction;
+
     private void Awake()
     {
         if (Instance == null)
@@ -77,6 +90,20 @@ public class TutorialManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
 
         lastPosition = transform.position;
+
+        CacheInputActions();
+    }
+
+    private void CacheInputActions()
+    {
+        changeWeaponAction = inputActions.FindAction("Change Weapon");
+        pauseAction = inputActions.FindAction("Pause");
+        CacheMovementInputActions();
+        CacheShootingInputActions();
+        CacheSlapInputActions();
+        CacheTeamUpInputActions();
+        CacheInteractInputActions();
+        talkAction = inputActions.FindAction("Talk");
     }
     public void Pause(bool state)
     {
@@ -106,7 +133,7 @@ public class TutorialManager : MonoBehaviour
         if (shutDown) DoCrouch();
         if (slid && canSwitch)
         {
-            if (inputActions.FindAction("Change Weapon").triggered && !onlySlap)
+            if (changeWeaponAction.triggered && !onlySlap)
             {
                 haveGun = !haveGun;
                 SwitchParent(haveGun);
@@ -124,7 +151,7 @@ public class TutorialManager : MonoBehaviour
             Shoot();
         }
         if (gunShot) TeamUp();
-        if (teamedUp && Input.GetKeyDown(KeyCode.V))
+        if (teamedUp && talkAction.triggered)
         {
             if (!talked)
             {
@@ -137,7 +164,7 @@ public class TutorialManager : MonoBehaviour
             Slap();
         }
 
-        if (inputActions.FindAction("Pause").triggered)
+        if (pauseAction.triggered)
         {
             isPaused = !isPaused;
             Pause(isPaused);
@@ -148,31 +175,6 @@ public class TutorialManager : MonoBehaviour
         realMovementSpeed = deltaPosition.magnitude / Time.deltaTime;
         lastPosition = currentPos;
     }
-
-    private void DoLooking()
-    {
-        Vector2 looking = GetPlayerLook();
-        if (looking.magnitude > 0.1f)
-        {
-            if (!looked)
-            {
-                looked = true;
-                OnLook?.Invoke();
-            }
-        }
-        float lookX = looking.x * lookSensitivity * Time.deltaTime;
-        float lookY = looking.y * lookSensitivity * Time.deltaTime;
-
-        xRotation -= lookY;
-        xRotation = Mathf.Clamp(xRotation, -85f, 75f);
-
-        camHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        transform.Rotate(Vector3.up * lookX);
-
-        mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x / 20, 4 * Time.deltaTime);
-        mouseXSmooth = Mathf.Clamp(mouseXSmooth, -1, 1);
-    }
-
 
     // Update the OnControllerColliderHit to detect ice
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -185,633 +187,5 @@ public class TutorialManager : MonoBehaviour
         {
             isOnIce = false;
         }
-    }
-
-    private void DoMovement()
-    {
-        grounded = controller.isGrounded;
-
-        // Handle gravity and grounded state
-        if (grounded && velocity.y < 0)
-        {
-            velocity.y = -2f;
-        }
-
-        Vector2 movement = GetPlayerMovement();
-        if (moved && inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched)
-        {
-            speedMultiplier = 2.0f;
-            if (!sprinted)
-            {
-                sprinted = true;
-                OnSprint?.Invoke();
-            }
-        }
-        else
-        {
-            speedMultiplier = 1.0f;
-        }
-        if (movement.magnitude > 0.1f)
-        {
-            if (!moved)
-            {
-                moved = true;
-                OnMove?.Invoke();
-            }
-        }
-
-        if (isSliding && isOnIce)
-        {
-            HandleSliding();
-        }
-        else
-        {
-            EndSliding();
-            Vector3 move = transform.right * movement.x + transform.forward * movement.y;
-
-            if (isOnIce)
-            {
-                // Ice sliding with movement control
-                velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
-                velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
-            }
-            else
-            {
-                // Regular movement
-                velocity.x = movementSpeed * speedMultiplier * move.x;
-                velocity.z = movementSpeed * speedMultiplier * move.z;
-            }
-        }
-
-        // Handle jumping
-        if (sprinted && grounded && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            jumpImpulseSource.GenerateImpulse();
-            if (!jumped)
-            {
-                jumped = true;
-                OnJump?.Invoke();
-            }
-
-            if (isOnIce && !isSliding)
-            {
-                StartSliding();
-            }
-        }
-
-        // Apply gravity
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
-
-        // Update animator
-        velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
-        velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
-        UpdateAnimator(velocityX, velocityZ);
-    }
-
-    private void HandleSliding()
-    {
-        if (velocity.y <= 0.5f)
-        {
-            if (velocity.x < slidingStopThreshold && velocity.z < slidingStopThreshold)
-            {
-                EndSliding();
-                return;
-            }
-            // Decelerate sliding
-            velocity.x *= slidingFriction * slidingSpeedMultiplier;
-            velocity.z *= slidingFriction * slidingSpeedMultiplier;
-            rig.weight = Mathf.Lerp(rig.weight, 0.1f, Time.deltaTime * 5f);
-
-            slidingSpeedMultiplier = 1f;
-        }
-    }
-    private void StartSliding()
-    {
-        isSliding = true;
-
-        if (!slid)
-        {
-            slid = true;
-            OnSlide?.Invoke();
-        }
-
-        controller.height = slidingHeight;
-        legs.SetActive(false);
-        FPShadow.SetActive(false);
-        Hands.SetActive(false);
-        slidingCam.SetActive(true);
-    }
-    private void EndSliding()
-    {
-        isSliding = false;
-        slidingSpeedMultiplier = 2.5f;
-
-        rig.weight = Mathf.Lerp(rig.weight, 1, Time.deltaTime * 5f);
-        legs.SetActive(true);
-        FPShadow.SetActive(true);
-        Hands.SetActive(true);
-        slidingCam.SetActive(false);
-    }
-
-    private void UpdateAnimator(float xVelocity, float yVelocity)
-    {
-        foreach (Animator animator in animators)
-        {
-            animator.SetFloat("XVelocity", xVelocity);
-            animator.SetFloat("YVelocity", yVelocity);
-            animator.SetBool("IsGrounded", grounded);
-            animator.SetBool("IsCrouched", isCrouched);
-            animator.SetFloat("Turning", mouseXSmooth);
-            animator.SetBool("IsSliding", isSliding);
-
-            animator.SetBool("HaveAGun", haveGun);
-        }
-    }
-
-    private void DoCrouch()
-    {
-        if (!isSliding)
-        {
-            if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
-            {
-                controller.height = crouchHeight;
-                isCrouched = true;
-
-                if (!crouched)
-                {
-                    crouched = true;
-                    OnCrouch?.Invoke();
-                }
-            }
-            else
-            {
-                if (!Physics.Raycast(transform.position, Vector3.up, 2.0f))
-                {
-                    controller.height = initHeight;
-                    isCrouched = false;
-                }
-            }
-        }
-    }
-
-    public Vector2 GetPlayerMovement()
-    {
-        return inputActions.FindAction("Move").ReadValue<Vector2>();
-    }
-
-    public Vector2 GetPlayerLook()
-    {
-        return inputActions.FindAction("Look").ReadValue<Vector2>();
-    }
-
-
-    public GameObject bulletPrefab, vfxPrefab;
-    private GameObject bullet;
-    public Transform spawnPt;
-    public Animator bulletAnimator;
-    public GameObject gun, shadowGun;
-    public Transform withGunParent, withoutGunParent;
-    public bool canTrigger, canShoot, isTriggered, isReloaded;
-    private bool haveGun = false, onlySlap = false;
-    private bool canSwitch = true;
-    private int bulletPos = 0;
-
-
-    private void Reload()
-    {
-        if (inputActions.FindAction("Reload").triggered && canShoot && !isReloaded)
-        {
-            isReloaded = true;
-            bulletPos = 0;
-            foreach (Animator animator in animators)
-            {
-                animator.Play("Reload");
-            }
-            if (!reloaded)
-            {
-                reloaded = true;
-                OnReload?.Invoke();
-            }
-            bulletAnimator.Play("Reload");
-        }
-        if (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Reload"))
-        {
-            canTrigger = false;
-            canSwitch = false;
-        }
-        else
-        {
-            canTrigger = true;
-            canSwitch = true;
-        }
-    }
-    private void Trigger()
-    {
-        if (inputActions.FindAction("Trigger").triggered && !isTriggered && canTrigger && canShoot && isReloaded)
-        {
-            isTriggered = true;
-            foreach (Animator animator in animators)
-            {
-                animator.SetBool("Triggered", isTriggered);
-            }
-            if (!triggered)
-            {
-                triggered = true;
-                OnTrigger?.Invoke();
-            }
-        }
-        if (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
-        {
-            canShoot = false;
-        }
-        else
-        {
-            canShoot = true;
-        }
-    }
-
-    private void Shoot()
-    {
-        if (inputActions.FindAction("Shoot").triggered && canShoot && isTriggered && isReloaded)
-        {
-            if (bulletPos == 1)
-            {
-                foreach (Animator animator in animators)
-                {
-                    animator.Play("Shooting");
-                }
-
-                if (!gunShot)
-                {
-                    StartCoroutine(DisableGunWithDelay(2f));
-                    OnGunShot?.Invoke();
-                }
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                Vector3 pos;
-                if (Physics.Raycast(ray, out RaycastHit hit))
-                {
-                    pos = hit.point;
-                }
-                else
-                {
-                    pos = ray.GetPoint(100f);
-                }
-
-                ShootServerRpc(spawnPt.position, Quaternion.identity, pos);
-
-            }
-            bulletPos++;
-            for (int i = 0; i < animators.Length - 1; i++)
-            {
-                animators[i].Play("Shooting");
-            }
-            StartCoroutine(Triggering());
-        }
-    }
-    private IEnumerator Triggering()
-    {
-        // Wait until the "Shooting" animation has finished playing
-        while (animators[2].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
-        {
-            yield return null;
-        }
-        isTriggered = false;
-        foreach (Animator animator in animators)
-        {
-            animator.SetBool("Triggered", isTriggered);
-        }
-    }
-
-    private IEnumerator DisableGunWithDelay(float delay = 1f)
-    {
-        yield return new WaitForSeconds(delay);
-
-        gunShot = true;
-        onlySlap = true;
-        haveGun = false;
-        SwitchParent(false);
-    }
-    public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim)
-    {
-        bullet = Instantiate(bulletPrefab, spawnPoint, rot);
-
-        Vector3 direction = (targetAim - spawnPoint).normalized;
-
-        if (bullet.TryGetComponent(out Rigidbody rb))
-        {
-            rb.linearVelocity = direction * 15f;
-        }
-        Destroy(bullet, 5f);
-        GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);
-        Destroy(vfx, 1f);
-    }
-    public void SwitchParent(bool state)
-    {
-        gun.SetActive(state);
-        shadowGun.SetActive(state);
-        if (state)
-        {
-            Hands.transform.parent = withGunParent;
-            Hands.transform.localPosition = Vector3.zero;
-            Hands.transform.localRotation = Quaternion.identity;
-        }
-        else
-        {
-            Hands.transform.parent = withoutGunParent;
-            Hands.transform.localPosition = Vector3.zero;
-            Hands.transform.localRotation = Quaternion.identity;
-        }
-    }
-
-
-
-    [SerializeField] private Transform slapArea;
-    [SerializeField] private float slapRaduis;
-    [SerializeField] private float slapCoolDown = 1f;
-    [SerializeField] private LayerMask otherPlayers;
-    private Collider[] slapResults = new Collider[10];
-    private bool canSlap = true;
-
-    // Stun related variables
-    private int slapCount = 0;
-    private int slapLimit = 3;
-    public AudioSource slapAudio;
-
-    private void Slap()
-    {
-        if (inputActions.FindAction("Slap").triggered && canSlap)
-        {
-            foreach (Animator anim in animators)
-            {
-                anim.SetTrigger("Slap");
-            }
-            TryToSlap();
-
-            canSlap = false;
-            StartCoroutine(Timer(slapCoolDown));
-        }
-    }
-
-    private IEnumerator Timer(float waitTime)
-    {
-        yield return new WaitForSeconds(waitTime);
-        canSlap = true;
-    }
-
-    private void TryToSlap()
-    {
-        int numColliders = Physics.OverlapSphereNonAlloc(slapArea.position, slapRaduis, slapResults, otherPlayers);
-
-        if (numColliders > 0)
-        {
-            slapAudio.Play();
-            slapCount++;
-
-            if (slapCount >= slapLimit)
-            {
-                slapResults[0].GetComponent<TutorialRagdoll>().EnableRagdoll();
-                if (!slapped)
-                {
-                    slapped = true;
-                    OnSlap?.Invoke();
-                }
-
-                slapCount = 0;
-            }
-        }
-    }
-
-
-
-    private List<GameObject> validPlayers = new();
-    public bool isTeamedUp = false;
-    public GameObject teamMate;
-    public float teamUpRaduis = 2f;
-    public Transform teamUpArea;
-    Collider[] teamUpResults = new Collider[1];
-    public AudioClip dapSound;
-    public AudioClip perfectDapSound;
-    private int perfectDap = 0;
-    public Transform dapPosition;
-    public AudioMixerGroup audioMixerGroup;
-    public Color teamColor = Color.green;
-
-    void TeamUp()
-    {
-        if (isTeamedUp)
-        {
-            if (Input.GetKeyDown(KeyCode.X))
-            {
-                MessageBox.Informate("You have ended the team up with TutoBot", Color.red, MessagePriority.High);
-                if (!endedTeamUp)
-                {
-                    endedTeamUp = true;
-                    OnEndTeamUp?.Invoke();
-                }
-
-                EndTeamUp();
-                if (teamMate != null)
-                {
-                    RemoveTeamMate();
-                }
-            }
-
-            return;
-        }
-
-        TryToTeamUp();
-    }
-
-    private void TryToTeamUp()
-    {
-        int numColliders = Physics.OverlapSphereNonAlloc(teamUpArea.position, teamUpRaduis, teamUpResults, otherPlayers);
-        validPlayers.Clear();
-
-        for (int i = 0; i < numColliders; i++)
-        {
-            if (teamUpResults[i].GetComponent<TutoBot>())
-            {
-                validPlayers.Add(teamUpResults[i].gameObject);
-            }
-        }
-        if (validPlayers?.Count > 0)
-        {
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                if (!isTeamedUp)
-                {
-                    isTeamedUp = true;
-                    if (!teamedUp)
-                    {
-                        teamedUp = true;
-                        OnTeamUp?.Invoke();
-                    }
-                    MessageBox.Informate("You have teamed up with TutoBot", Color.green);
-                    AddTeamMate();
-                    PlayDapSound(dapPosition.position, perfectDap == 1);
-                }
-
-            }
-            MessageBox.Informate("Press E to team up with TutoBot ", Color.white, MessagePriority.Low, 0.5f);
-        }
-    }
-    public void EndTeamUp()
-    {
-        isTeamedUp = false;
-    }
-
-    public void PlayDapSound(Vector3 dapPosition, bool perfectDap)
-    {
-        AudioClip clipToPlay = perfectDap ? perfectDapSound : dapSound;
-
-        // Create a temporary GameObject with an AudioSource
-        GameObject audioObject = new("TempAudio");
-        audioObject.transform.position = dapPosition;
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
-        audioSource.outputAudioMixerGroup = audioMixerGroup;
-
-        // Set the clip and adjust the pitch for variety
-        audioSource.clip = clipToPlay;
-        audioSource.spatialBlend = 1.0f; // Make the sound 3D
-        audioSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f); // Randomize the pitch slightly
-
-        // Play the sound and destroy the GameObject after the clip duration
-        audioSource.Play();
-        Destroy(audioObject, clipToPlay.length);
-    }
-
-    public void AddTeamMate()
-    {
-        teamMate = validPlayers[0];
-        teamMate.GetComponent<TutoBot>().Accept(teamColor);
-    }
-
-    public void RemoveTeamMate()
-    {
-        teamMate.GetComponentInChildren<TutoBot>().Accept(Color.black);
-        teamMate = null;
-    }
-
-
-
-    [SerializeField] private LayerMask pickUpLayerMask;
-    [SerializeField] private float maxDistance = 5f;
-    public Transform bumBoxPickUpPosition;
-    public Transform pickedUpObject;
-
-    // Update is called once per frame
-    void PickUpThrowShut()
-    {
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out RaycastHit hit, maxDistance, pickUpLayerMask))
-        {
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                if (pickedUpObject == null)
-                {
-                    if (haveGun) return;
-
-                    PickUpObject(hit.collider);
-                }
-            }
-
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                TryToMute(hit.transform);
-            }
-        }
-
-        else if (pickedUpObject != null)
-        {
-            pickedUpObject.transform.SetPositionAndRotation(bumBoxPickUpPosition.position, bumBoxPickUpPosition.rotation);
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                DropObject();
-            }
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                TryToMute(pickedUpObject);
-            }
-
-        }
-    }
-
-    private void PickUpObject(Collider collider)
-    {
-        if (collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
-        {
-            interactable.Interact(0);
-
-            if (interactable.IsPickable)
-            {
-                if (!pickedUp)
-                {
-                    pickedUp = true;
-                    OnPickUp?.Invoke();
-                }
-                pickedUpObject = collider.transform;
-            }
-        }
-    }
-
-    private void DropObject()
-    {
-        pickedUpObject.GetComponent<IInteractable>().Drop();
-
-        if (pickedUpObject.GetComponent<IInteractable>().IsPickable)
-        {
-            pickedUpObject.gameObject.SetActive(true);
-            pickedUpObject = null;
-            if (!thrown)
-            {
-                thrown = true;
-                OnThrow?.Invoke();
-            }
-        }
-    }
-
-    private void TryToMute(Transform obj)
-    {
-        if (obj.TryGetComponent(out OfflineBumBox bumBox))
-        {
-            bumBox.Mute();
-            if (!shutDown)
-            {
-                shutDown = true;
-                OnShutDown?.Invoke();
-            }
-        }
-    }
-    
-    public float stepRate = 0.5f;
-    public float stepCoolDown;
-    public AudioSource footstepSource;
-    public AudioClip[] footstepClips;
-
-    private void PlayFootstep()
-    {
-        if (speedMultiplier > 1)
-        {
-            stepRate = 0.35f;
-        }
-        else
-        {
-            stepRate = 0.5f;
-        }
-
-        stepCoolDown -= Time.deltaTime;
-        // Only the owning player can trigger their own footsteps
-        if ((GetPlayerMovement() != Vector2.zero) && realMovementSpeed > 1.2f && controller.isGrounded && stepCoolDown < 0f)
-        {
-            if (footstepClips.Length > 0)
-            {
-                footstepSource.pitch = 1f + UnityEngine.Random.Range(-0.2f, 0.2f);
-                int index = UnityEngine.Random.Range(0, footstepClips.Length);
-                footstepSource.PlayOneShot(footstepClips[index], 0.9f);
-            }
-            stepCoolDown = stepRate;
-        }
-        
     }
 }

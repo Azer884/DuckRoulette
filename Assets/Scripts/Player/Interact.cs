@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Unity.Netcode;
 
 public class Interact : NetworkBehaviour
@@ -7,35 +8,47 @@ public class Interact : NetworkBehaviour
     [SerializeField] private float maxDistance = 5f;
     public Transform bumBoxPickUpPosition, fakeBox, fakeboxShadow;
     private Transform pickedUpObject;
+    private Transform mainCameraTransform;
     public Shooting shooting;
+    private InputAction interactAction, muteAction;
 
     public override void OnNetworkSpawn()
     {
         enabled = IsOwner;
+        mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
+
+        InputActionAsset inputActions = GetComponent<InputSystem>().inputActions;
+        interactAction = inputActions.FindAction("Interact");
+        muteAction = inputActions.FindAction("Mute");
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (pickedUpObject != null && Input.GetKeyDown(KeyCode.E))
+        if (mainCameraTransform == null)
+        {
+            return;
+        }
+
+        if (pickedUpObject != null && interactAction.triggered)
         {
             DropObject();
             return;
         }
 
         // Raycast for interactions
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward,
+        if (Physics.Raycast(mainCameraTransform.position, mainCameraTransform.forward,
                 out RaycastHit hit, maxDistance, pickUpLayerMask))
         {
             // Try pickup
-            if (Input.GetKeyDown(KeyCode.E) && pickedUpObject == null)
+            if (interactAction.triggered && pickedUpObject == null)
             {
                 if (shooting.enabled) return;
                 PickUpObject(hit.collider);
             }
 
             // Try mute
-            if (Input.GetKeyDown(KeyCode.F))
+            if (muteAction.triggered)
             {
                 TryToMute(hit.transform);
             }
@@ -58,7 +71,7 @@ public class Interact : NetworkBehaviour
                 fakeboxShadow.localScale = pickedUpObject.localScale;
             }
 
-            if (Input.GetKeyDown(KeyCode.F))
+            if (muteAction.triggered)
             {
                 TryToMute(pickedUpObject);
             }
@@ -102,6 +115,9 @@ public class Interact : NetworkBehaviour
     [ServerRpc]
     private void MoveObjectServerRpc(ulong objToMove, Vector3 position, Quaternion rotation)
     {
-        NetworkManager.Singleton.SpawnManager.SpawnedObjects[objToMove].transform.SetPositionAndRotation(position, rotation);
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objToMove, out var networkObject))
+        {
+            networkObject.transform.SetPositionAndRotation(position, rotation);
+        }
     }
 }

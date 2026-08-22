@@ -11,6 +11,8 @@ public class VoiceChatRaycast : NetworkBehaviour
     [SerializeField] private float chestHeight;
     [SerializeField] private float feetHeight;
 
+    private readonly Dictionary<Transform, AudioSource> audioSourceCache = new();
+
     public override void OnNetworkSpawn()
     {
         if(!IsOwner) enabled = false;
@@ -43,7 +45,12 @@ public class VoiceChatRaycast : NetworkBehaviour
             if (otherPlayer == null) continue;
 
             float distanceToOtherPlayer = Vector3.Distance(transform.position, otherPlayer.position);
-            AudioSource voiceAudio = otherPlayer.GetComponent<AudioSource>();
+
+            if (!audioSourceCache.TryGetValue(otherPlayer, out AudioSource voiceAudio) || voiceAudio == null)
+            {
+                voiceAudio = otherPlayer.GetComponent<AudioSource>();
+                audioSourceCache[otherPlayer] = voiceAudio;
+            }
 
             // Safety check for AudioSource
             if (voiceAudio == null)
@@ -66,8 +73,8 @@ public class VoiceChatRaycast : NetworkBehaviour
                 Vector3 rayStartFeet = transform.position + Vector3.up * feetHeight;
                 Vector3 rayEndFeet = otherPlayer.position + Vector3.up * feetHeight;
 
-                bool wallInTheWay = RayCheck(rayStartHead, rayEndHead) &&
-                                    RayCheck(rayStartChest, rayEndChest) &&
+                bool wallInTheWay = RayCheck(rayStartHead, rayEndHead) ||
+                                    RayCheck(rayStartChest, rayEndChest) ||
                                     RayCheck(rayStartFeet, rayEndFeet);
 
                 if (wallInTheWay)
@@ -158,6 +165,7 @@ public class VoiceChatRaycast : NetworkBehaviour
         {
             // Remove the disconnected player from the list
             otherPlayers.Remove(playerObject.transform);
+            audioSourceCache.Remove(playerObject.transform);
         }
     }
 

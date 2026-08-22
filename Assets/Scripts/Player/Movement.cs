@@ -89,14 +89,18 @@ public class Movement : NetworkBehaviour
     private CinemachineCamera playerCamera;
     private float targetFov;
     private NoiseHandler noiseHandler;
+    private Shooting shootingComponent;
+    private InputAction moveAction, lookAction, runAction, jumpAction, crouchAction;
     private GameObject activeRunVfxPrefab;
     private string activeRunSurfaceKey;
     private bool runVfxActive;
     private float lastRunVfxRequestTime;
     private GameObject spawnedRunVfxPrefab;
     private NetworkObject spawnedRunVfxObject;
+    private bool isRunning;
 
     public Transform RunVfxOrigin => runVfxOrigin;
+    public bool IsSliding => isSliding;
 
     float mouseXSmooth = 0f;
 
@@ -165,8 +169,15 @@ public class Movement : NetworkBehaviour
         controller = GetComponent<CharacterController>();
         inputActions = GetComponent<InputSystem>().inputActions;
         noiseHandler = GetComponent<NoiseHandler>();
+        shootingComponent = GetComponent<Shooting>();
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
+
+        moveAction = inputActions.FindAction("Move");
+        lookAction = inputActions.FindAction("Look");
+        runAction = inputActions.FindAction("Run");
+        jumpAction = inputActions.FindAction("Jump");
+        crouchAction = inputActions.FindAction("Crouch");
 
         playerCamera = cam != null ? cam.GetComponentInChildren<CinemachineCamera>() : null;
         if (playerCamera == null && camHolder != null)
@@ -192,6 +203,7 @@ public class Movement : NetworkBehaviour
         DoCrouch();
         DoLooking();
         UpdateFov();
+        UpdateRunVfx(isRunning);
         Vector3 currentPos = transform.position;
         Vector3 deltaPosition = currentPos - lastPosition;
         realMovementSpeed = deltaPosition.magnitude / Time.deltaTime;
@@ -247,7 +259,6 @@ public class Movement : NetworkBehaviour
 
     private bool IsGamepadLookInput()
     {
-        var lookAction = inputActions.FindAction("Look");
         var activeControl = lookAction != null ? lookAction.activeControl : null;
         return activeControl != null && activeControl.device is Gamepad;
     }
@@ -282,7 +293,7 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
-        bool isRunning = inputActions.FindAction("Run").ReadValue<float>() > 0 && movement.y > 0 && !isCrouched;
+        isRunning = runAction.ReadValue<float>() > 0 && movement.y > 0 && !isCrouched;
         speedMultiplier = isRunning ? 2.0f : 1.0f;
         targetFov = isRunning ? runFov : walkFov;
 
@@ -310,7 +321,11 @@ public class Movement : NetworkBehaviour
 
         // Handle jumping (allow coyote time)
         bool canUseCoyote = Time.time - lastGroundedTime <= coyoteTime;
-        if ((grounded || canUseCoyote) && inputActions.FindAction("Jump").triggered && !isCrouched && !isSliding && !IsHoldingGun())
+        // Jumping is unrestricted on normal ground regardless of the gun. On ice specifically,
+        // the gun holder can't jump (and so can't trigger the toboggan slide below either) -
+        // only someone without the gun can jump their way off ice.
+        bool jumpBlockedByGun = isOnIce && IsHoldingGun();
+        if ((grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             if (noiseHandler != null)
@@ -410,14 +425,21 @@ public class Movement : NetworkBehaviour
     private void EndSliding()
     {
         isSliding = false;
-        
+
         rig.weight = Mathf.Lerp(rig.weight, 1, Time.deltaTime * 5f);
         legs.SetActive(true);
         FPShadow.SetActive(true);
         Hands.SetActive(true);
         slidingCam.SetActive(false);
-        
+
         spinRig.weight = 1f;
+
+        // The gun may have changed hands while sliding - that switch was deferred (see
+        // Shooting.OnEnable) so the slide could finish uninterrupted. Apply it now that we're up.
+        if (IsHoldingGun() && shootingComponent != null)
+        {
+            shootingComponent.ApplyGunHandsPose();
+        }
     }
 
     private void UpdateRunVfx(bool isRunning)
@@ -618,7 +640,7 @@ public class Movement : NetworkBehaviour
     {
         if (!isSliding)
         {
-            if (inputActions.FindAction("Crouch").ReadValue<float>() > 0)
+            if (crouchAction.ReadValue<float>() > 0)
             {
                 controller.height = crouchHeight;
                 isCrouched = true;
@@ -636,12 +658,12 @@ public class Movement : NetworkBehaviour
 
     public Vector2 GetPlayerMovement()
     {
-        return inputActions.FindAction("Move").ReadValue<Vector2>();
+        return moveAction.ReadValue<Vector2>();
     }
 
     public Vector2 GetPlayerLook()
     {
-        return inputActions.FindAction("Look").ReadValue<Vector2>();
+        return lookAction.ReadValue<Vector2>();
     }
 
     public static void ChangeLayerRecursively(GameObject currentGameObject, int newLayer)
@@ -656,7 +678,6 @@ public class Movement : NetworkBehaviour
 
     private bool IsHoldingGun()
     {
-        Shooting shooting = GetComponent<Shooting>();
-        return shooting != null && shooting.haveGun.Value;
+        return shootingComponent != null && shootingComponent.haveGun.Value;
     }
 }

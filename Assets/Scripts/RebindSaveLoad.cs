@@ -15,6 +15,7 @@ public class RebindSaveLoad : MonoBehaviour
     private const string rebindFileName = "rebinds.json"; // Cloud file name
 
     private NetworkObject playerObj;
+    private Coroutine waitForPlayerSpawnCoroutine;
 
     private void Awake()
     {
@@ -59,9 +60,13 @@ public class RebindSaveLoad : MonoBehaviour
 
         gamepad = Gamepad.current;
         input = GetComponent<PlayerInput>();
+        // onControlsChanged only fires on a runtime switch between schemes - if the player
+        // launches already on a gamepad and never switches, currentControlScheme was never set
+        // and rumble silently never fired. Seed it from the current scheme up front.
+        currentControlScheme = input.currentControlScheme;
         input.onControlsChanged += SwitchControls;
 
-        StartCoroutine(WaitForPlayerSpawn());
+        RestartWaitForPlayerSpawn();
 
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -69,7 +74,37 @@ public class RebindSaveLoad : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        StartCoroutine(WaitForPlayerSpawn());
+        RestartWaitForPlayerSpawn();
+    }
+
+    // Cancels any still-running wait and unsubscribes from the previous playerObj before
+    // starting a new wait, so subscriptions can't stack across scene loads (double rumble).
+    private void RestartWaitForPlayerSpawn()
+    {
+        if (waitForPlayerSpawnCoroutine != null)
+        {
+            StopCoroutine(waitForPlayerSpawnCoroutine);
+        }
+
+        UnsubscribeFromPlayerObj();
+        waitForPlayerSpawnCoroutine = StartCoroutine(WaitForPlayerSpawn());
+    }
+
+    private void UnsubscribeFromPlayerObj()
+    {
+        if (playerObj != null)
+        {
+            if (playerObj.TryGetComponent<Shooting>(out var shooting))
+                shooting.OnGunShot -= OnGunShot;
+
+            if (playerObj.TryGetComponent<Slap>(out var slap))
+            {
+                slap.OnSlap -= OnSlap;
+                slap.OnSlapRecived -= OnSlapRecived;
+            }
+        }
+
+        playerObj = null;
     }
 
     private IEnumerator WaitForPlayerSpawn()
@@ -87,6 +122,8 @@ public class RebindSaveLoad : MonoBehaviour
             slap.OnSlap += OnSlap;
             slap.OnSlapRecived += OnSlapRecived;
         }
+
+        waitForPlayerSpawnCoroutine = null;
     }
 
     private void OnDisable()
@@ -108,19 +145,20 @@ public class RebindSaveLoad : MonoBehaviour
 
         input.onControlsChanged -= SwitchControls;
 
-        if (playerObj != null)
+        if (waitForPlayerSpawnCoroutine != null)
         {
-            var shooting = playerObj.GetComponent<Shooting>();
-            if (shooting != null)
-                shooting.OnGunShot -= OnGunShot;
-
-            var slap = playerObj.GetComponent<Slap>();
-            if (slap != null)
-            {
-                slap.OnSlap -= OnSlap;
-                slap.OnSlapRecived -= OnSlapRecived;
-            }
+            StopCoroutine(waitForPlayerSpawnCoroutine);
+            waitForPlayerSpawnCoroutine = null;
         }
+
+        if (_activeRumbleRoutine != null)
+        {
+            StopCoroutine(_activeRumbleRoutine);
+            _activeRumbleRoutine = null;
+            gamepad?.SetMotorSpeeds(0f, 0f);
+        }
+
+        UnsubscribeFromPlayerObj();
 
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
@@ -146,6 +184,8 @@ public class RebindSaveLoad : MonoBehaviour
         RumbleGamepad(0.25f, 0.8f, 0.2f, 0.3f);
     }
 
+    private Coroutine _activeRumbleRoutine;
+
     public void RumbleGamepad(float lowFrequency, float highFrequency, float startDelay, float duration)
     {
         if (currentControlScheme != "Gamepad")
@@ -155,7 +195,15 @@ public class RebindSaveLoad : MonoBehaviour
 
         if (gamepad != null)
         {
-            StartCoroutine(SetMotorSpeed(lowFrequency, highFrequency, startDelay, duration));
+            // Without this, two rumbles fired close together (e.g. a slap right after a gunshot)
+            // race each other's coroutines - whichever's duration ends first calls
+            // SetMotorSpeeds(0, 0) and silently cuts off the other one early.
+            if (_activeRumbleRoutine != null)
+            {
+                StopCoroutine(_activeRumbleRoutine);
+            }
+
+            _activeRumbleRoutine = StartCoroutine(SetMotorSpeed(lowFrequency, highFrequency, startDelay, duration));
         }
     }
 
@@ -163,10 +211,18 @@ public class RebindSaveLoad : MonoBehaviour
     {
         yield return new WaitForSeconds(startDelay);
 
-        gamepad.SetMotorSpeeds(lowFrequency, highFrequency);
+        if (gamepad != null)
+        {
+            gamepad.SetMotorSpeeds(lowFrequency, highFrequency);
+        }
 
         yield return new WaitForSeconds(duration);
 
-        gamepad.SetMotorSpeeds(0f, 0f);
+        if (gamepad != null)
+        {
+            gamepad.SetMotorSpeeds(0f, 0f);
+        }
+
+        _activeRumbleRoutine = null;
     }
 }

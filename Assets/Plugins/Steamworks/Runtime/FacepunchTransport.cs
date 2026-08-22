@@ -30,7 +30,11 @@ namespace Netcode.Transports.Facepunch
         [Tooltip("When in play mode, this will display your Steam ID.")]
         [SerializeField] private ulong userSteamId;
 
-        private LogLevel LogLevel => NetworkManager.Singleton.LogLevel;
+        // NetworkManager.Singleton can still be null here - InitSteamworks() waits on
+        // SteamClient.IsValid, which can take a variable amount of time, and was racing against
+        // NetworkManager's own setup, throwing an NRE that aborted the coroutine before it ever
+        // reached SteamClient.SteamId below.
+        private LogLevel LogLevel => NetworkManager.Singleton != null ? NetworkManager.Singleton.LogLevel : LogLevel.Normal;
 
         private class Client
         {
