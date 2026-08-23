@@ -1,22 +1,64 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
 
 public class Interact : NetworkBehaviour
 {
-    [SerializeField] private LayerMask pickUpLayerMask;
-    [SerializeField] private float maxDistance = 5f;
+    // Public so TutorialManager can inject the offline wiring at runtime.
+    public LayerMask pickUpLayerMask;
+    public float maxDistance = 5f;
     public Transform bumBoxPickUpPosition, fakeBox, fakeboxShadow;
     private Transform pickedUpObject;
     private Transform mainCameraTransform;
     public Shooting shooting;
     private InputAction interactAction, muteAction;
 
+    // Raised whenever the local player picks up / drops an interactable, so external
+    // systems (e.g. TutorialManager step tracking) don't have to poll for it.
+    public event Action ObjectPickedUp;
+    public event Action ObjectDropped;
+
+    // True when running without an active Netcode session (offline tutorial): held objects
+    // are moved directly on this client and no ServerRpc is sent.
+    public bool IsLocalMode => NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
+
+    /// <summary>Whether the local player is currently holding an object.</summary>
+    public bool IsHoldingObject => pickedUpObject != null;
+
+    /// <summary>The object currently being held, if any.</summary>
+    public Transform HeldObject => pickedUpObject;
+
+    /// <summary>Force-drops whatever is currently held (e.g. used by TutorialReseter).</summary>
+    public void DropHeldObject()
+    {
+        if (pickedUpObject != null)
+        {
+            DropObject();
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         enabled = IsOwner;
         mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
 
+        CacheInputActions();
+    }
+
+    private void Awake()
+    {
+        // Offline (tutorial) mode never receives OnNetworkSpawn - cache everything here so
+        // the component works as soon as TutorialManager enables it.
+        if (IsLocalMode)
+        {
+            mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
+            CacheInputActions();
+        }
+    }
+
+    private void CacheInputActions()
+    {
         InputActionAsset inputActions = GetComponent<InputSystem>().inputActions;
         interactAction = inputActions.FindAction("Interact");
         muteAction = inputActions.FindAction("Mute");
@@ -25,9 +67,15 @@ public class Interact : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Re-resolve lazily: the first-person camera may only become active after spawn
+        // (or after TutorialManager sets up the offline rig).
         if (mainCameraTransform == null)
         {
-            return;
+            mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
+            if (mainCameraTransform == null)
+            {
+                return;
+            }
         }
 
         if (pickedUpObject != null && interactAction.triggered)
@@ -61,14 +109,26 @@ public class Interact : NetworkBehaviour
 
             if (interact.IsPickable)
             {
-                MoveObjectServerRpc(
-                    pickedUpObject.GetComponent<NetworkObject>().NetworkObjectId,
-                    bumBoxPickUpPosition.position,
-                    bumBoxPickUpPosition.rotation
-                );
+                if (IsLocalMode)
+                {
+                    // Offline: move the real object directly - no fake-box swap, matching the
+                    // original tutorial behavior.
+                    pickedUpObject.SetPositionAndRotation(
+                        bumBoxPickUpPosition.position,
+                        bumBoxPickUpPosition.rotation
+                    );
+                }
+                else
+                {
+                    MoveObjectServerRpc(
+                        pickedUpObject.GetComponent<NetworkObject>().NetworkObjectId,
+                        bumBoxPickUpPosition.position,
+                        bumBoxPickUpPosition.rotation
+                    );
 
-                fakeBox.localScale = pickedUpObject.localScale;
-                fakeboxShadow.localScale = pickedUpObject.localScale;
+                    fakeBox.localScale = pickedUpObject.localScale;
+                    fakeboxShadow.localScale = pickedUpObject.localScale;
+                }
             }
 
             if (muteAction.triggered)
@@ -82,8 +142,14 @@ public class Interact : NetworkBehaviour
     {
         if(collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
         {
-            interactable.Interact(OwnerClientId);
+            interactable.Interact(IsLocalMode ? 0 : OwnerClientId);
             pickedUpObject = collider.transform;
+
+            if (IsLocalMode)
+            {
+                ObjectPickedUp?.Invoke();
+                return;
+            }
 
             if (interactable.IsPickable)
             {
@@ -95,13 +161,18 @@ public class Interact : NetworkBehaviour
     private void DropObject()
     {
         pickedUpObject.GetComponent<IInteractable>().Drop();
-        bool isPickable = pickedUpObject.GetComponent<IInteractable>().IsPickable;
 
-        if (isPickable)
+        if (!IsLocalMode)
         {
-            Movement.ChangeLayerRecursively(pickedUpObject.gameObject, 13);
+            bool isPickable = pickedUpObject.GetComponent<IInteractable>().IsPickable;
+            if (isPickable)
+            {
+                Movement.ChangeLayerRecursively(pickedUpObject.gameObject, 13);
+            }
         }
+
         pickedUpObject = null;
+        ObjectDropped?.Invoke();
     }
 
     private void TryToMute(Transform obj)
@@ -109,6 +180,10 @@ public class Interact : NetworkBehaviour
         if (obj.TryGetComponent(out BumBox bumBox))
         {
             bumBox.Mute();
+        }
+        else if (obj.TryGetComponent(out OfflineBumBox offlineBumBox))
+        {
+            offlineBumBox.Mute();
         }
     }
 

@@ -2275,7 +2275,7 @@ MonoBehaviour:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -1
+    m_InternalValue: 18446744073709551615
   bulletPosition:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -2301,7 +2301,6 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
-  playersKills: 
 --- !u!1 &1740546963033050780
 GameObject:
   m_ObjectHideFlags: 0
@@ -3638,12 +3637,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1396798937
+  GlobalObjectIdHash: 2853619967
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  <InScenePlaced>k__BackingField: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
@@ -3670,6 +3670,7 @@ MonoBehaviour:
   movementSpeed: 3
   spinRig: {fileID: 1053368495529338142}
   gravity: -30
+  coyoteTime: 0.2
   speedMultiplier: 1
   jumpHeight: 1.5
   initHeight: 0
@@ -3709,6 +3710,9 @@ MonoBehaviour:
   runVfxRayDistance: 1.5
   runVfxSurfaceOffset: 0.02
   runVfxRequestCooldown: 0.1
+  canMove: 1
+  canJump: 1
+  canCrouch: 1
 --- !u!114 &5993872244831146990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4191,6 +4195,11 @@ MonoBehaviour:
   openMic: 0
   micUI: {fileID: 5530621431114728853}
   spit: {fileID: 2652751741661899090}
+  isTalking:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!82 &199935326035327325
 AudioSource:
   m_ObjectHideFlags: 0
@@ -6185,6 +6194,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -8823,6 +8833,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0

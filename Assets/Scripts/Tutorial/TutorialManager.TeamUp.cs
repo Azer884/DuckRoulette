@@ -19,7 +19,7 @@ public partial class TutorialManager
     public Color teamColor = Color.green;
     private InputAction endTeamUpAction;
 
-    // interactAction is declared/cached in TutorialManager.Interact.cs (CacheInteractInputActions) -
+    // interactAction is declared/cached in TutorialManager.cs (CacheInputActions) -
     // reused here since TeamUp's "accept" also binds to the same E/Interact action.
     private void CacheTeamUpInputActions()
     {

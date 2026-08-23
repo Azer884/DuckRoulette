@@ -9,18 +9,14 @@ public partial class TutorialManager
 
     private void PlayFootstep()
     {
-        if (speedMultiplier > 1)
-        {
-            stepRate = 0.35f;
-        }
-        else
-        {
-            stepRate = 0.5f;
-        }
+        // Movement state now lives on the shared Movement component.
+        float currentSpeedMultiplier = movementComp != null ? movementComp.speedMultiplier : 1f;
+        stepRate = currentSpeedMultiplier > 1 ? 0.35f : 0.5f;
 
         stepCoolDown -= Time.deltaTime;
         // Only the owning player can trigger their own footsteps
-        if ((GetPlayerMovement() != Vector2.zero) && realMovementSpeed > 1.2f && controller.isGrounded && stepCoolDown < 0f)
+        bool hasMoveInput = movementComp != null && movementComp.GetPlayerMovement() != Vector2.zero;
+        if (hasMoveInput && realMovementSpeed > 1.2f && controller.isGrounded && stepCoolDown < 0f)
         {
             if (footstepClips.Length > 0)
             {
@@ -30,6 +26,5 @@ public partial class TutorialManager
             }
             stepCoolDown = stepRate;
         }
-
     }
 }

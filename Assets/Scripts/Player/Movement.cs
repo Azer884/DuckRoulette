@@ -18,12 +18,14 @@ public class Movement : NetworkBehaviour
 
     private InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
     private CharacterController controller;
-    
-    [SerializeField] private Transform camHolder;
+
+    // Public so TutorialManager can inject the offline rig wiring at runtime (the shared
+    // script drives both the networked game and the tutorial).
+    public Transform camHolder;
     [SerializeField] private GameObject secondCamHolder;
     [SerializeField] private GameObject cam;
-    [SerializeField] private float movementSpeed = 2.0f;
-    [SerializeField] private Rig spinRig;
+    public float movementSpeed = 2.0f;
+    public Rig spinRig;
     private float xRotation = 0f;
 
     [Header("Movement Variables"), Space]
@@ -34,21 +36,21 @@ public class Movement : NetworkBehaviour
     private float lastGroundedTime = -Mathf.Infinity;
     private bool grounded;
     public float speedMultiplier = 1.0f;
-    [SerializeField] private float jumpHeight = 1.5f;
-    
+    public float jumpHeight = 1.5f;
+
     [Header("Crouch Variables"), Space]
     public float initHeight;
     public float crouchHeight;
     public bool isCrouched;
 
-    [SerializeField] private Animator[] animators;
-    [SerializeField] private Animator handAnim;
+    public Animator[] animators;
+    public Animator handAnim;
     [SerializeField] private float velocityX = 0f;
     [SerializeField] private float velocityZ = 0f;
 
-    [SerializeField] private GameObject legs;
-    [SerializeField] private GameObject FPShadow;
-    [SerializeField] private GameObject Hands;
+    public GameObject legs;
+    public GameObject FPShadow;
+    public GameObject Hands;
     [SerializeField] private GameObject fullBody, thirdPersonCam;
 
     private Vector3 lastPosition; // To store the last frame's position
@@ -69,8 +71,8 @@ public class Movement : NetworkBehaviour
     [SerializeField] private float slidingFriction = 0.95f; // Friction for sliding deceleration
     [SerializeField] private float slidingStopThreshold = 0.1f; // Minimum velocity to stop sliding
     [SerializeField] private float slidingHeight = 0.5f;
-    [SerializeField] private GameObject slidingCam;
-    [SerializeField] private Rig rig;
+    public GameObject slidingCam;
+    public Rig rig;
 
     [Header("Camera FOV"), Space]
     [SerializeField] private float walkFov = 60f;
@@ -99,6 +101,20 @@ public class Movement : NetworkBehaviour
     private NetworkObject spawnedRunVfxObject;
     private bool isRunning;
 
+    [Header("Ability Gating (tutorial)"), Space]
+    // Tutorial gating: TutorialManager flips these off/on to lock abilities behind steps.
+    // They default to true so the networked game is unaffected.
+    public bool canMove = true;
+    public bool canJump = true;
+    public bool canCrouch = true;
+
+    // True when this component runs without an active Netcode session (e.g. the offline
+    // tutorial scene). In that mode all RPCs/NetworkVariables are skipped and everything
+    // happens locally - the same code drives both modes.
+    public bool IsLocalMode => NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
+
+    private GameObject localRunVfxInstance;
+
     public Transform RunVfxOrigin => runVfxOrigin;
     public bool IsSliding => isSliding;
 
@@ -110,48 +126,76 @@ public class Movement : NetworkBehaviour
 
         if (!IsOwner)
         {
-            cam.SetActive(false);
-            thirdPersonCam.SetActive(true);
-            camHolder.gameObject.SetActive(false);
-            secondCamHolder.SetActive(false);
-            slidingCam.SetActive(false);
-            rig.gameObject.SetActive(false);
-            ChangeLayerRecursively(fullBody, 3);
-            ChangeLayerRecursively(legs, 2);
-            ChangeLayerRecursively(FPShadow, 2);
-            ChangeLayerRecursively(Hands, 2);
+            ApplyRemoteVisualState();
             enabled = false;
         }
         else
         {
+            ApplyOwnerVisualState();
+        }
+    }
+
+    // Owner-side camera/layer setup. Split out of OnNetworkSpawn so the offline tutorial
+    // (which never gets a NetworkObject/OnNetworkSpawn call) can run the same setup from
+    // Start(). Every reference is optional: the tutorial player doesn't carry the full set.
+    private void ApplyOwnerVisualState()
+    {
+        // Spawn-slot positioning is a networked-game concept (per-client z offset);
+        // the offline tutorial keeps whatever position the scene placed it at.
+        if (!IsLocalMode)
+        {
             transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
-            cam.SetActive(true);
-            thirdPersonCam.SetActive(false);
-            camHolder.gameObject.SetActive(true);
-            secondCamHolder.SetActive(true);
-            slidingCam.SetActive(false);
+        }
+
+        if (cam != null) cam.SetActive(true);
+        if (thirdPersonCam != null) thirdPersonCam.SetActive(false);
+        if (camHolder != null) camHolder.gameObject.SetActive(true);
+        if (secondCamHolder != null) secondCamHolder.SetActive(true);
+        if (slidingCam != null) slidingCam.SetActive(false);
+        if (rig != null)
+        {
             rig.gameObject.SetActive(true);
             rig.weight = 1f;
-            isSliding = false;
-            isOnIce = false;
-            slideStartTime = 0f;
-            slideEndTime = 0f;
-            slideDirection = Vector3.zero;
-            ChangeLayerRecursively(fullBody, 2);
-            ChangeLayerRecursively(legs, 3);
-            ChangeLayerRecursively(FPShadow, 3);
-            ChangeLayerRecursively(Hands, LayerMask.NameToLayer("Hands"));
         }
+        if (spinRig != null) spinRig.weight = 1f;
+
+        isSliding = false;
+        isOnIce = false;
+        slideStartTime = 0f;
+        slideEndTime = 0f;
+        slideDirection = Vector3.zero;
+
+        if (fullBody != null) ChangeLayerRecursively(fullBody, 2);
+        if (legs != null) ChangeLayerRecursively(legs, 3);
+        if (FPShadow != null) ChangeLayerRecursively(FPShadow, 3);
+        if (Hands != null) ChangeLayerRecursively(Hands, LayerMask.NameToLayer("Hands"));
+    }
+
+    private void ApplyRemoteVisualState()
+    {
+        if (cam != null) cam.SetActive(false);
+        if (thirdPersonCam != null) thirdPersonCam.SetActive(true);
+        if (camHolder != null) camHolder.gameObject.SetActive(false);
+        if (secondCamHolder != null) secondCamHolder.SetActive(false);
+        if (slidingCam != null) slidingCam.SetActive(false);
+        if (rig != null) rig.gameObject.SetActive(false);
+        if (fullBody != null) ChangeLayerRecursively(fullBody, 3);
+        if (legs != null) ChangeLayerRecursively(legs, 2);
+        if (FPShadow != null) ChangeLayerRecursively(FPShadow, 2);
+        if (Hands != null) ChangeLayerRecursively(Hands, 2);
     }
 
     private void OnDisable()
     {
-        if (IsOwner)
+        // Offline there is no server to notify - just clean up any locally spawned VFX.
+        // (Also avoids firing a ServerRpc during teardown on networked clients.)
+        if (!IsLocalMode && IsOwner)
         {
             RequestRunVfxServerRpc(false, string.Empty, string.Empty);
         }
 
         StopRunVfx();
+        DestroyLocalRunVfx();
     }
 
     public override void OnNetworkDespawn()
@@ -195,6 +239,13 @@ public class Movement : NetworkBehaviour
         }
 
         lastPosition = transform.position;
+
+        // Offline (tutorial) mode never receives OnNetworkSpawn - apply the owner-side
+        // visual state here so cameras/rig/layers end up in the same state as a networked owner.
+        if (IsLocalMode)
+        {
+            ApplyOwnerVisualState();
+        }
     }
 
     private void Update()
@@ -293,6 +344,12 @@ public class Movement : NetworkBehaviour
         }
 
         Vector2 movement = GetPlayerMovement();
+        // Tutorial gating: with canMove off the player is rooted in place (gravity and
+        // looking keep working) until TutorialManager unlocks movement.
+        if (!canMove)
+        {
+            movement = Vector2.zero;
+        }
         isRunning = runAction.ReadValue<float>() > 0 && movement.y > 0 && !isCrouched;
         speedMultiplier = isRunning ? 2.0f : 1.0f;
         targetFov = isRunning ? runFov : walkFov;
@@ -325,7 +382,7 @@ public class Movement : NetworkBehaviour
         // the gun holder can't jump (and so can't trigger the toboggan slide below either) -
         // only someone without the gun can jump their way off ice.
         bool jumpBlockedByGun = isOnIce && IsHoldingGun();
-        if ((grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
+        if (canJump && (grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             if (noiseHandler != null)
@@ -448,7 +505,14 @@ public class Movement : NetworkBehaviour
         {
             if (runVfxActive)
             {
-                RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                if (IsLocalMode)
+                {
+                    DestroyLocalRunVfx();
+                }
+                else
+                {
+                    RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                }
                 runVfxActive = false;
             }
 
@@ -467,7 +531,14 @@ public class Movement : NetworkBehaviour
         {
             if (runVfxActive)
             {
-                RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                if (IsLocalMode)
+                {
+                    DestroyLocalRunVfx();
+                }
+                else
+                {
+                    RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                }
                 runVfxActive = false;
             }
 
@@ -479,13 +550,45 @@ public class Movement : NetworkBehaviour
         {
             if (Time.time - lastRunVfxRequestTime >= runVfxRequestCooldown)
             {
-                RequestRunVfxServerRpc(true, hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty);
+                if (IsLocalMode)
+                {
+                    SpawnLocalRunVfx(prefab);
+                }
+                else
+                {
+                    RequestRunVfxServerRpc(true, hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty);
+                }
                 lastRunVfxRequestTime = Time.time;
                 runVfxActive = true;
             }
 
             activeRunVfxPrefab = prefab;
             activeRunSurfaceKey = GetSurfaceKey(hit);
+        }
+    }
+
+    // Offline equivalent of RequestRunVfxServerRpc: spawn the VFX locally and keep the
+    // instance around until the surface changes or running stops.
+    private void SpawnLocalRunVfx(GameObject prefab)
+    {
+        if (localRunVfxInstance != null && activeRunVfxPrefab == prefab)
+        {
+            return;
+        }
+
+        DestroyLocalRunVfx();
+
+        Vector3 position = runVfxOrigin != null ? runVfxOrigin.position : transform.position;
+        Quaternion rotation = runVfxOrigin != null ? runVfxOrigin.rotation : transform.rotation;
+        localRunVfxInstance = Instantiate(prefab, position, rotation);
+    }
+
+    private void DestroyLocalRunVfx()
+    {
+        if (localRunVfxInstance != null)
+        {
+            Destroy(localRunVfxInstance);
+            localRunVfxInstance = null;
         }
     }
 
@@ -630,6 +733,10 @@ public class Movement : NetworkBehaviour
             animator.SetFloat("Turning", mouseXSmooth);
             animator.SetBool("IsSliding", isSliding);
         }
+        if (handAnim == null)
+        {
+            return;
+        }
         handAnim.SetFloat("XVelocity", xVelocity);
         handAnim.SetFloat("YVelocity", yVelocity);
         handAnim.SetBool("IsGrounded", grounded);
@@ -638,6 +745,12 @@ public class Movement : NetworkBehaviour
 
     private void DoCrouch()
     {
+        // Tutorial gating: crouch stays locked until TutorialManager enables it.
+        if (!canCrouch)
+        {
+            return;
+        }
+
         if (!isSliding)
         {
             if (crouchAction.ReadValue<float>() > 0)
@@ -678,6 +791,6 @@ public class Movement : NetworkBehaviour
 
     private bool IsHoldingGun()
     {
-        return shootingComponent != null && shootingComponent.haveGun.Value;
+        return shootingComponent != null && shootingComponent.HasGun;
     }
 }

@@ -1,7 +1,11 @@
+using System;
 using UnityEngine;
 
 public class OfflineBumBox : MonoBehaviour, IInteractable
 {
+    // Raised every time the mute toggle is used on this box (pause/unpause its audio).
+    // TutorialManager listens for this to advance the "shut down" tutorial step.
+    public static event Action MuteToggled;
 
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = true;
@@ -45,5 +49,7 @@ public class OfflineBumBox : MonoBehaviour, IInteractable
         {
             audioSource.UnPause();
         }
+
+        MuteToggled?.Invoke();
     }
 }

@@ -17,12 +17,12 @@ public class Shooting : NetworkBehaviour
     public NetworkVariable<bool> hasShot = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public bool canTrigger, canShoot, isTriggered;
     [SerializeField] private Transform targetAim;
-    [SerializeField] private Hands fPHands;
+    public Hands fPHands;
     public GameObject gun;
     public NetworkVariable<bool> haveGun = new(false,  NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] private Slap slapScript;
     public int shotCounter = 0, emptyShots;
-    [SerializeField] private GameObject vfxPrefab;
+    public GameObject vfxPrefab;
     [SerializeField] private AudioClip reloadClip;
     [SerializeField] private AudioClip triggerClip;
     [SerializeField] private AudioClip shootClip;
@@ -31,6 +31,38 @@ public class Shooting : NetworkBehaviour
     private bool _shotExecuted;
     private InputAction reloadAction, triggerAction, shootAction;
     private Movement movement;
+
+    // --- Offline (tutorial) support -------------------------------------------
+    // When there is no active Netcode session the component runs fully locally: the
+    // russian-roulette chamber state lives here instead of in GameManager's
+    // NetworkVariables, bullets/VFX/sounds are spawned locally and no RPCs are sent.
+    // All gameplay tuning below (animations, input, timings) stays shared with the
+    // networked game - only the transport layer differs.
+    public bool IsLocalMode => NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
+
+    private const int LocalChamberSize = 6;
+    private bool _localHaveGun;
+    private bool _localIsReloaded;
+    // Offline (tutorial) chamber state is fully deterministic: the live round always sits in
+    // the pinned chamber and every reload restarts the cylinder at chamber 0. Each reload
+    // therefore plays out identically - first pull = dry click, second pull = bang.
+    private int _localBulletPosition;
+    [SerializeField] private int _localPinnedBulletPosition = 1;
+
+    public bool HasGun => IsLocalMode ? _localHaveGun : haveGun.Value;
+    private bool IsReloadedNow => IsLocalMode ? _localIsReloaded : GameManager.Instance.isReloaded.Value;
+    private bool ShootingAllowedNow => IsLocalMode || GameManager.Instance.canShoot.Value;
+
+    /// <summary>Tutorial hook: pin which chamber holds the live round (0-based).</summary>
+    public void ConfigureLocalChamber(int index)
+    {
+        _localPinnedBulletPosition = Mathf.Clamp(index, 0, LocalChamberSize - 1);
+    }
+
+    // One-shot gameplay events so external systems (e.g. TutorialManager step tracking)
+    // can observe reloads/triggers without polling input themselves.
+    public event Action OnReloaded;
+    public event Action OnTriggered;
 
     public override void OnNetworkSpawn()
     {
@@ -67,12 +99,24 @@ public class Shooting : NetworkBehaviour
         // PlayerShootingScriptClientRpc) - reset here so a player who already shot once can
         // shoot again on a later round. IsSpawned guards the initial pre-spawn OnEnable call,
         // which OnNetworkSpawn's own reset already covers.
-        if (IsSpawned && IsOwner)
+        if (IsLocalMode)
+        {
+            _localHaveGun = true;
+            _localIsReloaded = false;
+            _localBulletPosition = 0;
+            _shotExecuted = false;
+        }
+        else if (IsSpawned && IsOwner)
         {
             hasShot.Value = false;
             _shotExecuted = false;
             haveGun.Value = true;
         }
+
+        // A disable mid-way through the Triggering() coroutine kills it before it can clear
+        // this flag (e.g. the gun being lowered right after a shot) - without a reset here
+        // the next gun phase would be permanently unable to trigger.
+        isTriggered = false;
 
         // While sliding, defer the hand-pose switch instead of cutting the slide short - it gets
         // applied by Movement.EndSliding once the player actually gets back up.
@@ -86,7 +130,7 @@ public class Shooting : NetworkBehaviour
     // deferred gun pose (see OnEnable above) gets applied at the right time.
     public void ApplyGunHandsPose()
     {
-        if (haveGun.Value)
+        if (HasGun)
         {
             HandsState(true);
         }
@@ -98,7 +142,11 @@ public class Shooting : NetworkBehaviour
 
         HandsState(false);
 
-        if (IsOwner)
+        if (IsLocalMode)
+        {
+            _localHaveGun = false;
+        }
+        else if (IsOwner)
         {
             haveGun.Value = false;
         }
@@ -114,7 +162,7 @@ public class Shooting : NetworkBehaviour
 
     private void Reload()
     {
-        if (reloadAction.triggered && !GameManager.Instance.isReloaded.Value && GameManager.Instance.canShoot.Value)
+        if (reloadAction.triggered && !IsReloadedNow && ShootingAllowedNow)
         {
             PlayReloadSound(gun != null ? gun.transform.position : transform.position);
 
@@ -122,11 +170,26 @@ public class Shooting : NetworkBehaviour
             {
                 animator.Play("Reload");
             }
-            bulletAnimator.Play("Reload");
-            
-            ReloadServerRpc();
+            if (bulletAnimator != null)
+            {
+                bulletAnimator.Play("Reload");
+            }
+
+            if (IsLocalMode)
+            {
+                // Deterministic tutorial reload: cylinder restarts at chamber 0 with the
+                // live round pinned in place, so the outcome never depends on luck.
+                _localBulletPosition = 0;
+                _localIsReloaded = true;
+            }
+            else
+            {
+                ReloadServerRpc();
+            }
+
+            OnReloaded?.Invoke();
         }
-        if (animators[0].GetCurrentAnimatorStateInfo(0).IsName("Reload"))
+        if (animators.Length > 0 && animators[0].GetCurrentAnimatorStateInfo(0).IsName("Reload"))
         {
             canTrigger = false;
         }
@@ -137,7 +200,7 @@ public class Shooting : NetworkBehaviour
     }
     private void Trigger()
     {
-        if (triggerAction.triggered && !isTriggered && GameManager.Instance.isReloaded.Value && canTrigger && GameManager.Instance.canShoot.Value)
+        if (triggerAction.triggered && !isTriggered && IsReloadedNow && canTrigger && ShootingAllowedNow)
         {
             isTriggered = true;
             PlayTriggerSound(gun != null ? gun.transform.position : transform.position);
@@ -146,8 +209,10 @@ public class Shooting : NetworkBehaviour
             {
                 animator.SetBool("Triggered", isTriggered);
             }
+
+            OnTriggered?.Invoke();
         }
-        if (animators[0].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
+        if (animators.Length > 0 && animators[0].GetCurrentAnimatorStateInfo(0).IsName("Trigger"))
         {
             canShoot = false;
         }
@@ -167,13 +232,31 @@ public class Shooting : NetworkBehaviour
 
     private void ExecuteShot()
     {
-        if (_shotExecuted)
+        // One-shot-per-round protection is only a networked concept: the round ends via
+        // hasShot and the component is re-enabled for the next holder. Offline (tutorial)
+        // shooting repeats freely - reload/trigger state already rate-limits it.
+        if (!IsLocalMode && _shotExecuted)
         {
             return;
         }
 
-        _shotExecuted = true;
-        bool isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
+        bool isValidShot;
+        if (IsLocalMode)
+        {
+            // Offline russian roulette: the pinned chamber holds the live round.
+            isValidShot = _localBulletPosition == _localPinnedBulletPosition;
+        }
+        else
+        {
+            isValidShot = GameManager.Instance.bulletPosition.Value == GameManager.Instance.randomBulletPosition.Value;
+        }
+
+        if (!IsLocalMode)
+        {
+            _shotExecuted = true;
+        }
+
+        Vector3 spawnPosition = spawnPt != null ? spawnPt.position : transform.position;
         if (isValidShot)
         {
             foreach (Animator animator in animators)
@@ -181,31 +264,102 @@ public class Shooting : NetworkBehaviour
                 animator.Play("Shooting");
             }
             OnGunShot?.Invoke();
-            if (!CanUseNetcode())
-            {
-                PlayShootSound(spawnPt != null ? spawnPt.position : transform.position);
-            }
-            ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
             shotCounter++;
+
+            if (IsLocalMode)
+            {
+                SpawnLocalBullet(spawnPosition);
+                PlayLocalOneShot(shootClip, spawnPosition);
+                // The round was fired - require a reload before the next shot, mirroring
+                // the server-side isReloaded reset in ShootServerRpc.
+                _localIsReloaded = false;
+            }
+            else if (!CanUseNetcode())
+            {
+                PlayShootSound(spawnPosition);
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+            }
+            else
+            {
+                ShootServerRpc(spawnPt.position, Quaternion.identity, targetAim.position);
+            }
         }
         else
         {
-            for (int i = 0; i < 3; i++)
+            int emptyShotAnimators = Mathf.Min(3, animators.Length);
+            for (int i = 0; i < emptyShotAnimators; i++)
             {
                 animators[i].Play("Shooting");
             }
             emptyShots++;
-            PlayEmptyShotSound(spawnPt != null ? spawnPt.position : transform.position);
+            PlayEmptyShotSound(spawnPosition);
         }
 
-        hasShot.Value = true;
+        if (IsLocalMode)
+        {
+            // Mirror GameManager.OnClientShotChanged: the cylinder advances after every
+            // trigger pull, valid or not.
+            _localBulletPosition = (_localBulletPosition + 1) % LocalChamberSize;
+        }
+        else
+        {
+            hasShot.Value = true;
+        }
         StartCoroutine(Triggering());
+    }
+
+    // Offline bullet: raycast through the crosshair/cursor, spawn the prefab locally and
+    // clean it up after a few seconds - no NetworkObject involved.
+    private void SpawnLocalBullet(Vector3 spawnPosition)
+    {
+        if (bulletPrefab == null)
+        {
+            return;
+        }
+
+        bullet = Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
+
+        Vector3 aimPoint = spawnPosition + transform.forward * 100f;
+        if (Camera.main != null && Mouse.current != null)
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            aimPoint = Physics.Raycast(ray, out RaycastHit hit) ? hit.point : ray.GetPoint(100f);
+        }
+        else if (targetAim != null)
+        {
+            aimPoint = targetAim.position;
+        }
+
+        Vector3 direction = (aimPoint - spawnPosition).normalized;
+        if (bullet.TryGetComponent(out Rigidbody rb))
+        {
+            rb.linearVelocity = direction * 15f;
+        }
+
+        Destroy(bullet, 5f);
+
+        if (vfxPrefab != null)
+        {
+            GameObject vfx = Instantiate(vfxPrefab, spawnPosition, Quaternion.identity);
+            Destroy(vfx, 1f);
+        }
     }
 
     private System.Collections.IEnumerator Triggering()
     {
-        // Wait until the "Shooting" animation has finished playing
-        while (animators[4].GetCurrentAnimatorStateInfo(0).IsName("Shooting"))
+        // Wait until the "Shooting" animation has finished playing. The hands animator lives at
+        // index 4 on the networked player prefab; fall back to the last available animator when
+        // fewer are assigned (offline tutorial rig).
+        if (animators.Length == 0)
+        {
+            isTriggered = false;
+            yield break;
+        }
+        int shootingCheckIndex = Mathf.Min(4, animators.Length - 1);
+        // Safety cutoff: if the "Shooting" state ever lingers (missing exit transition, etc.)
+        // isTriggered must still clear or the gun could never be triggered again.
+        float triggerResetCutoff = Time.time + 3f;
+        while (animators[shootingCheckIndex].GetCurrentAnimatorStateInfo(0).IsName("Shooting") && Time.time < triggerResetCutoff)
         {
             yield return null;
         }
@@ -393,12 +547,23 @@ public class Shooting : NetworkBehaviour
 
     private void HandsState(bool state)
     {
-        foreach (Animator anim in animators)
+        // animators/fPHands may legitimately be unset briefly (offline injection happens
+        // right after AddComponent, whose OnEnable lands here first).
+        if (animators != null)
         {
-            anim.SetBool("HaveAGun", state);
+            foreach (Animator anim in animators)
+            {
+                anim.SetBool("HaveAGun", state);
+            }
         }
-        fPHands.SwitchParent(state);
-        slapScript.enabled = !state;
+        if (fPHands != null)
+        {
+            fPHands.SwitchParent(state);
+        }
+        if (slapScript != null)
+        {
+            slapScript.enabled = !state;
+        }
     }
 
     private System.Collections.IEnumerator DestroyVfxAfterDelay(NetworkObject netObj, float delay)
