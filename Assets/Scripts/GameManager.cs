@@ -120,7 +120,11 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void PlayerShootingScriptClientRpc(ulong shooterClientId)
     {
-        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Shooting>(out var shootingScript))
+        // GameManager's own in-scene spawn can flush and call this before this client's local
+        // player object has finished spawning (e.g. right after PlayerSpawner spawns the first
+        // player) - GetLocalPlayerObject() is null in that window, so guard instead of NRE-ing.
+        NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayerObject != null && localPlayerObject.TryGetComponent<Shooting>(out var shootingScript))
         {
             shootingScript.enabled = NetworkManager.Singleton.LocalClientId == shooterClientId;
         }
