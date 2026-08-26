@@ -45,21 +45,30 @@ public class PlayerSpawner : NetworkBehaviour
 
     private void SceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        if(isStarted)return;
-        if (IsHost && sceneName == "GameScene")
+        // isStarted only means "GameScene" already spawned players for this round - it must
+        // never latch true on an unrelated scene's load event (e.g. LoadingScreen), or the real
+        // GameScene event that follows gets blocked by the guard below before it even checks
+        // the scene name, and players stop spawning entirely.
+        if (sceneName == "Lobby")
+        {
+            isStarted = false;
+            return;
+        }
+
+        if (sceneName != "GameScene" || isStarted)
+        {
+            return;
+        }
+
+        isStarted = true;
+
+        if (IsHost)
         {
             foreach (ulong id in clientsCompleted)
             {
                 GameObject player0 = Instantiate(player);
                 player0.GetComponent<NetworkObject>().SpawnAsPlayerObject(id, true);
-
             }
-        }
-        isStarted = true;
-
-        if (sceneName == "Lobby")
-        {
-            isStarted = false;
         }
     }
 

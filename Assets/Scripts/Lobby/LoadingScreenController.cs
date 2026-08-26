@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -38,6 +39,11 @@ public class LoadingScreenController : NetworkBehaviour
     public string[] tips;
 
     private readonly NetworkList<ProgressEntry> progress = new NetworkList<ProgressEntry>();
+    // GameNetworkManager.PendingGameSceneName only exists locally on whichever peer called
+    // StartGame() (the host) - every other client needs the target scene name too, or their
+    // OnLoad below never recognizes it, never holds/reports their load, and the host then
+    // waits forever at 90% for a progress report that never arrives - so the player never spawns.
+    private readonly NetworkVariable<FixedString64Bytes> pendingSceneName = new();
     private readonly Dictionary<ulong, Slider> otherBars = new();
     private AsyncOperation pendingOp;
     private bool activationSent;
@@ -62,6 +68,7 @@ public class LoadingScreenController : NetworkBehaviour
         if (IsServer)
         {
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += OnLoadingScreenReached;
+            pendingSceneName.Value = GameNetworkManager.Instance.PendingGameSceneName;
 
             progress.Clear();
             foreach (ulong id in NetworkManager.Singleton.ConnectedClientsIds)
@@ -101,7 +108,7 @@ public class LoadingScreenController : NetworkBehaviour
     private void OnSceneLoadBegin(ulong clientId, string sceneName, LoadSceneMode mode, AsyncOperation asyncOperation)
     {
         if (clientId != NetworkManager.Singleton.LocalClientId) return;
-        if (sceneName != GameNetworkManager.Instance.PendingGameSceneName) return;
+        if (sceneName != pendingSceneName.Value.ToString()) return;
 
         pendingOp = asyncOperation;
         pendingOp.allowSceneActivation = false;

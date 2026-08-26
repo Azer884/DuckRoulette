@@ -321,7 +321,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicManager
   audioMixer: {fileID: 24100000, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
-  fadeDuration: 2
+  fadeDuration: 7.5
   musicClips:
   - {fileID: 8300000, guid: e75fcf201bb09f84aa441d07e0482da9, type: 3}
   - {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
