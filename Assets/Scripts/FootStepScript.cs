@@ -18,7 +18,6 @@ public class FootStepScript : NetworkBehaviour {
     public float stepCoolDown;
     public Movement movement;
     public AudioSource footstepSource;
-    public AudioClip[] footstepClips;
     private CharacterController controller;
     public CinemachineImpulseSource impulseSource;
     private NoiseHandler noiseHandler;
@@ -90,16 +89,18 @@ public class FootStepScript : NetworkBehaviour {
         }
     }
 
-    private void PlayFootstep() 
+    private void PlayFootstep()
     {
-        if (footstepSource == null || footstepClips == null || footstepClips.Length == 0)
+        if (footstepSource == null || SFXManager.Instance == null)
         {
             return;
         }
 
+        AudioClip clip = SFXManager.Instance.RandomFootstep();
+        if (clip == null) return;
+
         footstepSource.pitch = 1f + Random.Range(-0.2f, 0.2f);
-        int index = Random.Range(0, footstepClips.Length);
-        footstepSource.PlayOneShot(footstepClips[index], 0.9f);
+        footstepSource.PlayOneShot(clip, 0.9f);
     }
 
     private void SpawnFootstepVfx()

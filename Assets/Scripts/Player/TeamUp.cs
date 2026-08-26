@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
 public class TeamUp : NetworkBehaviour
@@ -21,9 +20,6 @@ public class TeamUp : NetworkBehaviour
     private int requesterId = -1; // Add this line to store requesterId
     private int perfectDap = 0;
     public Transform dapPosition;
-    public AudioClip dapSound;
-    public AudioClip perfectDapSound;
-    public AudioMixerGroup audioMixerGroup;
     public Renderer[] renderers;
     public Color teamColor = Color.green;
 
@@ -149,22 +145,10 @@ public class TeamUp : NetworkBehaviour
 
     public void PlayDapSound(Vector3 dapPosition, bool perfectDap)
     {
-        AudioClip clipToPlay = perfectDap ? perfectDapSound : dapSound;
+        if (SFXManager.Instance == null) return;
 
-        // Create a temporary GameObject with an AudioSource
-        GameObject audioObject = new GameObject("TempAudio");
-        audioObject.transform.position = dapPosition;
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
-        audioSource.outputAudioMixerGroup = audioMixerGroup;
-
-        // Set the clip and adjust the pitch for variety
-        audioSource.clip = clipToPlay;
-        audioSource.spatialBlend = 1.0f; // Make the sound 3D
-        audioSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f); // Randomize the pitch slightly
-
-        // Play the sound and destroy the GameObject after the clip duration
-        audioSource.Play();
-        Destroy(audioObject, clipToPlay.length);
+        AudioClip clipToPlay = perfectDap ? SFXManager.Instance.perfectDapSound : SFXManager.Instance.dapSound;
+        SFXManager.Instance.PlayAt(clipToPlay, dapPosition, UnityEngine.Random.Range(0.9f, 1.1f), SFXManager.Instance.dapMixerGroup);
     }
 
     public void AddTeamMate()

@@ -5,7 +5,6 @@ public class SFXHandler : MonoBehaviour
     private Slap slapComponent;
 
     [SerializeField]private AudioSource source;
-    [SerializeField] private AudioClip[] slapsAudioClips;
 
     void Awake()
     {
@@ -17,9 +16,12 @@ public class SFXHandler : MonoBehaviour
     }
     public void PainSound()
     {
-        int randomInt = Random.Range(0, slapsAudioClips.Length);
+        if (SFXManager.Instance == null) return;
 
-        source.PlayOneShot(slapsAudioClips[randomInt]);
+        AudioClip clip = SFXManager.Instance.RandomSlapPain();
+        if (clip == null) return;
+
+        source.PlayOneShot(clip);
     }
     void OnDisable()
     {

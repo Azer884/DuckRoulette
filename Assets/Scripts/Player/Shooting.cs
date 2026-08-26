@@ -1,7 +1,6 @@
 ﻿using System;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
 public class Shooting : NetworkBehaviour
@@ -23,11 +22,6 @@ public class Shooting : NetworkBehaviour
     [SerializeField] private Slap slapScript;
     public int shotCounter = 0, emptyShots;
     public GameObject vfxPrefab;
-    [SerializeField] private AudioClip reloadClip;
-    [SerializeField] private AudioClip triggerClip;
-    [SerializeField] private AudioClip shootClip;
-    [SerializeField] private AudioClip emptyShotClip;
-    [SerializeField] private AudioMixerGroup sfxMixerGroup;
     private bool _shotExecuted;
     private InputAction reloadAction, triggerAction, shootAction;
     private Movement movement;
@@ -269,7 +263,7 @@ public class Shooting : NetworkBehaviour
             if (IsLocalMode)
             {
                 SpawnLocalBullet(spawnPosition);
-                PlayLocalOneShot(shootClip, spawnPosition);
+                PlayLocalOneShot(SFXManager.Instance.shootClip, spawnPosition);
                 // The round was fired - require a reload before the next shot, mirroring
                 // the server-side isReloaded reset in ShootServerRpc.
                 _localIsReloaded = false;
@@ -435,7 +429,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(reloadClip, position);
+        PlayLocalOneShot(SFXManager.Instance.reloadClip, position);
     }
 
     private void PlayTriggerSound(Vector3 position)
@@ -446,7 +440,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(triggerClip, position);
+        PlayLocalOneShot(SFXManager.Instance.triggerClip, position);
     }
 
     private void PlayShootSound(Vector3 position)
@@ -457,7 +451,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(shootClip, position);
+        PlayLocalOneShot(SFXManager.Instance.shootClip, position);
     }
 
     private void PlayEmptyShotSound(Vector3 position)
@@ -468,7 +462,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(emptyShotClip, position);
+        PlayLocalOneShot(SFXManager.Instance.emptyShotClip, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -480,7 +474,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayReloadSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(reloadClip, position);
+        PlayLocalOneShot(SFXManager.Instance.reloadClip, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -492,7 +486,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayTriggerSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(triggerClip, position);
+        PlayLocalOneShot(SFXManager.Instance.triggerClip, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -504,7 +498,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayShootSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(shootClip, position);
+        PlayLocalOneShot(SFXManager.Instance.shootClip, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -516,28 +510,15 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayEmptyShotSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(emptyShotClip, position);
+        PlayLocalOneShot(SFXManager.Instance.emptyShotClip, position);
     }
 
     private void PlayLocalOneShot(AudioClip clip, Vector3 position)
     {
-        if (clip == null)
+        if (SFXManager.Instance != null)
         {
-            return;
+            SFXManager.Instance.PlayAt(clip, position);
         }
-
-        GameObject audioObject = new GameObject($"{clip.name}_OneShot");
-        audioObject.transform.position = position;
-
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
-        audioSource.clip = clip;
-        audioSource.spatialBlend = 1f;
-        audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
-        audioSource.playOnAwake = false;
-        audioSource.outputAudioMixerGroup = sfxMixerGroup;
-        audioSource.Play();
-
-        Destroy(audioObject, clip.length);
     }
 
     private bool CanUseNetcode()

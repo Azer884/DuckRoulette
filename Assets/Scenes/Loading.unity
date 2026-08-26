@@ -155,8 +155,9 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  <InScenePlaced>k__BackingField: 0
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -950,6 +951,77 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1663424120959615050
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2354864023488966241}
+  - component: {fileID: 7037724272676747992}
+  m_Layer: 0
+  m_Name: SFXManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2354864023488966241
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1663424120959615050}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7037724272676747992
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1663424120959615050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 728789863344b9a43933a2b78f2b6386, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
+  sfxMixerGroup: {fileID: -6730983486251991596, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
+  dapMixerGroup: {fileID: 5529914607747943723, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
+  buttonClick: {fileID: 0}
+  buttonSelect: {fileID: 0}
+  buttonHover: {fileID: 0}
+  toggleOn: {fileID: 0}
+  toggleOff: {fileID: 0}
+  slapClip: {fileID: 8300000, guid: b979c3d6692c5444e98d85f8cc9a76a4, type: 3}
+  slapPainClips:
+  - {fileID: 8300000, guid: 272a9da28725d324f944dbc24d25bf72, type: 3}
+  - {fileID: 8300000, guid: b2a6fb3d443c7204ba1a5c53fe1ebc2c, type: 3}
+  - {fileID: 8300000, guid: e5af247360eb85447bd0c0aee2c0d62e, type: 3}
+  - {fileID: 8300000, guid: df9dbba1b8596174ba133dedd740184f, type: 3}
+  - {fileID: 8300000, guid: e7de388eef3b6ef488e2479cf21185ae, type: 3}
+  - {fileID: 8300000, guid: 91e88e511949f3c4195cba8e1c357208, type: 3}
+  - {fileID: 8300000, guid: c152053bd0fdc214d84fe3b5baf81a81, type: 3}
+  - {fileID: 8300000, guid: b693ee57baab23f47b3e0c8bf730d3a3, type: 3}
+  reloadClip: {fileID: 8300000, guid: 76dbbc6404367ea4cb22751ea6935e48, type: 3}
+  triggerClip: {fileID: 8300000, guid: 17b6c5c039fb95b4fb4846f7ef0d9ed8, type: 3}
+  shootClip: {fileID: 8300000, guid: 3db7fa953f92caf46a2ea5364d148583, type: 3}
+  emptyShotClip: {fileID: 8300000, guid: 9cd5972a549b12f4bba2af12b0964ff7, type: 3}
+  dapSound: {fileID: 8300000, guid: d31f89554bdf04243bf778cec0f9353b, type: 3}
+  perfectDapSound: {fileID: 8300000, guid: eb3171f99f4f4d84fb58ff3569bba27a, type: 3}
+  footstepClips:
+  - {fileID: 8300000, guid: ba4a078066d9aae4cbc2362273873cbb, type: 3}
+  - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
+  uiSource: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -963,4 +1035,5 @@ SceneRoots:
   - {fileID: 2119555548}
   - {fileID: 408759100}
   - {fileID: 119620256}
+  - {fileID: 2354864023488966241}
   - {fileID: 1450959552}

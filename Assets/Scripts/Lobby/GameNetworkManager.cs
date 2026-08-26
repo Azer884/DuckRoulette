@@ -436,6 +436,8 @@ public class GameNetworkManager : MonoBehaviour
             SteamFriends.SetRichPresence(richPresenceKey, "In-Lobby");
         }
     }
+    public string PendingGameSceneName { get; private set; }
+
     public void StartGame()
     {
         if (mapIndex < 0 || mapIndex >= SceneManager.sceneCountInBuildSettings)
@@ -447,7 +449,8 @@ public class GameNetworkManager : MonoBehaviour
         string scenePath = SceneUtility.GetScenePathByBuildIndex(mapIndex);
         string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
 
-        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+        PendingGameSceneName = sceneName;
+        NetworkManager.Singleton.SceneManager.LoadScene("LoadingScreen", LoadSceneMode.Single);
         NetworkTransmission.instance.StarGameFeeServerRpc();
     }
     
@@ -514,6 +517,7 @@ public class GameNetworkManager : MonoBehaviour
 
             var capturedLobby = lobby; // capture loop variable to avoid closure issues
             joinButton.onClick.AddListener(() => JoinLobby(capturedLobby));
+            if (SFXManager.Instance != null) SFXManager.Instance.RegisterButton(joinButton);
         }
     }
 

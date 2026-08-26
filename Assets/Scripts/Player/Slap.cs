@@ -3,9 +3,8 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
-using UnityEngine.Audio;
 
-public class Slap : NetworkBehaviour 
+public class Slap : NetworkBehaviour
 {
     public event System.Action OnSlap, OnSlapTriggered;
     public event System.Action OnSlapRecived;
@@ -24,10 +23,8 @@ public class Slap : NetworkBehaviour
     private Dictionary<GameObject, int> slapLimit = new();
     private Dictionary<GameObject, Coroutine> slapCoroutines = new();
     public AudioSource slapAudio;
-    [SerializeField] private AudioClip slapClip;
     [SerializeField] private GameObject impactVfxPrefab;
     [SerializeField] private float impactVfxLifetime = 1.5f;
-    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     public override void OnNetworkSpawn()
     {
@@ -195,9 +192,9 @@ public class Slap : NetworkBehaviour
 
     private AudioClip GetSlapClip()
     {
-        if (slapClip != null)
+        if (SFXManager.Instance != null && SFXManager.Instance.slapClip != null)
         {
-            return slapClip;
+            return SFXManager.Instance.slapClip;
         }
 
         return slapAudio != null ? slapAudio.clip : null;
@@ -205,23 +202,10 @@ public class Slap : NetworkBehaviour
 
     private void PlayLocalOneShot(AudioClip clip, Vector3 position)
     {
-        if (clip == null)
+        if (SFXManager.Instance != null)
         {
-            return;
+            SFXManager.Instance.PlayAt(clip, position);
         }
-
-        GameObject audioObject = new GameObject($"{clip.name}_OneShot");
-        audioObject.transform.position = position;
-
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
-        audioSource.clip = clip;
-        audioSource.spatialBlend = 1f;
-        audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
-        audioSource.playOnAwake = false;
-        audioSource.outputAudioMixerGroup = sfxMixerGroup;
-        audioSource.Play();
-
-        Destroy(audioObject, clip.length);
     }
 
     private bool CanUseNetcode()

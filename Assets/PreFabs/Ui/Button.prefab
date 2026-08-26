@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3262805491271609391}
   - component: {fileID: 7980022045426446000}
   - component: {fileID: 1312414808533649474}
+  - component: {fileID: -5168035610874895278}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -193,6 +194,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 057fd8a73caa0a64d974247bd1422832, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  selectedScale: 1.1
+  animationDuration: 0.2
+  isSlider: 0
+--- !u!114 &-5168035610874895278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44161939008156641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e481efd00cc4e045b4c9774a08423fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXButtonHooks
 --- !u!1 &5422407174697673533
 GameObject:
   m_ObjectHideFlags: 0
@@ -296,6 +312,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

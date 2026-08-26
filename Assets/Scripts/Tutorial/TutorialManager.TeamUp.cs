@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
 public partial class TutorialManager
@@ -11,11 +10,8 @@ public partial class TutorialManager
     public float teamUpRaduis = 2f;
     public Transform teamUpArea;
     Collider[] teamUpResults = new Collider[1];
-    public AudioClip dapSound;
-    public AudioClip perfectDapSound;
     private int perfectDap = 0;
     public Transform dapPosition;
-    public AudioMixerGroup audioMixerGroup;
     public Color teamColor = Color.green;
     private InputAction endTeamUpAction;
 
@@ -92,22 +88,10 @@ public partial class TutorialManager
 
     public void PlayDapSound(Vector3 dapPosition, bool perfectDap)
     {
-        AudioClip clipToPlay = perfectDap ? perfectDapSound : dapSound;
+        if (SFXManager.Instance == null) return;
 
-        // Create a temporary GameObject with an AudioSource
-        GameObject audioObject = new("TempAudio");
-        audioObject.transform.position = dapPosition;
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
-        audioSource.outputAudioMixerGroup = audioMixerGroup;
-
-        // Set the clip and adjust the pitch for variety
-        audioSource.clip = clipToPlay;
-        audioSource.spatialBlend = 1.0f; // Make the sound 3D
-        audioSource.pitch = UnityEngine.Random.Range(0.9f, 1.1f); // Randomize the pitch slightly
-
-        // Play the sound and destroy the GameObject after the clip duration
-        audioSource.Play();
-        Destroy(audioObject, clipToPlay.length);
+        AudioClip clipToPlay = perfectDap ? SFXManager.Instance.perfectDapSound : SFXManager.Instance.dapSound;
+        SFXManager.Instance.PlayAt(clipToPlay, dapPosition, UnityEngine.Random.Range(0.9f, 1.1f), SFXManager.Instance.dapMixerGroup);
     }
 
     public void AddTeamMate()
