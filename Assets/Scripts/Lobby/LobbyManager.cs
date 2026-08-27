@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -36,6 +37,14 @@ public class LobbyManager : MonoBehaviour
     public ulong myClientId;
     public Animator friendList;
     public GameObject offlinePlayerBox, offlinePlayer;
+
+    public ulong? privateChatTargetId;
+    public string privateChatTargetName;
+    private string originalPlaceholderText;
+    private bool placeholderCached;
+    private ulong? lastWhispererId;
+    private string lastWhispererName;
+
     private void Awake()
     {
         if (instance != null)
@@ -82,15 +91,112 @@ public class LobbyManager : MonoBehaviour
             return;
         }
 
+        if (inputField.text.StartsWith("/msg ", StringComparison.OrdinalIgnoreCase))
+        {
+            string rest = inputField.text.Substring("/msg ".Length).Trim();
+            int spaceIndex = rest.IndexOf(' ');
+            string username = spaceIndex < 0 ? rest : rest.Substring(0, spaceIndex);
+            string message = spaceIndex < 0 ? "" : rest.Substring(spaceIndex + 1).Trim();
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(message))
+            {
+                SendMessageToChat("Usage: /msg username message", 0, true);
+                inputField.text = "";
+                return;
+            }
+
+            bool found = false;
+            foreach (KeyValuePair<ulong, GameObject> _player in playerInfo)
+            {
+                if (_player.Key == myClientId)
+                {
+                    continue;
+                }
+                if (_player.Value != null && _player.Value.TryGetComponent(out PlayerInfo playerInfoComponent) && string.Equals(playerInfoComponent.steamName, username, StringComparison.OrdinalIgnoreCase))
+                {
+                    NetworkTransmission.instance.SendPrivateChatServerRpc(message, _player.Key);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                SendMessageToChat("Player not found: " + username, 0, true);
+            }
+            inputField.text = "";
+            return;
+        }
+        else if (inputField.text.StartsWith("/r ", StringComparison.OrdinalIgnoreCase))
+        {
+            string message = inputField.text.Substring("/r ".Length).Trim();
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                SendMessageToChat("Usage: /r message", 0, true);
+                inputField.text = "";
+                return;
+            }
+
+            if (!lastWhispererId.HasValue)
+            {
+                SendMessageToChat("No one has messaged you yet", 0, true);
+                inputField.text = "";
+                return;
+            }
+
+            NetworkTransmission.instance.SendPrivateChatServerRpc(message, lastWhispererId.Value);
+            inputField.text = "";
+            return;
+        }
+        else if (inputField.text.StartsWith("/kick ", StringComparison.OrdinalIgnoreCase))
+        {
+            string username = inputField.text.Substring("/kick ".Length).Trim();
+            if (!isHost)
+            {
+                SendMessageToChat("Only the host can kick players", 0, true);
+                inputField.text = "";
+                return;
+            }
+
+            bool found = false;
+            foreach (KeyValuePair<ulong, GameObject> _player in playerInfo)
+            {
+                if (_player.Key == myClientId)
+                {
+                    continue;
+                }
+                if (_player.Value != null && _player.Value.TryGetComponent(out PlayerInfo playerInfoComponent) && string.Equals(playerInfoComponent.steamName, username, StringComparison.OrdinalIgnoreCase))
+                {
+                    NetworkTransmission.instance.RequestKickServerRpc(_player.Key);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                SendMessageToChat("Player not found: " + username, 0, true);
+            }
+            inputField.text = "";
+            return;
+        }
+
         if (NetworkTransmission.instance != null)
         {
-            NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
+            if (privateChatTargetId.HasValue)
+            {
+                NetworkTransmission.instance.SendPrivateChatServerRpc(inputField.text, privateChatTargetId.Value);
+                ClosePrivateChat();
+            }
+            else
+            {
+                NetworkTransmission.instance.IWishToSendAChatServerRPC(inputField.text, myClientId, false);
+            }
         }
         else
         {
             Debug.LogWarning("NetworkTransmission instance is null!");
         }
-        
+
         inputField.text = "";
     }
 
@@ -100,7 +206,7 @@ public class LobbyManager : MonoBehaviour
         public TMP_Text textObject;
     }
 
-    public void SendMessageToChat(string _text, ulong _fromwho, bool _server)
+    public void SendMessageToChat(string _text, ulong _fromwho, bool _server, bool _private = false)
     {
         // Safety checks
         if (messageList == null)
@@ -132,7 +238,14 @@ public class LobbyManager : MonoBehaviour
             }
         }
 
-        newMessage.text = _name + ": " + _text;
+        if (_private)
+        {
+            newMessage.text = "[Whisper] " + _name + ": " + _text;
+        }
+        else
+        {
+            newMessage.text = _name + ": " + _text;
+        }
 
         if (textObject != null && chatPanel != null)
         {
@@ -144,6 +257,10 @@ public class LobbyManager : MonoBehaviour
                 if (_server)
                 {
                     newMessage.textObject.color = Color.red;
+                }
+                else if (_private)
+                {
+                    newMessage.textObject.color = new Color(0.7f, 0.3f, 1f);
                 }
             }
         }
@@ -330,6 +447,68 @@ public class LobbyManager : MonoBehaviour
         }
 
         return _ready;
+    }
+
+    public void OpenPrivateChat(ulong targetClientId, string targetName)
+    {
+        privateChatTargetId = targetClientId;
+        privateChatTargetName = targetName;
+
+        if (inputField != null && inputField.placeholder != null)
+        {
+            if (!placeholderCached)
+            {
+                if (inputField.placeholder is TMP_Text originalPh)
+                {
+                    originalPlaceholderText = originalPh.text;
+                }
+                placeholderCached = true;
+            }
+
+            if (inputField.placeholder is TMP_Text ph)
+            {
+                ph.text = $"Message {targetName}...";
+            }
+        }
+
+        SendMessageToChat($"-- Now whispering to {targetName}. Press Esc to return to public chat. --", 0, true);
+
+        if (inputField != null)
+        {
+            inputField.ActivateInputField();
+        }
+    }
+
+    public void ClosePrivateChat()
+    {
+        if (!privateChatTargetId.HasValue)
+        {
+            return;
+        }
+
+        if (inputField != null && inputField.placeholder is TMP_Text ph && placeholderCached)
+        {
+            ph.text = originalPlaceholderText;
+        }
+
+        privateChatTargetId = null;
+        privateChatTargetName = null;
+
+        SendMessageToChat("-- Back to public chat --", 0, true);
+    }
+
+    public void ReceivePrivateMessage(string _text, ulong _fromWho, ulong _toWho)
+    {
+        if (_fromWho != myClientId)
+        {
+            lastWhispererId = _fromWho;
+            if (playerInfo.TryGetValue(_fromWho, out GameObject card) && card.TryGetComponent(out PlayerInfo playerInfoComponent))
+            {
+                lastWhispererName = playerInfoComponent.steamName;
+            }
+        }
+
+        SendMessageToChat(_text, _fromWho, false, true);
     }
 
     public void Quit()

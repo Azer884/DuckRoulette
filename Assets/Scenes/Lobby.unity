@@ -12699,6 +12699,16 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
   m_PrefabInstance: {fileID: 723905361}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1153295900 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
+  m_PrefabInstance: {fileID: 994115649}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1153295901 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 44161939008156641, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
+  m_PrefabInstance: {fileID: 882671378}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &1153296000 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8151820358433423605, guid: e6ac3a4ce97aafe41941b3bcc2b5340b, type: 3}
@@ -18680,6 +18690,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerName: {fileID: 538047995}
   kickButton: {fileID: 1153295999}
+  messageButton: {fileID: 1153295900}
+  moreButton: {fileID: 1153295901}
 --- !u!1 &1614777160
 GameObject:
   m_ObjectHideFlags: 0

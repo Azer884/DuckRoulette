@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.Threading.Tasks;
 using UnityEngine.UI;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -297,12 +298,35 @@ public class GameNetworkManager : MonoBehaviour
             if (NetworkManager.Singleton.StartClient())
             {
                 Debug.Log("Client has started.");
+                StartCoroutine(ClientConnectionTimeout());
             }
             else
             {
                 Debug.LogError("Failed to start client");
             }
         });
+    }
+
+    private IEnumerator ClientConnectionTimeout()
+    {
+        const float timeoutSeconds = 15f;
+        float elapsed = 0f;
+
+        while (elapsed < timeoutSeconds)
+        {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening || NetworkManager.Singleton.IsConnectedClient)
+            {
+                yield break;
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsConnectedClient)
+        {
+            Debug.LogError("Failed to connect to host: timed out waiting for the Steam P2P connection (likely NAT/relay/firewall on one of the peers).");
+            Disconnected();
+        }
     }
 
     public void Disconnected()
@@ -325,6 +349,11 @@ public class GameNetworkManager : MonoBehaviour
             {
                 LobbyManager.instance.ClearChat();
                 LobbyManager.instance.Disconnected();
+            }
+
+            if (ClickMenu.Instance != null)
+            {
+                ClickMenu.Instance.gameObject.SetActive(false);
             }
             Debug.Log("Disconnected.");
 

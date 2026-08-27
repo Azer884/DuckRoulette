@@ -98,6 +98,59 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
+    public void RequestKickServerRpc(ulong targetClientId, ServerRpcParams serverRpcParams = default)
+    {
+        if (serverRpcParams.Receive.SenderClientId != NetworkManager.ServerClientId)
+            return;
+
+        if (!LobbyManager.instance.playerInfo.ContainsKey(targetClientId))
+            return;
+
+        ClientRpcParams clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new ulong[] { targetClientId }
+            }
+        };
+
+        YouWereKickedClientRPC(clientRpcParams);
+
+        NetworkManager.Singleton.DisconnectClient(targetClientId);
+    }
+
+    [ClientRpc]
+    private void YouWereKickedClientRPC(ClientRpcParams clientRpcParams = default)
+    {
+        GameNetworkManager.Instance.Disconnected();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SendPrivateChatServerRpc(string _message, ulong _toWho, ServerRpcParams serverRpcParams = default)
+    {
+        ulong _fromWho = serverRpcParams.Receive.SenderClientId;
+
+        if (!LobbyManager.instance.playerInfo.ContainsKey(_toWho))
+            return;
+
+        ClientRpcParams clientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new ulong[] { _fromWho, _toWho }
+            }
+        };
+
+        PrivateChatClientRPC(_message, _fromWho, _toWho, clientRpcParams);
+    }
+
+    [ClientRpc]
+    private void PrivateChatClientRPC(string _message, ulong _fromWho, ulong _toWho, ClientRpcParams clientRpcParams = default)
+    {
+        LobbyManager.instance.ReceivePrivateMessage(_message, _fromWho, _toWho);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
     public void RemoveMeFromDictionaryServerRPC(ulong _steamId)
     {
         RemovePlayerFromDictionaryClientRPC(_steamId);

@@ -1,12 +1,19 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using Steamworks;
 
 public class ClickMenu : MonoBehaviour
 {
     public static ClickMenu Instance { get; private set; } = null;
     public TextMeshProUGUI playerName;
     public GameObject kickButton;
+    public GameObject messageButton;
+    public GameObject moreButton;
+    public ulong targetSteamId;
+    public ulong targetClientId;
+    public string targetName;
 
     // Start is called before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -20,9 +27,28 @@ public class ClickMenu : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        kickButton.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            NetworkTransmission.instance.RequestKickServerRpc(targetClientId);
+            gameObject.SetActive(false);
+        });
+
+        messageButton.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            LobbyManager.instance.OpenPrivateChat(targetClientId, targetName);
+            gameObject.SetActive(false);
+        });
+
+        moreButton.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            SteamFriends.OpenUserOverlay(targetSteamId, "steamid");
+            gameObject.SetActive(false);
+        });
+
         gameObject.SetActive(false);
     }
-    
+
     public bool IsPointerOverUIObject(GameObject clickObj)
     {
         // Get all objects under the cursor

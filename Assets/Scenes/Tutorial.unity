@@ -45217,11 +45217,6 @@ MonoBehaviour:
   shotCounter: 0
   emptyShots: 0
   vfxPrefab: {fileID: 5277833064454356266, guid: 8c73d6cd65ce64749aaff02b108e6dd5, type: 3}
-  reloadClip: {fileID: 8300000, guid: 76dbbc6404367ea4cb22751ea6935e48, type: 3}
-  triggerClip: {fileID: 8300000, guid: 17b6c5c039fb95b4fb4846f7ef0d9ed8, type: 3}
-  shootClip: {fileID: 8300000, guid: 3db7fa953f92caf46a2ea5364d148583, type: 3}
-  emptyShotClip: {fileID: 8300000, guid: 9cd5972a549b12f4bba2af12b0964ff7, type: 3}
-  sfxMixerGroup: {fileID: -6730983486251991596, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
   _localPinnedBulletPosition: 1
 --- !u!1 &6656585034658285084
 GameObject:
@@ -58535,9 +58530,6 @@ MonoBehaviour:
   stepRate: 0.5
   stepCoolDown: 0
   footstepSource: {fileID: 696230871}
-  footstepClips:
-  - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
-  - {fileID: 8300000, guid: 231180b01ba6c11409c6a14dda5c0c6e, type: 3}
   slapArea: {fileID: 5800746379302730392}
   slapRaduis: 0.82
   slapCoolDown: 1.5
@@ -58549,10 +58541,7 @@ MonoBehaviour:
   teamMate: {fileID: 0}
   teamUpRaduis: 1.5
   teamUpArea: {fileID: 3915796450670493310}
-  dapSound: {fileID: 8300000, guid: d31f89554bdf04243bf778cec0f9353b, type: 3}
-  perfectDapSound: {fileID: 8300000, guid: eb3171f99f4f4d84fb58ff3569bba27a, type: 3}
   dapPosition: {fileID: 4713912826082930837}
-  audioMixerGroup: {fileID: 5529914607747943723, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
   teamColor: {r: 0, g: 0.49411768, b: 1, a: 1}
   looked: 0
   moved: 0
