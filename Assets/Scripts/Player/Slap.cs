@@ -218,11 +218,14 @@ public class Slap : NetworkBehaviour
     {
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
-            // Get the player's object and trigger the ragdoll
+            // Fire "getting slapped" on the VICTIM's own Slap instance, not this slapper's -
+            // NoiseHandler.OnEnable only ever subscribes to the Slap component on its own
+            // GameObject, so invoking OnSlapRecived on `this` (the slapper) misdirected the
+            // hit-shake to the slapper instead of the player who actually got slapped.
             var playerObject = client.PlayerObject;
-            if (playerObject != null)
+            if (playerObject != null && playerObject.TryGetComponent(out Slap victimSlap))
             {
-                OnSlapRecived?.Invoke();
+                victimSlap.OnSlapRecived?.Invoke();
             }
         }
     }

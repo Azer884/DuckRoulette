@@ -117,6 +117,7 @@ public class Movement : NetworkBehaviour
 
     public Transform RunVfxOrigin => runVfxOrigin;
     public bool IsSliding => isSliding;
+    public bool IsRunning => isRunning;
 
     float mouseXSmooth = 0f;
 
@@ -191,7 +192,7 @@ public class Movement : NetworkBehaviour
         // (Also avoids firing a ServerRpc during teardown on networked clients.)
         if (!IsLocalMode && IsOwner)
         {
-            RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+            RequestRunVfxServerRpc(false, string.Empty, string.Empty, Color.white);
         }
 
         StopRunVfx();
@@ -385,6 +386,7 @@ public class Movement : NetworkBehaviour
         if (canJump && (grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            lastGroundedTime = -Mathf.Infinity;
             if (noiseHandler != null)
             {
                 noiseHandler.TriggerJumpShake();
@@ -511,7 +513,7 @@ public class Movement : NetworkBehaviour
                 }
                 else
                 {
-                    RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                    RequestRunVfxServerRpc(false, string.Empty, string.Empty, Color.white);
                 }
                 runVfxActive = false;
             }
@@ -537,7 +539,7 @@ public class Movement : NetworkBehaviour
                 }
                 else
                 {
-                    RequestRunVfxServerRpc(false, string.Empty, string.Empty);
+                    RequestRunVfxServerRpc(false, string.Empty, string.Empty, Color.white);
                 }
                 runVfxActive = false;
             }
@@ -550,13 +552,14 @@ public class Movement : NetworkBehaviour
         {
             if (Time.time - lastRunVfxRequestTime >= runVfxRequestCooldown)
             {
+                Color groundTint = SampleGroundTint(hit);
                 if (IsLocalMode)
                 {
-                    SpawnLocalRunVfx(prefab);
+                    SpawnLocalRunVfx(prefab, groundTint);
                 }
                 else
                 {
-                    RequestRunVfxServerRpc(true, hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty);
+                    RequestRunVfxServerRpc(true, hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty, groundTint);
                 }
                 lastRunVfxRequestTime = Time.time;
                 runVfxActive = true;
@@ -567,9 +570,45 @@ public class Movement : NetworkBehaviour
         }
     }
 
+    // Reads the ground renderer's base color under the hit point so the walk-smoke VFX
+    // can be tinted to match whatever surface the player is running on.
+    private Color SampleGroundTint(RaycastHit hit)
+    {
+        Renderer renderer = hit.collider != null ? hit.collider.GetComponentInParent<Renderer>() : null;
+        if (renderer == null || renderer.sharedMaterial == null)
+        {
+            return Color.white;
+        }
+
+        Material material = renderer.sharedMaterial;
+        if (material.HasProperty("_BaseColor"))
+        {
+            return material.GetColor("_BaseColor");
+        }
+        if (material.HasProperty("_Color"))
+        {
+            return material.GetColor("_Color");
+        }
+
+        return Color.white;
+    }
+
+    // Multiplies every particle system's start color by the sampled ground tint, keeping
+    // each system's own alpha/fade authored in the prefab.
+    private static void ApplyGroundTint(GameObject instance, Color tint)
+    {
+        foreach (ParticleSystem ps in instance.GetComponentsInChildren<ParticleSystem>())
+        {
+            ParticleSystem.MainModule main = ps.main;
+            Color baseColor = main.startColor.color;
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(baseColor.r * tint.r, baseColor.g * tint.g, baseColor.b * tint.b, baseColor.a));
+        }
+    }
+
     // Offline equivalent of RequestRunVfxServerRpc: spawn the VFX locally and keep the
     // instance around until the surface changes or running stops.
-    private void SpawnLocalRunVfx(GameObject prefab)
+    private void SpawnLocalRunVfx(GameObject prefab, Color groundTint)
     {
         if (localRunVfxInstance != null && activeRunVfxPrefab == prefab)
         {
@@ -581,6 +620,7 @@ public class Movement : NetworkBehaviour
         Vector3 position = runVfxOrigin != null ? runVfxOrigin.position : transform.position;
         Quaternion rotation = runVfxOrigin != null ? runVfxOrigin.rotation : transform.rotation;
         localRunVfxInstance = Instantiate(prefab, position, rotation);
+        ApplyGroundTint(localRunVfxInstance, groundTint);
     }
 
     private void DestroyLocalRunVfx()
@@ -593,7 +633,7 @@ public class Movement : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void RequestRunVfxServerRpc(bool isRunning, string surfaceTag, string physicMaterialName)
+    private void RequestRunVfxServerRpc(bool isRunning, string surfaceTag, string physicMaterialName, Color groundTint)
     {
         if (!isRunning)
         {
@@ -616,6 +656,7 @@ public class Movement : NetworkBehaviour
         StopRunVfxServer();
 
         GameObject instance = Instantiate(prefab, runVfxOrigin.position, runVfxOrigin.rotation);
+        ApplyGroundTint(instance, groundTint);
         spawnedRunVfxPrefab = prefab;
         spawnedRunVfxObject = instance.GetComponent<NetworkObject>();
 
