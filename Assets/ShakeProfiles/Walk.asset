@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98e524dbe5f295344a2d8fe8b55a29bc, type: 3}
+  m_Name: Walk
+  m_EditorClassIdentifier: Assembly-CSharp::ShakeProfile
+  amplitude: 0.3
+  frequency: 2
+  duration: 1.4
+  envelope:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6396234
+      value: -0.15014726
+      inSlope: 0.0019303589
+      outSlope: 0.0019303589
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.49115542
+      outWeight: 0.7435874
+    - serializedVersion: 3
+      time: 1
+      value: -0.0010577142
+      inSlope: 0.0010009718
+      outSlope: 0.0010009718
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  noiseShape: {fileID: 0}

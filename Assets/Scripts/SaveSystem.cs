@@ -8,6 +8,8 @@ public static class SaveSystem
 
     public static void Save(Coin coin)
     {
+        if (!SteamClient.IsValid) return;
+
         try
         {
             CoinData data = new(coin);
@@ -33,6 +35,8 @@ public static class SaveSystem
 
     public static CoinData LoadCoin()
     {
+        if (!SteamClient.IsValid) return null;
+
         if (SteamRemoteStorage.FileExists(steamCloudFileName))
         {
             try

@@ -19,8 +19,9 @@ public class FootStepScript : NetworkBehaviour {
     public Movement movement;
     public AudioSource footstepSource;
     private CharacterController controller;
-    public CinemachineImpulseSource impulseSource;
-    private NoiseHandler noiseHandler;
+    public ShakeProfile walkShakeProfile;
+    public ShakeProfile runShakeProfile;
+    private CameraShaker cameraShaker;
 
     [Header("Footstep VFX")]
     [SerializeField] private GameObject defaultFootstepVfxPrefab;
@@ -38,7 +39,7 @@ public class FootStepScript : NetworkBehaviour {
         controller = movement.GetComponent<CharacterController>();
         inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
         moveAction = inputActions.FindAction("Move");
-        noiseHandler = GetComponent<NoiseHandler>() ?? movement.GetComponent<NoiseHandler>();
+        cameraShaker = CameraShaker.GetOrAdd(movement.gameObject);
     }
     #endregion
 
@@ -73,13 +74,10 @@ public class FootStepScript : NetworkBehaviour {
         {
             if (IsOwner)
             {
-                if (noiseHandler != null)
+                if (cameraShaker != null)
                 {
-                    noiseHandler.TriggerStepShake(movement != null && movement.speedMultiplier > 1f);
-                }
-                else if (impulseSource != null)
-                {
-                    impulseSource.GenerateImpulse();
+                    bool isRunning = movement != null && movement.speedMultiplier > 1f;
+                    cameraShaker.Shake(isRunning ? runShakeProfile : walkShakeProfile);
                 }
 
                 SpawnFootstepVfx();

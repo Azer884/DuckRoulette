@@ -140,7 +140,6 @@ GameObject:
   - component: {fileID: 6690049341799254103}
   - component: {fileID: 8770591222266219009}
   - component: {fileID: 6872050279072039837}
-  - component: {fileID: 9153737631754612192}
   m_Layer: 0
   m_Name: CameraHolder
   m_TagString: Untagged
@@ -243,30 +242,6 @@ MonoBehaviour:
   AmplitudeGain: 0
   FrequencyGain: 0
   m_NoiseOffsets: {x: 5.7331543, y: 104.846344, z: -93.207245}
---- !u!114 &9153737631754612192
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 150960864964520945}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00b2d199b96b516448144ab30fb26aed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ApplyAfter: 2
-  ChannelMask: 1
-  Gain: 1
-  Use2DDistance: 0
-  UseCameraSpace: 1
-  SignalCombinationMode: 0
-  ReactionSettings:
-    m_SecondaryNoise: {fileID: 0}
-    AmplitudeGain: 1
-    FrequencyGain: 1
-    Duration: 1
-    m_NoiseOffsets: {x: -39.520386, y: -642.4418, z: 396.43332}
 --- !u!1 &223978567987732042
 GameObject:
   m_ObjectHideFlags: 0
@@ -3549,10 +3524,6 @@ GameObject:
   - component: {fileID: 199935326035327325}
   - component: {fileID: 8286541738520930516}
   - component: {fileID: 421624338261724200}
-  - component: {fileID: 7136494257465206030}
-  - component: {fileID: 773563083178522455}
-  - component: {fileID: 8051052191642501203}
-  - component: {fileID: 9210295925041576989}
   - component: {fileID: 9008643366807559449}
   - component: {fileID: 7994633359111961727}
   - component: {fileID: 2362302214951902385}
@@ -3673,6 +3644,17 @@ MonoBehaviour:
   coyoteTime: 0.2
   speedMultiplier: 1
   jumpHeight: 1.5
+  enableGroundParry: 1
+  groundParryWindow: 0.15
+  groundParryJumpMultiplier: 2
+  groundParryHorizontalMultiplier: 3
+  groundParrySpeedBoostMultiplier: 1.55
+  groundParrySpeedBoostDuration: 2
+  groundParryCooldown: 3
+  groundParryShakeProfile: {fileID: 0}
+  groundParryVfxPrefab: {fileID: 4361026281742437505, guid: 6ff1343b2b6fd9b40888a62d36b410c7, type: 3}
+  groundParryVfxScale: 1
+  groundParryVfxLifetime: 1.5
   initHeight: 0
   crouchHeight: 2.5
   isCrouched: 0
@@ -3690,7 +3672,7 @@ MonoBehaviour:
   fullBody: {fileID: 6314640165891774443}
   thirdPersonCam: {fileID: 593364487133265807}
   realMovementSpeed: 0
-  jumpImpulseSource: {fileID: 773563083178522455}
+  jumpShakeProfile: {fileID: 11400000, guid: 0aa7143c3478eed419f2f5065818ebfd, type: 2}
   iceFriction: 0.7
   slidingSpeedMultiplier: 2
   slidingFriction: 0.95
@@ -3740,6 +3722,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  shootShakeProfile: {fileID: 0}
   bulletPrefab: {fileID: 9175873306992830966, guid: 563706a6b67a24a498184f3413f9bec4, type: 3}
   spawnPt: {fileID: 6379040414650745114}
   cam: {fileID: 6566756217050747349}
@@ -3800,6 +3783,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  slapShakeProfile: {fileID: 0}
+  slapReceivedShakeProfile: {fileID: 0}
   slapArea: {fileID: 5800746380646867471}
   slapRaduis: 0.82
   slapCoolDown: 1.5
@@ -4348,296 +4333,6 @@ AudioReverbFilter:
   m_LFReference: 250
   m_ReflectionsDelay: 0
   m_ReverbPreset: 3
---- !u!114 &7136494257465206030
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2431616952988622430}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ImpulseDefinition:
-    ImpulseChannel: 1
-    ImpulseShape: 0
-    CustomImpulseShape:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.6396234
-        value: -0.15014726
-        inSlope: 0.0019303589
-        outSlope: 0.0019303589
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.49115542
-        outWeight: 0.7435874
-      - serializedVersion: 3
-        time: 1
-        value: -0.0010577142
-        inSlope: 0.0010009718
-        outSlope: 0.0010009718
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 1
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    ImpulseDuration: 0.2
-    ImpulseType: 2
-    DissipationRate: 0.25
-    RawSignal: {fileID: 0}
-    AmplitudeGain: 1
-    FrequencyGain: 1
-    RepeatMode: 0
-    Randomize: 1
-    TimeEnvelope:
-      AttackShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      DecayShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      AttackTime: 0
-      SustainTime: 0.2
-      DecayTime: 0.7
-      ScaleWithImpact: 1
-      HoldForever: 0
-    ImpactRadius: 100
-    DirectionMode: 0
-    DissipationMode: 2
-    DissipationDistance: 100
-    PropagationSpeed: 343
-  DefaultVelocity: {x: 0, y: 0.2, z: 0}
---- !u!114 &773563083178522455
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2431616952988622430}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ImpulseDefinition:
-    ImpulseChannel: 1
-    ImpulseShape: 0
-    CustomImpulseShape:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.14345506
-        value: -0.28109294
-        inSlope: 0.7730966
-        outSlope: 0.7730966
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 0.5009965
-        value: 1.30455
-        inSlope: -0.007083845
-        outSlope: -0.007083845
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.8508614
-      - serializedVersion: 3
-        time: 0.79655993
-        value: -0.6433283
-        inSlope: 0.00985831
-        outSlope: 0.00985831
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 1
-      - serializedVersion: 3
-        time: 1
-        value: 0.006942749
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    ImpulseDuration: 1.4
-    ImpulseType: 2
-    DissipationRate: 0.25
-    RawSignal: {fileID: 0}
-    AmplitudeGain: 1
-    FrequencyGain: 1
-    RepeatMode: 0
-    Randomize: 1
-    TimeEnvelope:
-      AttackShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      DecayShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      AttackTime: 0
-      SustainTime: 0.2
-      DecayTime: 0.7
-      ScaleWithImpact: 1
-      HoldForever: 0
-    ImpactRadius: 100
-    DirectionMode: 0
-    DissipationMode: 2
-    DissipationDistance: 100
-    PropagationSpeed: 343
-  DefaultVelocity: {x: 0, y: 0.1, z: 0}
---- !u!114 &8051052191642501203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2431616952988622430}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ImpulseDefinition:
-    ImpulseChannel: 1
-    ImpulseShape: 0
-    CustomImpulseShape:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.6396234
-        value: -0.15014726
-        inSlope: 0.0019303589
-        outSlope: 0.0019303589
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.49115542
-        outWeight: 0.7435874
-      - serializedVersion: 3
-        time: 1
-        value: -0.0010577142
-        inSlope: 0.0010009718
-        outSlope: 0.0010009718
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 1
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    ImpulseDuration: 0.2
-    ImpulseType: 0
-    DissipationRate: 0.25
-    RawSignal: {fileID: 0}
-    AmplitudeGain: 1
-    FrequencyGain: 1
-    RepeatMode: 0
-    Randomize: 1
-    TimeEnvelope:
-      AttackShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      DecayShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      AttackTime: 0
-      SustainTime: 0.2
-      DecayTime: 0.7
-      ScaleWithImpact: 1
-      HoldForever: 0
-    ImpactRadius: 100
-    DirectionMode: 0
-    DissipationMode: 2
-    DissipationDistance: 100
-    PropagationSpeed: 343
-  DefaultVelocity: {x: 0, y: 0.2, z: 0}
---- !u!114 &9210295925041576989
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2431616952988622430}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00196bfaaa2c63f4197b41cf64b62400, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualCamera: {fileID: 6690049341799254103}
-  walkShakeAmplitude: 0.05
-  walkShakeFrequency: 0.8
-  runShakeAmplitude: 0.12
-  runShakeFrequency: 1.6
-  movementSpeedThreshold: 1.2
-  movementSmoothing: 10
-  jumpShakeAmplitude: 0.35
-  jumpShakeFrequency: 2
-  jumpShakeDuration: 0.12
-  shootShakeAmplitude: 0.45
-  shootShakeFrequency: 1.8
-  shootShakeDuration: 0.1
-  slapShakeAmplitude: 0.55
-  slapShakeFrequency: 5
-  slapShakeDuration: 0.12
-  hitShakeAmplitude: 0.9
-  hitShakeFrequency: 3
-  hitShakeDuration: 0.15
-  shootingNoise: {fileID: 11400000, guid: e9ce97b7a206dc64d90931ea044e0c72, type: 2}
 --- !u!114 &9008643366807559449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15207,7 +14902,8 @@ MonoBehaviour:
   stepCoolDown: 0.25
   movement: {fileID: 7283489907467008536}
   footstepSource: {fileID: 4521806343263086695}
-  impulseSource: {fileID: 7136494257465206030}
+  walkShakeProfile: {fileID: 11400000, guid: d28abfa0cac6671488c000d838cdf45d, type: 2}
+  runShakeProfile: {fileID: 11400000, guid: d8263b7a4ab8a174aa02abd06b8ff511, type: 2}
   defaultFootstepVfxPrefab: {fileID: 6096989812176507171, guid: 8b1482eea1723b54284d23e6746c8b2a, type: 3}
   footstepVfxBySurface: []
   groundLayerMask:

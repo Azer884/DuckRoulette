@@ -8,6 +8,9 @@ public class Slap : NetworkBehaviour
 {
     public event System.Action OnSlap, OnSlapTriggered;
     public event System.Action OnSlapRecived;
+    public ShakeProfile slapShakeProfile;
+    public ShakeProfile slapReceivedShakeProfile;
+    private CameraShaker cameraShaker;
     private InputActionAsset inputActions;
     private InputAction slapAction;
     [SerializeField] private Transform slapArea;
@@ -35,6 +38,7 @@ public class Slap : NetworkBehaviour
     private void Awake() {
         inputActions = GetComponent<InputSystem>().inputActions;
         slapAction = inputActions.FindAction("Slap");
+        cameraShaker = CameraShaker.GetOrAdd(gameObject);
     }
 
     private void Update()
@@ -67,6 +71,10 @@ public class Slap : NetworkBehaviour
     private void TryToSlap()
     {
         OnSlap?.Invoke();
+        if (cameraShaker != null)
+        {
+            cameraShaker.Shake(slapShakeProfile);
+        }
         Debug.Log("Slap!");
         
         int numColliders = Physics.OverlapSphereNonAlloc(slapArea.position, slapRaduis, slapResults, otherPlayers);
@@ -226,6 +234,10 @@ public class Slap : NetworkBehaviour
             if (playerObject != null && playerObject.TryGetComponent(out Slap victimSlap))
             {
                 victimSlap.OnSlapRecived?.Invoke();
+                if (victimSlap.cameraShaker != null)
+                {
+                    victimSlap.cameraShaker.Shake(victimSlap.slapReceivedShakeProfile);
+                }
             }
         }
     }

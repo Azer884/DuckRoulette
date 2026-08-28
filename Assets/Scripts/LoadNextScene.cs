@@ -12,11 +12,7 @@ public class LoadNextScene : MonoBehaviour
         if (SteamClient.IsValid)
         {
             Tutorial.Load();
-            if (Tutorial.Data.hasCompletedTutorial)
-            {
-                StartCoroutine(LoadMainScene());
-            }
-            else SceneManager.LoadScene("Tutorial");
+            StartCoroutine(LoadMainScene());
         }
         else SceneManager.LoadScene("Error");
     }
@@ -25,8 +21,8 @@ public class LoadNextScene : MonoBehaviour
     IEnumerator LoadMainScene()
     {
         yield return new WaitUntil(() => NetworkManager.Singleton != null);
-        
+
         SceneManager.LoadScene("Lobby");
-        
+
     }
 }

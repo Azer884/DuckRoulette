@@ -9,6 +9,7 @@ public class OfflineBumBox : MonoBehaviour, IInteractable
 
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = true;
+    public string InteractionPrompt => "Pick Up";
     public int holderId = -1;
 
 

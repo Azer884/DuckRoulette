@@ -5,6 +5,7 @@ public class BlackjackTable : MonoBehaviour, IInteractable
 {
     public bool IsHeld { get; set;} = false;
     public bool IsPickable {get; set;} = false;
+    public string InteractionPrompt => "Play Blackjack";
 
     public void Drop()
     {

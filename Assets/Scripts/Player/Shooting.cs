@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 public class Shooting : NetworkBehaviour
 {
     public event Action OnGunShot;
+    public ShakeProfile shootShakeProfile;
+    private CameraShaker cameraShaker;
     public GameObject bulletPrefab;
     private GameObject bullet;
     public Transform spawnPt;
@@ -83,6 +85,7 @@ public class Shooting : NetworkBehaviour
         triggerAction = inputActions.FindAction("Trigger");
         shootAction = inputActions.FindAction("Shoot");
         movement = GetComponent<Movement>();
+        cameraShaker = CameraShaker.GetOrAdd(gameObject);
     }
 
     private void OnEnable()
@@ -258,6 +261,10 @@ public class Shooting : NetworkBehaviour
                 animator.Play("Shooting");
             }
             OnGunShot?.Invoke();
+            if (cameraShaker != null)
+            {
+                cameraShaker.Shake(shootShakeProfile);
+            }
             shotCounter++;
 
             if (IsLocalMode)

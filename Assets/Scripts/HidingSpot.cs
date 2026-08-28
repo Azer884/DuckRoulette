@@ -9,6 +9,7 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     public Transform hidingSpot, leavingSpot;
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = false;
+    public string InteractionPrompt => "Hide";
     public int holderId = -1;
     public void Interact(ulong clientId)
     {

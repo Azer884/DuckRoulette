@@ -40,7 +40,7 @@ public partial class TutorialManager : MonoBehaviour
     [SerializeField] private GameObject Hands;
     [SerializeField] private Rig rig;
     [SerializeField] private GameObject slidingCam;
-    public CinemachineImpulseSource jumpImpulseSource;
+    public ShakeProfile jumpShakeProfile;
 
     [Header("Gun Wiring (injected into Shooting)"), Space]
     public GameObject bulletPrefab, vfxPrefab;
@@ -133,7 +133,7 @@ public partial class TutorialManager : MonoBehaviour
         movementComp.rig = rig;
         movementComp.spinRig = rig;
         movementComp.slidingCam = slidingCam;
-        movementComp.jumpImpulseSource = jumpImpulseSource;
+        movementComp.jumpShakeProfile = jumpShakeProfile;
 
         shootingComp.bulletPrefab = bulletPrefab;
         shootingComp.vfxPrefab = vfxPrefab;

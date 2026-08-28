@@ -19,6 +19,11 @@ public class Interact : NetworkBehaviour
     public event Action ObjectPickedUp;
     public event Action ObjectDropped;
 
+    // The Interact action carries both a Keyboard and a Gamepad binding at once, so calling
+    // GetBindingDisplayString() with no group returns every matching binding joined with " | "
+    // (e.g. "A | E") instead of just the one the player is actually using.
+    private bool isPaused;
+
     // True when running without an active Netcode session (offline tutorial): held objects
     // are moved directly on this client and no ServerRpc is sent.
     public bool IsLocalMode => NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening;
@@ -48,13 +53,18 @@ public class Interact : NetworkBehaviour
 
     private void Awake()
     {
-        // Offline (tutorial) mode never receives OnNetworkSpawn - cache everything here so
-        // the component works as soon as TutorialManager enables it.
-        if (IsLocalMode)
-        {
-            mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
-            CacheInputActions();
-        }
+        // Always cache here, not just in local/offline mode: a Tutorial player is never
+        // Netcode-spawned, so OnNetworkSpawn (which also caches these) never runs for it.
+        // Gating this on IsLocalMode was wrong - IsLocalMode reflects whether *any*
+        // NetworkManager happens to be listening (e.g. still connected because Tutorial was
+        // opened from an active Lobby session), not whether this object will ever be spawned.
+        // When a stale NetworkManager was listening, this block was skipped, interactAction/
+        // muteAction were never assigned, and Update() threw a NullReferenceException the
+        // moment it touched them (blocking pickup and the interaction-prompt HUD). Caching
+        // unconditionally is harmless for the real networked player too, since OnNetworkSpawn
+        // re-caches the same actions.
+        mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
+        CacheInputActions();
     }
 
     private void CacheInputActions()
@@ -64,9 +74,35 @@ public class Interact : NetworkBehaviour
         muteAction = inputActions.FindAction("Mute");
     }
 
+    private void OnEnable()
+    {
+        PauseMenu.OnPause += HandlePause;
+        PauseMenu.OnUnPause += HandleUnpause;
+    }
+
+    private void HandlePause()
+    {
+        isPaused = true;
+        InteractionPromptHUD.Hide();
+    }
+
+    private void HandleUnpause()
+    {
+        isPaused = false;
+    }
+
     // Update is called once per frame
     void Update()
     {
+        // Interact.Update() only reads input.triggered (which naturally reports false while
+        // RebindSaveLoad.Instance.input is disabled by PauseMenu.Pause()) but the raycast below
+        // doesn't - it kept running and re-showing the prompt every frame the crosshair still
+        // hovered an interactable, even while paused.
+        if (isPaused)
+        {
+            return;
+        }
+
         // Re-resolve lazily: the first-person camera may only become active after spawn
         // (or after TutorialManager sets up the offline rig).
         if (mainCameraTransform == null)
@@ -88,6 +124,15 @@ public class Interact : NetworkBehaviour
         if (Physics.Raycast(mainCameraTransform.position, mainCameraTransform.forward,
                 out RaycastHit hit, maxDistance, pickUpLayerMask))
         {
+            if (pickedUpObject == null)
+            {
+                UpdateInteractionPrompt(hit.collider);
+            }
+            else
+            {
+                InteractionPromptHUD.Hide();
+            }
+
             // Try pickup
             if (interactAction.triggered && pickedUpObject == null)
             {
@@ -100,6 +145,10 @@ public class Interact : NetworkBehaviour
             {
                 TryToMute(hit.transform);
             }
+        }
+        else
+        {
+            InteractionPromptHUD.Hide();
         }
 
         // Move object you are holding
@@ -136,6 +185,35 @@ public class Interact : NetworkBehaviour
                 TryToMute(pickedUpObject);
             }
         }
+    }
+
+    private void OnDisable()
+    {
+        PauseMenu.OnPause -= HandlePause;
+        PauseMenu.OnUnPause -= HandleUnpause;
+        InteractionPromptHUD.Hide();
+    }
+
+    private void UpdateInteractionPrompt(Collider collider)
+    {
+        if (shooting.enabled ||
+            !collider.TryGetComponent(out IInteractable interactable) ||
+            interactable.IsHeld)
+        {
+            InteractionPromptHUD.Hide();
+            return;
+        }
+
+        InteractionPromptHUD.Show(interactable.InteractionPrompt, GetActiveBindingDisplayString());
+    }
+
+    // interactAction has both a Keyboard ("E") and a Gamepad ("A"/South) binding at once.
+    // GetBindingDisplayString() with no group returns every matching binding joined with
+    // " | " (e.g. "A | E") - filter to whichever device last produced input instead.
+    private string GetActiveBindingDisplayString()
+    {
+        bool isGamepad = interactAction.activeControl != null && interactAction.activeControl.device is Gamepad;
+        return interactAction.GetBindingDisplayString(group: isGamepad ? "Gamepad" : "Keyboard");
     }
 
     private void PickUpObject(Collider collider)

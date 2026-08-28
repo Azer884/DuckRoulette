@@ -62,6 +62,8 @@ public partial class TutorialManager
         }
         if (validPlayers?.Count > 0)
         {
+            InteractionPromptHUD.Show("Team Up", GetBindingDisplayString(interactAction));
+
             if (interactAction.triggered)
             {
                 if (!isTeamedUp)
@@ -78,8 +80,20 @@ public partial class TutorialManager
                 }
 
             }
-            MessageBox.Informate("Press E to team up with TutoBot ", Color.white, MessagePriority.Low, 0.5f);
         }
+        else
+        {
+            InteractionPromptHUD.Hide();
+        }
+    }
+
+    // interactAction/endTeamUpAction each carry a Keyboard and a Gamepad binding at once, so
+    // GetBindingDisplayString() with no group returns every matching binding joined with
+    // " | " (e.g. "A | E") instead of just the one the player is actually using.
+    private static string GetBindingDisplayString(InputAction action)
+    {
+        bool isGamepad = action.activeControl != null && action.activeControl.device is Gamepad;
+        return action.GetBindingDisplayString(group: isGamepad ? "Gamepad" : "Keyboard");
     }
     public void EndTeamUp()
     {

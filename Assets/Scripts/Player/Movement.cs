@@ -38,6 +38,35 @@ public class Movement : NetworkBehaviour
     public float speedMultiplier = 1.0f;
     public float jumpHeight = 1.5f;
 
+    [Header("Ground Parry"), Space]
+    [SerializeField] private bool enableGroundParry = true;
+    [Tooltip("How long before touchdown a Jump press still counts as a parry attempt, in seconds.")]
+    [SerializeField] private float groundParryWindow = 0.15f;
+    [Tooltip("Multiplies jumpHeight for a successful parry's vertical jump.")]
+    [SerializeField] private float groundParryJumpMultiplier = 1.25f;
+    [Tooltip("Multiplies current horizontal velocity on a successful parry, for extra carry distance.")]
+    [SerializeField] private float groundParryHorizontalMultiplier = 1.3f;
+    [Tooltip("Movement speed multiplier active for groundParrySpeedBoostDuration seconds after a successful parry.")]
+    [SerializeField] private float groundParrySpeedBoostMultiplier = 1.25f;
+    [SerializeField] private float groundParrySpeedBoostDuration = 2f;
+    [Tooltip("Minimum time between two successful parries.")]
+    [SerializeField] private float groundParryCooldown = 1.5f;
+    [SerializeField] private ShakeProfile groundParryShakeProfile;
+
+    [Header("Ground Parry VFX"), Space]
+    [SerializeField] private GameObject groundParryVfxPrefab;
+    [SerializeField] private float groundParryVfxScale = 1f;
+    [SerializeField] private float groundParryVfxLifetime = 1.5f;
+
+    // Buffers the last Jump press regardless of grounded state, so a press made shortly before
+    // touchdown still parries once the landing frame arrives.
+    private float lastJumpPressedTime = -Mathf.Infinity;
+    // One attempt per airtime: cleared when the player leaves the ground, not when they land,
+    // so holding Jump through a single landing can't retrigger a parry.
+    private bool parryConsumedThisAirtime;
+    private float lastParryTime = -Mathf.Infinity;
+    private float parrySpeedBoostEndTime = -Mathf.Infinity;
+
     [Header("Crouch Variables"), Space]
     public float initHeight;
     public float crouchHeight;
@@ -56,7 +85,8 @@ public class Movement : NetworkBehaviour
     private Vector3 lastPosition; // To store the last frame's position
     [HideInInspector]public float realMovementSpeed;  // To store the calculated speed
     
-    public CinemachineImpulseSource jumpImpulseSource;
+    public ShakeProfile jumpShakeProfile;
+    private CameraShaker cameraShaker;
 
     
     private bool isOnIce = false; // Check if the player is on ice
@@ -90,7 +120,6 @@ public class Movement : NetworkBehaviour
 
     private CinemachineCamera playerCamera;
     private float targetFov;
-    private NoiseHandler noiseHandler;
     private Shooting shootingComponent;
     private InputAction moveAction, lookAction, runAction, jumpAction, crouchAction;
     private GameObject activeRunVfxPrefab;
@@ -213,7 +242,7 @@ public class Movement : NetworkBehaviour
     {
         controller = GetComponent<CharacterController>();
         inputActions = GetComponent<InputSystem>().inputActions;
-        noiseHandler = GetComponent<NoiseHandler>();
+        cameraShaker = CameraShaker.GetOrAdd(gameObject);
         shootingComponent = GetComponent<Shooting>();
         initHeight = controller.height;
         Cursor.lockState = CursorLockMode.Locked;
@@ -331,6 +360,7 @@ public class Movement : NetworkBehaviour
 
     private void DoMovement()
     {
+        bool wasGrounded = grounded;
         grounded = controller.isGrounded;
         // Record the last time we were on ground to allow coyote-time jumps
         if (grounded)
@@ -362,18 +392,19 @@ public class Movement : NetworkBehaviour
         else
         {
             Vector3 move = transform.right * movement.x + transform.forward * movement.y;
+            float parryBoost = Time.time <= parrySpeedBoostEndTime ? groundParrySpeedBoostMultiplier : 1f;
 
             if (isOnIce)
             {
                 // Ice sliding with movement control
-                velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
-                velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * 1.2f, Time.deltaTime * iceFriction);
+                velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * parryBoost * 1.2f, Time.deltaTime * iceFriction);
+                velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * parryBoost * 1.2f, Time.deltaTime * iceFriction);
             }
             else
             {
                 // Regular movement
-                velocity.x = movementSpeed * speedMultiplier * move.x;
-                velocity.z = movementSpeed * speedMultiplier * move.z;
+                velocity.x = movementSpeed * speedMultiplier * parryBoost * move.x;
+                velocity.z = movementSpeed * speedMultiplier * parryBoost * move.z;
             }
         }
 
@@ -383,17 +414,35 @@ public class Movement : NetworkBehaviour
         // the gun holder can't jump (and so can't trigger the toboggan slide below either) -
         // only someone without the gun can jump their way off ice.
         bool jumpBlockedByGun = isOnIce && IsHoldingGun();
-        if (canJump && (grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
+
+        if (jumpAction.triggered)
+        {
+            lastJumpPressedTime = Time.time;
+        }
+
+        bool justLanded = grounded && !wasGrounded;
+        if (wasGrounded && !grounded)
+        {
+            // Left the ground - a fresh airtime gets its own single parry attempt.
+            parryConsumedThisAirtime = false;
+        }
+
+        bool parryPressBuffered = Time.time - lastJumpPressedTime <= groundParryWindow;
+        bool parryOffCooldown = Time.time - lastParryTime >= groundParryCooldown;
+        bool tryingGroundParry = enableGroundParry && justLanded && parryPressBuffered && parryOffCooldown &&
+            !parryConsumedThisAirtime && canJump && !isCrouched && !isSliding && !jumpBlockedByGun;
+
+        if (tryingGroundParry)
+        {
+            PerformGroundParry();
+        }
+        else if (canJump && (grounded || canUseCoyote) && jumpAction.triggered && !isCrouched && !isSliding && !jumpBlockedByGun)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             lastGroundedTime = -Mathf.Infinity;
-            if (noiseHandler != null)
+            if (cameraShaker != null)
             {
-                noiseHandler.TriggerJumpShake();
-            }
-            else if (jumpImpulseSource != null)
-            {
-                jumpImpulseSource.GenerateImpulse();
+                cameraShaker.Shake(jumpShakeProfile);
             }
 
             if (isOnIce && !isSliding)
@@ -413,6 +462,92 @@ public class Movement : NetworkBehaviour
         velocityX = Mathf.Lerp(velocityX, realMovementSpeed > 1.2 ? movement.x : 0, 10f * Time.deltaTime);
         velocityZ = Mathf.Lerp(velocityZ, realMovementSpeed > 1.2 ? (movement.y * speedMultiplier) : 0, 10f * Time.deltaTime);
         UpdateAnimator(velocityX, velocityZ);
+    }
+
+    private void PerformGroundParry()
+    {
+        lastParryTime = Time.time;
+        parryConsumedThisAirtime = true;
+        lastGroundedTime = -Mathf.Infinity;
+
+        float parryJumpHeight = jumpHeight * groundParryJumpMultiplier;
+        velocity.y = Mathf.Sqrt(parryJumpHeight * -2f * gravity);
+        velocity.x *= groundParryHorizontalMultiplier;
+        velocity.z *= groundParryHorizontalMultiplier;
+
+        if (cameraShaker != null)
+        {
+            cameraShaker.Shake(groundParryShakeProfile != null ? groundParryShakeProfile : jumpShakeProfile);
+        }
+
+        if (isOnIce && !isSliding)
+        {
+            StartSliding();
+        }
+
+        ParryFeedbackHUD.Show();
+        RequestGroundParryVfx();
+    }
+
+    private void RequestGroundParryVfx()
+    {
+        if (groundParryVfxPrefab == null)
+        {
+            return;
+        }
+
+        Vector3 position = GetFeetPosition();
+
+        if (IsLocalMode)
+        {
+            SpawnGroundParryVfx(position);
+        }
+        else
+        {
+            RequestGroundParryVfxServerRpc(position);
+        }
+    }
+
+    private Vector3 GetFeetPosition()
+    {
+        Vector3 origin = controller.bounds.center;
+        float distance = controller.bounds.extents.y + 0.5f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, distance, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            return hit.point;
+        }
+        return transform.position - Vector3.up * (controller.height * 0.5f);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestGroundParryVfxServerRpc(Vector3 position)
+    {
+        SpawnGroundParryVfxClientRpc(position);
+    }
+
+    [ClientRpc]
+    private void SpawnGroundParryVfxClientRpc(Vector3 position)
+    {
+        SpawnGroundParryVfx(position);
+    }
+
+    private void SpawnGroundParryVfx(Vector3 position)
+    {
+        if (groundParryVfxPrefab == null)
+        {
+            return;
+        }
+
+        GameObject instance = Instantiate(groundParryVfxPrefab, position, Quaternion.identity);
+        instance.transform.localScale = Vector3.one * groundParryVfxScale;
+
+        foreach (ParticleSystem ps in instance.GetComponentsInChildren<ParticleSystem>())
+        {
+            ps.Clear(true);
+            ps.Play(true);
+        }
+
+        Destroy(instance, groundParryVfxLifetime);
     }
 
     private void HandleSliding()

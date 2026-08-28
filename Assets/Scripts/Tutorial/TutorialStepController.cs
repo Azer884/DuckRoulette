@@ -85,9 +85,14 @@ public class TutorialStepController : MonoBehaviour
     private IEnumerator DoAdvanceStep(int step, float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (currentStep != step) yield break;
+        // A player can complete steps out of the expected order (e.g. ending the team-up
+        // before the "talk" message even caught up). Only reject this advance if we've
+        // already moved PAST it - a strict "==" here left currentStep stuck behind forever
+        // whenever a later step's event fired first, permanently stalling the whole chain
+        // (no slap prompt, no tutorial-complete, never back to lobby).
+        if (currentStep > step) yield break;
 
-        currentStep++;
+        currentStep = step + 1;
         ShowStepMessage(currentStep);
     }
 
