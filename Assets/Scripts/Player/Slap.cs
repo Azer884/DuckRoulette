@@ -104,7 +104,9 @@ public class Slap : NetworkBehaviour
             slapLimit[player] = Random.Range(3, 10); // Set a random limit between 3 and 10
         }
 
-        PlaySlapSound(slapArea != null ? slapArea.position : transform.position);
+        // Impact sound/VFX must play where the SLAPPED player is, not at the slapper's own
+        // slapArea - using `this` slapper's position spawned the impact VFX on the wrong player.
+        PlaySlapSound(player != null ? player.transform.position : transform.position);
         OnSlapTriggered?.Invoke();
         slapCount[player]++;
         

@@ -214,8 +214,12 @@ public class Ragdoll : NetworkBehaviour
         foreach (var anim in otherAnimators)
             anim.enabled = true;
 
-        SetScriptsEnabled(true);
+        // Visuals must come back BEFORE scripts: re-enabling Shooting here fires its OnEnable,
+        // which reapplies the gun hand pose (HandsState/fPHands.SwitchParent) - doing that while
+        // `hands` is still SetActive(false) from EnableRagdoll left the pose applied to a hidden,
+        // not-yet-reset hierarchy, which is why the gun looked held wrong after standing back up.
         SetVisualsEnabled(true);
+        SetScriptsEnabled(true);
 
         _characterController.enabled = true;
     }

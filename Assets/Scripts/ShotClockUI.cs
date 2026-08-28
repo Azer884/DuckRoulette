@@ -28,6 +28,12 @@ public class ShotClockUI : MonoBehaviour
         {
             root.SetActive(false);
         }
+
+        // Not who has the gun stays hidden on purpose - the whole game is not knowing that.
+        if (turnLabel != null)
+        {
+            turnLabel.gameObject.SetActive(false);
+        }
     }
 
     private void Update()
@@ -38,7 +44,8 @@ public class ShotClockUI : MonoBehaviour
         }
 
         if (RoundManager.Instance == null || GameManager.Instance == null ||
-            NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening ||
+            PlayerSpawner.Instance == null || !PlayerSpawner.Instance.isStarted)
         {
             if (root.activeSelf)
             {
@@ -47,14 +54,12 @@ public class ShotClockUI : MonoBehaviour
             return;
         }
 
-        bool active = RoundManager.Instance.IsRoundActive;
-        if (root.activeSelf != active)
+        // Stays visible for the whole match once a round has started, instead of toggling off
+        // between rounds (the ~5s gap while the gun hands off) - it was popping in and out every
+        // single turn, which read as "the timer disappeared".
+        if (!root.activeSelf)
         {
-            root.SetActive(active);
-        }
-        if (!active)
-        {
-            return;
+            root.SetActive(true);
         }
 
         float remaining = RoundManager.Instance.RemainingTime;
@@ -75,11 +80,5 @@ public class ShotClockUI : MonoBehaviour
         root.transform.localScale = urgent
             ? Vector3.one * (1f + Mathf.PingPong(Time.time * 4f, 0.12f))
             : Vector3.one;
-
-        if (turnLabel != null)
-        {
-            turnLabel.text = isMyTurn ? "YOUR TURN" : GameManager.Instance.GetPlayerNickname(gunHolder).ToUpperInvariant();
-            turnLabel.color = isMyTurn ? yourTurnColor : new Color(1f, 1f, 1f, 0.85f);
-        }
     }
 }

@@ -62,38 +62,62 @@ public class DeathTrigger : MonoBehaviour
     {
         victimId = parentNetworkObject.OwnerClientId;
 
-        if (other.transform.parent.TryGetComponent(out BulletBehavior bullet))
+        if (!other.transform.parent.TryGetComponent(out BulletBehavior bullet))
         {
-            bool isFriendlyFire = GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId;
-
-            if (bullet.OwnerClientId != victimId && !death.isDead.Value && !isFriendlyFire)
-            {
-                death.DieServerRpc();
-                death.KillPlayerServerRpc();
-
-                ulong shooterId = bullet.OwnerClientId;
-                spectatedPlayerId = shooterId;
-
-                // Fetch player names from the Username component
-                string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
-                string victimName = GameManager.Instance.GetPlayerNickname(victimId);
-
-                Debug.Log($"{shooterName} killed {victimName}");
-                GameManager.Instance.UpdateKillsServerRpc(shooterId, 1);
-
-                // Notify GameManager about the death
-                GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
-                Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
-
-                if (parentNetworkObject.IsOwner)
-                {
-                    SpectateHUD.ShowDeathBanner(shooterName);
-                }
-
-                StartCoroutine(WaitBeforeSpctate(5f));
-            }
-            bullet.DestroyServerRpc(0);
+            return;
         }
+
+        // OnTriggerEnter runs on every peer that locally simulates this collision (server,
+        // victim, shooter, bystanders) - each peer's local physics can register the hit on a
+        // slightly different frame (interpolation/latency), so gating everything below behind a
+        // single peer's detection (e.g. victim-only) isn't reliable enough to guarantee the round
+        // actually advances. Split by responsibility instead:
+        //  - bullet despawn and kill credit: only the shooter's own client (bullet.IsOwner) - it
+        //    detects exactly once per real hit, so this can't double-count kills.
+        //  - alive-state update: any peer that detects it - UpdatePlayerStateServerRpc no-ops if
+        //    the player's already marked inactive, so calling it redundantly is harmless and is
+        //    what makes round progression reliable even if the victim's own client is late/misses.
+        //  - Death's own ServerRpcs (isDead flag, ragdoll): only the victim's own client - they're
+        //    ownership-gated and Netcode rejects any other caller.
+        bool isFriendlyFire = GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId;
+        bool isValidHit = bullet.OwnerClientId != victimId && !death.isDead.Value && !isFriendlyFire;
+
+        if (bullet.IsOwner)
+        {
+            bullet.DestroyServerRpc(0);
+
+            if (isValidHit)
+            {
+                GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
+            }
+        }
+
+        if (!isValidHit)
+        {
+            return;
+        }
+
+        GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
+        Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
+
+        if (!parentNetworkObject.IsOwner)
+        {
+            return;
+        }
+
+        death.DieServerRpc();
+        death.KillPlayerServerRpc();
+
+        ulong shooterId = bullet.OwnerClientId;
+        spectatedPlayerId = shooterId;
+
+        string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
+        string victimName = GameManager.Instance.GetPlayerNickname(victimId);
+        Debug.Log($"{shooterName} killed {victimName}");
+
+        SpectateHUD.ShowDeathBanner(shooterName);
+
+        StartCoroutine(WaitBeforeSpctate(5f));
     }
 
     private IEnumerator WaitBeforeSpctate(float delay)

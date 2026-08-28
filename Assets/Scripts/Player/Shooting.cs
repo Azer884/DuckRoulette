@@ -70,9 +70,13 @@ public class Shooting : NetworkBehaviour
         {
             // NetworkVariable writes must happen once ownership is established (OnNetworkSpawn),
             // not in OnEnable, which runs before spawn/ownership is assigned for non-owner instances.
+            // haveGun stays false here: the prefab spawns with Shooting disabled (m_Enabled: 0) so
+            // GameManager's PlayerShootingScriptClientRpc is the only thing that ever enables it for
+            // the actual gun holder, which is what flips haveGun true via OnEnable below. Setting it
+            // true here unconditionally previously made every player appear to have the gun for the
+            // brief window before GameManager assigned one.
             hasShot.Value = false;
             _shotExecuted = false;
-            haveGun.Value = true;
         }
 
         base.OnNetworkSpawn();

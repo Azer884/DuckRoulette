@@ -401,10 +401,22 @@ public class GameNetworkManager : MonoBehaviour
 
     public void Singleton_OnClientDisconnectCallback(ulong _clientId)
     {
-        if (_clientId == 0)
+        // This callback is only ever hooked up on the client side (StartClient wires it up;
+        // StartHost never does), and on a client NGO always reports the LOCAL client's own id
+        // here - never 0 - when it loses its connection to the server/host. Comparing against
+        // the literal id 0 (the server's clientId constant) never matched over the Facepunch
+        // transport, so a host leaving never sent its clients back to the lobby.
+        if (NetworkManager.Singleton == null || _clientId != NetworkManager.Singleton.LocalClientId)
         {
-            NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
-            Disconnected();
+            return;
+        }
+
+        NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
+        Disconnected();
+
+        if (SceneManager.GetActiveScene().name != "Lobby")
+        {
+            SceneManager.LoadScene("Lobby");
         }
     }
 

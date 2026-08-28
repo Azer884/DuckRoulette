@@ -134,6 +134,11 @@ public class GameManager : NetworkBehaviour
     {
         RoundManager.Instance?.StartRound();
 
+        // The new gun holder must be able to trigger/reload as soon as their turn starts -
+        // canShoot used to stay false for the full delay below, so every new holder was locked
+        // out of shooting for 5s of their round timer for no visible reason.
+        canShoot.Value = true;
+
         if (_switchPlayerRoutine != null)
         {
             StopCoroutine(_switchPlayerRoutine);
@@ -145,9 +150,7 @@ public class GameManager : NetworkBehaviour
     // ReSharper disable Unity.PerformanceAnalysis
     private IEnumerator SwitchPlayerAfterDelay(float waitTime)
     {
-        canShoot.Value = false;
         yield return new WaitForSeconds(waitTime);
-        canShoot.Value = true;
         StartRain();
 
         if (!powerGunIsActive.Value)
@@ -171,7 +174,12 @@ public class GameManager : NetworkBehaviour
         MarkPlayerInactive(clientId, reassignGun: false);
     }
 
-    [ServerRpc]
+    // RequireOwnership=false: this is called on GameManager's own NetworkObject (in-scene, owned
+    // by the server) whenever ANY player slaps someone into a stun, not just the host - the
+    // default RequireOwnership would only ever let the server/host's own client succeed here,
+    // silently rejecting every non-host client's stun ("client cannot knockout host"). clientId is
+    // just the already-validated target of an existing slap interaction, not a trust boundary.
+    [ServerRpc(RequireOwnership = false)]
     public void StunPlayerServerRpc(ulong clientId)
     {
         StunPlayerClientRpc(clientId);
@@ -205,7 +213,20 @@ public class GameManager : NetworkBehaviour
             _switchPlayerRoutine = null;
         }
 
+        StartCoroutine(EndGameAfterStatsSync(winnerId));
+    }
+
+    // shotCounter/emptyShots/timeSurvived on each player's Stats are Owner-written NetworkVariables
+    // that only ever get set once, here, via UpdateStatsClientRpc - before that they're still the
+    // NetworkVariable default (0). Sending EndGameClientRpc in the same instant only guarantees the
+    // LOCAL player's own write is visible immediately; every other player's write still has to round
+    // trip client -> server -> every other client before EndGameClientRpc's TryGetPlayerStats reads
+    // would see it, so without a wait here the end screen showed stale/zeroed stats for everyone but
+    // yourself.
+    private IEnumerator EndGameAfterStatsSync(ulong winnerId)
+    {
         UpdateStatsClientRpc();
+        yield return new WaitForSeconds(0.5f);
 
         var playerIds = new List<ulong>();
         var killCounts = new List<int>();
