@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Steamworks;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -26,9 +27,30 @@ public class LoadingScreenController : NetworkBehaviour
         public bool Equals(ProgressEntry other) => ClientId == other.ClientId && Progress.Equals(other.Progress);
     }
 
+    // LobbyManager (and its playerInfo name/steamId dictionary) is scene-local and not
+    // DontDestroyOnLoad, so it's already gone by the time this scene loads - RefreshAllBars used
+    // to look names up there and silently got nothing, leaving every other player's row blank.
+    // Each client self-reports its own Steam name here instead, independent of the Lobby scene.
+    public struct PlayerNameEntry : INetworkSerializable, IEquatable<PlayerNameEntry>
+    {
+        public ulong ClientId;
+        public ulong SteamId;
+        public FixedString64Bytes Name;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref ClientId);
+            serializer.SerializeValue(ref SteamId);
+            serializer.SerializeValue(ref Name);
+        }
+
+        public bool Equals(PlayerNameEntry other) => ClientId == other.ClientId && SteamId == other.SteamId && Name.Equals(other.Name);
+    }
+
     [Header("My Progress")]
     public Slider myProgressBar;
     public TextMeshProUGUI myPercentText;
+    public RawImage myProfilePic;
 
     [Header("Other Players")]
     public Transform otherPlayersContainer;
@@ -39,12 +61,19 @@ public class LoadingScreenController : NetworkBehaviour
     public string[] tips;
 
     private readonly NetworkList<ProgressEntry> progress = new NetworkList<ProgressEntry>();
+    private readonly NetworkList<PlayerNameEntry> playerNames = new NetworkList<PlayerNameEntry>();
     // GameNetworkManager.PendingGameSceneName only exists locally on whichever peer called
     // StartGame() (the host) - every other client needs the target scene name too, or their
     // OnLoad below never recognizes it, never holds/reports their load, and the host then
     // waits forever at 90% for a progress report that never arrives - so the player never spawns.
     private readonly NetworkVariable<FixedString64Bytes> pendingSceneName = new();
     private readonly Dictionary<ulong, Slider> otherBars = new();
+    private readonly Dictionary<ulong, TextMeshProUGUI> otherLabels = new();
+    private readonly Dictionary<ulong, RawImage> otherProfilePics = new();
+    // SteamIds an avatar fetch has already been kicked off for - GetLargeAvatarAsync is a real
+    // network round trip, so this stops RefreshAllBars (called on every progress tick) from
+    // re-requesting the same avatar every frame.
+    private readonly HashSet<ulong> avatarFetchStarted = new();
     private AsyncOperation pendingOp;
     private bool activationSent;
 
@@ -78,7 +107,11 @@ public class LoadingScreenController : NetworkBehaviour
         }
 
         progress.OnListChanged += OnProgressChanged;
+        playerNames.OnListChanged += OnPlayerNamesChanged;
         RefreshAllBars();
+
+        ReportNameServerRpc(SteamClient.Name, (ulong)SteamClient.SteamId);
+        FetchAndApplyAvatar((ulong)SteamClient.SteamId, myProfilePic);
     }
 
     public override void OnNetworkDespawn()
@@ -93,6 +126,54 @@ public class LoadingScreenController : NetworkBehaviour
         }
 
         progress.OnListChanged -= OnProgressChanged;
+        playerNames.OnListChanged -= OnPlayerNamesChanged;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ReportNameServerRpc(string name, ulong steamId, ServerRpcParams rpcParams = default)
+    {
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        for (int i = 0; i < playerNames.Count; i++)
+        {
+            if (playerNames[i].ClientId == clientId)
+            {
+                playerNames[i] = new PlayerNameEntry { ClientId = clientId, SteamId = steamId, Name = name };
+                return;
+            }
+        }
+
+        playerNames.Add(new PlayerNameEntry { ClientId = clientId, SteamId = steamId, Name = name });
+    }
+
+    private bool TryGetPlayerNameEntry(ulong clientId, out PlayerNameEntry result)
+    {
+        foreach (PlayerNameEntry entry in playerNames)
+        {
+            if (entry.ClientId == clientId)
+            {
+                result = entry;
+                return true;
+            }
+        }
+
+        result = default;
+        return false;
+    }
+
+    private async void FetchAndApplyAvatar(ulong steamId, RawImage target)
+    {
+        if (target == null || steamId == 0 || !avatarFetchStarted.Add(steamId))
+        {
+            return;
+        }
+
+        var image = await SteamFriends.GetLargeAvatarAsync(steamId);
+        if (!image.HasValue || target == null)
+        {
+            return;
+        }
+
+        target.texture = SteamFriendsManager.GetTextureFromImage(image.Value);
     }
 
     // Server only: everyone has reached the loading screen itself, now kick off the real load of the game scene.
@@ -121,7 +202,9 @@ public class LoadingScreenController : NetworkBehaviour
         {
             float p = Mathf.Clamp01(pendingOp.progress / 0.9f);
             if (myProgressBar != null) myProgressBar.value = p;
-            if (myPercentText != null) myPercentText.text = $"{Mathf.RoundToInt(p * 100)}%";
+            // No separate name field on the "my progress" row - fold it into the existing
+            // percent text instead of adding new UI.
+            if (myPercentText != null) myPercentText.text = $"{SteamClient.Name} - {Mathf.RoundToInt(p * 100)}%";
 
             ReportProgressServerRpc(p);
 
@@ -173,6 +256,11 @@ public class LoadingScreenController : NetworkBehaviour
         RefreshAllBars();
     }
 
+    private void OnPlayerNamesChanged(NetworkListEvent<PlayerNameEntry> change)
+    {
+        RefreshAllBars();
+    }
+
     private void RefreshAllBars()
     {
         if (NetworkManager.Singleton == null) return;
@@ -190,18 +278,32 @@ public class LoadingScreenController : NetworkBehaviour
                 row.SetActive(true);
                 bar = row.GetComponentInChildren<Slider>();
                 otherBars[entry.ClientId] = bar;
-
-                TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>();
-                if (label != null && LobbyManager.instance != null &&
-                    LobbyManager.instance.playerInfo.TryGetValue(entry.ClientId, out GameObject playerInfoObj))
-                {
-                    label.text = playerInfoObj.GetComponent<PlayerInfo>().steamName;
-                }
+                otherLabels[entry.ClientId] = row.GetComponentInChildren<TextMeshProUGUI>();
+                otherProfilePics[entry.ClientId] = row.GetComponentInChildren<RawImage>();
             }
 
             if (bar != null)
             {
                 bar.value = entry.Progress;
+            }
+
+            // Refreshed every call (not just at row creation): this client's own name/steamId
+            // report can arrive after its progress row already exists.
+            if (TryGetPlayerNameEntry(entry.ClientId, out PlayerNameEntry nameEntry))
+            {
+                if (otherLabels.TryGetValue(entry.ClientId, out TextMeshProUGUI label) && label != null)
+                {
+                    string name = nameEntry.Name.ToString();
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        label.text = name;
+                    }
+                }
+
+                if (otherProfilePics.TryGetValue(entry.ClientId, out RawImage pic) && pic != null)
+                {
+                    FetchAndApplyAvatar(nameEntry.SteamId, pic);
+                }
             }
         }
     }

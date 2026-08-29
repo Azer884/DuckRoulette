@@ -25,6 +25,10 @@ public class DeathTrigger : MonoBehaviour
         death = GetComponentInParent<Death>();
         parentNetworkObject = GetComponentInParent<NetworkObject>();
 
+        // Was only ever set inside OnTriggerEnter, which the victim's own client can't be relied
+        // on to ever fire (see HandleDeath) - set it here instead so it's always valid.
+        victimId = parentNetworkObject.OwnerClientId;
+
         InputSystem inputSystem = GetComponentInParent<InputSystem>();
         if (inputSystem != null)
         {
@@ -60,55 +64,51 @@ public class DeathTrigger : MonoBehaviour
 
     public void OnTriggerEnter(Collider other)
     {
-        victimId = parentNetworkObject.OwnerClientId;
-
         if (!other.transform.parent.TryGetComponent(out BulletBehavior bullet))
         {
             return;
         }
 
         // OnTriggerEnter runs on every peer that locally simulates this collision (server,
-        // victim, shooter, bystanders) - each peer's local physics can register the hit on a
-        // slightly different frame (interpolation/latency), so gating everything below behind a
-        // single peer's detection (e.g. victim-only) isn't reliable enough to guarantee the round
-        // actually advances. Split by responsibility instead:
+        // victim, shooter, bystanders). The victim's own client is actually the LEAST reliable
+        // detector here - their own transform has zero interpolation lag while the bullet is
+        // simulated from a slightly-stale snapshot of them, so it can sail past their own collider
+        // even when everyone else's screen shows it connecting. So nothing below is gated to the
+        // victim's own client:
         //  - bullet despawn and kill credit: only the shooter's own client (bullet.IsOwner) - it
         //    detects exactly once per real hit, so this can't double-count kills.
-        //  - alive-state update: any peer that detects it - UpdatePlayerStateServerRpc no-ops if
-        //    the player's already marked inactive, so calling it redundantly is harmless and is
-        //    what makes round progression reliable even if the victim's own client is late/misses.
-        //  - Death's own ServerRpcs (isDead flag, ragdoll): only the victim's own client - they're
-        //    ownership-gated and Netcode rejects any other caller.
+        //  - alive-state + death/ragdoll: any peer that detects it, via GameManager (server-
+        //    authoritative from there - see GameManager.SetPlayerDeadClientRpc).
         bool isFriendlyFire = GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId;
         bool isValidHit = bullet.OwnerClientId != victimId && !death.isDead.Value && !isFriendlyFire;
 
         if (bullet.IsOwner)
         {
             bullet.DestroyServerRpc(0);
-
-            if (isValidHit)
-            {
-                GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
-            }
         }
 
-        if (!isValidHit)
+        // This player has 13 DeathTrigger instances (one per hitbox collider), so the same bullet
+        // can fire OnTriggerEnter on several of them in one frame - TryReportDeath dedupes that
+        // per-client (see Death.cs) so a single shot can't be credited as multiple kills.
+        if (!isValidHit || !death.TryReportDeath())
         {
             return;
         }
 
-        GameManager.Instance.UpdatePlayerStateServerRpc(victimId);
+        if (bullet.IsOwner)
+        {
+            GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
+        }
+
+        GameManager.Instance.UpdatePlayerStateServerRpc(victimId, bullet.OwnerClientId);
         Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
+    }
 
-        if (!parentNetworkObject.IsOwner)
-        {
-            return;
-        }
-
-        death.DieServerRpc();
-        death.KillPlayerServerRpc();
-
-        ulong shooterId = bullet.OwnerClientId;
+    // Called on the victim's own client by GameManager.SetPlayerDeadClientRpc once the server has
+    // authoritatively marked them dead - NOT from this object's own OnTriggerEnter, which can't be
+    // relied on to ever fire for the victim (see the comment in OnTriggerEnter above).
+    public void HandleDeath(ulong shooterId)
+    {
         spectatedPlayerId = shooterId;
 
         string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);

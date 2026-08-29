@@ -260,6 +260,15 @@ public class Ragdoll : NetworkBehaviour
         foots.SetActive(state);
         shadow.SetActive(state);
         userName.userName.gameObject.SetActive(state);
+
+        // The gun's own visibility is otherwise driven every frame by GunStateChanger purely off
+        // haveGun.Value, which ragdoll never touches - so it used to keep floating in its last
+        // hand pose while the player ragdolled instead of hiding like everything else, then
+        // reappear correctly here only if this player still actually holds the gun turn.
+        if (shooting != null && shooting.gun != null)
+        {
+            shooting.gun.SetActive(state && shooting.HasGun);
+        }
     }
 
     /* ===================== HELPERS ===================== */

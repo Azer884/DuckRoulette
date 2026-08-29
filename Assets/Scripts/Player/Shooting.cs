@@ -27,6 +27,10 @@ public class Shooting : NetworkBehaviour
     private bool _shotExecuted;
     private InputAction reloadAction, triggerAction, shootAction;
     private Movement movement;
+    // Frame Trigger() last consumed a triggerAction press to cock the gun - lets Shoot() tell a
+    // fresh Trigger press (the gamepad RT click that should fire, since Input System only
+    // re-triggers a Button action after release) apart from the very press that just cocked it.
+    private int lastTriggerConsumedFrame = -1;
 
     // --- Offline (tutorial) support -------------------------------------------
     // When there is no active Netcode session the component runs fully locally: the
@@ -77,6 +81,18 @@ public class Shooting : NetworkBehaviour
             // brief window before GameManager assigned one.
             hasShot.Value = false;
             _shotExecuted = false;
+
+            // GameManager picks the first gun holder and broadcasts PlayerShootingScriptClientRpc
+            // from its own OnNetworkSpawn, which runs before PlayerSpawner has actually spawned any
+            // player objects - that broadcast's GetLocalPlayerObject() lookup is still null then, so
+            // it silently no-ops. Nothing re-sent it afterward, so nobody visibly held the gun until
+            // the first round timeout (30s later) force-reassigned it - looking like "the gun starts
+            // on one player then switches to another". Self-correct here instead, since this runs
+            // exactly when this player's own object actually finishes spawning.
+            if (GameManager.Instance != null && GameManager.Instance.playerWithGun.Value == OwnerClientId)
+            {
+                enabled = true;
+            }
         }
 
         base.OnNetworkSpawn();
@@ -90,6 +106,22 @@ public class Shooting : NetworkBehaviour
         shootAction = inputActions.FindAction("Shoot");
         movement = GetComponent<Movement>();
         cameraShaker = CameraShaker.GetOrAdd(gameObject);
+
+        // Shooting spawns disabled - only GameManager's PlayerShootingScriptClientRpc enables it,
+        // for the one assigned gun holder - so OnEnable (which normally sets HaveAGun) never runs
+        // for anyone else, leaving them stuck on the Animator Controller's own default value for
+        // that parameter. Awake still runs while disabled, so force it false here for every
+        // player up front: nobody looks armed until GameManager actually hands them the gun.
+        if (animators != null)
+        {
+            foreach (Animator anim in animators)
+            {
+                if (anim != null)
+                {
+                    anim.SetBool("HaveAGun", false);
+                }
+            }
+        }
     }
 
     private void OnEnable()
@@ -204,6 +236,7 @@ public class Shooting : NetworkBehaviour
         if (triggerAction.triggered && !isTriggered && IsReloadedNow && canTrigger && ShootingAllowedNow)
         {
             isTriggered = true;
+            lastTriggerConsumedFrame = Time.frameCount;
             PlayTriggerSound(gun != null ? gun.transform.position : transform.position);
 
             foreach (Animator animator in animators)
@@ -225,7 +258,15 @@ public class Shooting : NetworkBehaviour
 
     private void Shoot()
     {
-        if (shootAction.triggered && canShoot && isTriggered)
+        // The Trigger action (RT on gamepad) drives both phases now: Trigger() above only cocks
+        // on the frame it consumes a press. Input System doesn't re-trigger a Button action until
+        // its control is released and pressed again, so any triggerAction.triggered on a LATER
+        // frame is inherently "released and re-clicked" - including a digital, click-only RT that
+        // can't be told apart from an analog one any other way. shootAction (left mouse) stays a
+        // separate, independent path for keyboard/mouse.
+        bool secondTriggerPress = triggerAction.triggered && lastTriggerConsumedFrame != Time.frameCount;
+
+        if ((shootAction.triggered || secondTriggerPress) && canShoot && isTriggered)
         {
             ExecuteShot();
         }
@@ -546,6 +587,22 @@ public class Shooting : NetworkBehaviour
             foreach (Animator anim in animators)
             {
                 anim.SetBool("HaveAGun", state);
+
+                if (!state)
+                {
+                    // The gun can be taken away mid Trigger/Reload/Shooting animation (round
+                    // ends, timeout hand-off) - flipping HaveAGun alone waits on the animator's
+                    // own exit transitions, so a stuck Triggered bool or an in-progress state
+                    // could leave the hands frozen mid-pose. Hard-cut back to the unarmed
+                    // slap-idle stance instead.
+                    anim.SetBool("Triggered", false);
+                    AnimatorStateInfo stateInfo = anim.GetCurrentAnimatorStateInfo(0);
+                    if ((stateInfo.IsName("Trigger") || stateInfo.IsName("Reload") || stateInfo.IsName("Shooting"))
+                        && anim.HasState(0, Animator.StringToHash("NoGunMovement")))
+                    {
+                        anim.Play("NoGunMovement", 0, 0f);
+                    }
+                }
             }
         }
         if (fPHands != null)

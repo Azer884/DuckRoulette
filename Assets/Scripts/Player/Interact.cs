@@ -19,9 +19,6 @@ public class Interact : NetworkBehaviour
     public event Action ObjectPickedUp;
     public event Action ObjectDropped;
 
-    // The Interact action carries both a Keyboard and a Gamepad binding at once, so calling
-    // GetBindingDisplayString() with no group returns every matching binding joined with " | "
-    // (e.g. "A | E") instead of just the one the player is actually using.
     private bool isPaused;
 
     // True when running without an active Netcode session (offline tutorial): held objects
@@ -204,16 +201,7 @@ public class Interact : NetworkBehaviour
             return;
         }
 
-        InteractionPromptHUD.Show(interactable.InteractionPrompt, GetActiveBindingDisplayString());
-    }
-
-    // interactAction has both a Keyboard ("E") and a Gamepad ("A"/South) binding at once.
-    // GetBindingDisplayString() with no group returns every matching binding joined with
-    // " | " (e.g. "A | E") - filter to whichever device last produced input instead.
-    private string GetActiveBindingDisplayString()
-    {
-        bool isGamepad = interactAction.activeControl != null && interactAction.activeControl.device is Gamepad;
-        return interactAction.GetBindingDisplayString(group: isGamepad ? "Gamepad" : "Keyboard");
+        InteractionPromptHUD.Show(interactable.InteractionPrompt, interactAction);
     }
 
     private void PickUpObject(Collider collider)

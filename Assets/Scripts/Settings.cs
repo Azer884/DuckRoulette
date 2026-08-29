@@ -10,12 +10,41 @@ public class Settings : MonoBehaviour
     private bool isFriendsActive;
     private Animator animator;
 
+    private InputAction returnAction;
+
     private void Awake()
     {
         animator = GetComponent<Animator>();
         if (animator == null)
         {
             Debug.LogError("Settings: Animator component not found on this GameObject!");
+        }
+    }
+
+    private void OnEnable()
+    {
+        returnAction = RebindSaveLoad.Instance != null ? RebindSaveLoad.Instance.actions.FindAction("Return") : null;
+        if (returnAction != null)
+        {
+            returnAction.performed += HandleReturn;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (returnAction != null)
+        {
+            returnAction.performed -= HandleReturn;
+        }
+    }
+
+    // "Return" also carries a Keyboard/Escape binding, which PauseMenu's own "Pause" action
+    // already handles - only react to the gamepad B press here so the two don't double-fire.
+    private void HandleReturn(InputAction.CallbackContext context)
+    {
+        if (context.control?.device is Gamepad && settingsMenu != null && settingsMenu.activeSelf)
+        {
+            OnReturnClick();
         }
     }
 

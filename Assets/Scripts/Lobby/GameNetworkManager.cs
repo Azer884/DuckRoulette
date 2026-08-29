@@ -220,18 +220,14 @@ public class GameNetworkManager : MonoBehaviour
                 return;
             }
 
-            RoomEnter result = await lobby.Value.Join();
-
-            if (result != RoomEnter.Success)
-            {
-                Debug.Log("Failed to join lobby.");
-            }
-            else
-            {
-                LobbySaver.instance.currentLobby = lobby;
-                LobbyManager.instance.ConnectedAsClient();
-                Debug.Log("Joined Private Lobby.");
-            }
+            // JoinLobbyAsync already performs the join and awaits Steam's own LobbyEnter_t
+            // callback - calling lobby.Value.Join() again here sent Steam a second join request,
+            // firing OnLobbyEntered (and therefore StartClient(), which subscribes
+            // OnClientConnectedCallback again) twice for one join, so the resulting single
+            // connection got double-processed into two spawned player objects for this client.
+            LobbySaver.instance.currentLobby = lobby;
+            LobbyManager.instance.ConnectedAsClient();
+            Debug.Log("Joined Private Lobby.");
         }
         catch (System.Exception ex)
         {
@@ -290,6 +286,12 @@ public class GameNetworkManager : MonoBehaviour
                 return;
             }
             
+            // Defend against StartClient somehow running twice for one connection attempt (e.g.
+            // a duplicated join elsewhere firing OnLobbyEntered twice) - without this, the SAME
+            // callback method ends up subscribed twice and a single real connect event runs
+            // AddMeToDictionaryServerRPC/SpawnAsPlayerObject twice, spawning two characters.
+            NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
             NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
             NetworkManager.Singleton.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
             transport.targetSteamId = _sId;

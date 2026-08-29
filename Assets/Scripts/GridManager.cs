@@ -45,12 +45,14 @@ public class GridManager : NetworkBehaviour
         if (IsServer && networkObject != null)
         {
             var reference = new NetworkObjectReference(networkObject);
+            // NetworkCharacters.Add already fires OnListChanged -> OnCharactersListChanged ->
+            // RefreshCharacterCache(). This extra direct call ran RefreshCharacterCache a second
+            // time for the very same add, which is why "Character added" logged twice per join
+            // and every lobby slot got repositioned (ChangeObjectPosClientRpc) twice per join.
             if (!NetworkCharacters.Contains(reference))
             {
                 NetworkCharacters.Add(reference);
             }
-
-            RefreshCharacterCache();
         }
     }
 

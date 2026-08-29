@@ -67,7 +67,11 @@ public class PauseMenu : NetworkBehaviour
 
         pauseMenu.SetActive(true);
         crosshair.transform.parent.gameObject.SetActive(false);
-        Cursor.lockState = CursorLockMode.Confined;
+        // CursorLockMode.Confined re-applies a native Windows cursor clip region; going straight
+        // from Locked to Confined in a standalone build leaves that clip stuck (cursor visible but
+        // frozen) until the app loses and regains focus (alt+tab). None fully releases the clip
+        // instead, which is the standard fix for this exact Unity/Windows issue.
+        Cursor.lockState = CursorLockMode.None;
         menuIsOpen = true;
         OnPause?.Invoke();
     }
@@ -77,8 +81,17 @@ public class PauseMenu : NetworkBehaviour
 
         endGamePanel.SetActive(true);
         crosshair.SetActive(false);
-        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.lockState = CursorLockMode.None;
         ended = true;
+
+        // InteractionPromptHUD is DontDestroyOnLoad and only ever hidden by Interact/TeamUp
+        // reacting to OnPause, which End() never fired - so a prompt visible the instant the game
+        // ended stayed stuck on screen, and kept getting re-shown every frame afterward since
+        // neither script's own raycast/proximity check stops just because the round is over.
+        // OnPause permanently suppresses both (Update()'s `!ended` guard above means Resume()
+        // can never undo it after this).
+        OnPause?.Invoke();
+        InteractionPromptHUD.Hide();
     }
 
     private void OnApplicationQuit() 

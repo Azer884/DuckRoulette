@@ -168,10 +168,52 @@ public class GameManager : NetworkBehaviour
         isReloaded.Value = true;
     }
 
+    // killerClientId is only used to drive the victim's own death banner/spectate target - the
+    // alive-state change itself (MarkPlayerInactive) doesn't need it. See SetPlayerDeadClientRpc
+    // for why the ragdoll/isDead broadcast is server-driven from here instead of victim-owned RPCs.
     [ServerRpc(RequireOwnership = false)]
-    public void UpdatePlayerStateServerRpc(ulong clientId)
+    public void UpdatePlayerStateServerRpc(ulong clientId, ulong killerClientId)
     {
-        MarkPlayerInactive(clientId, reassignGun: false);
+        if (MarkPlayerInactive(clientId, reassignGun: false))
+        {
+            SetPlayerDeadClientRpc(clientId, killerClientId);
+        }
+    }
+
+    // Server-authoritative death/ragdoll broadcast. Death used to expose owner-gated ServerRpcs so
+    // only the victim's own client could report their own death, but the victim's own transform has
+    // zero interpolation lag (owner-authoritative) while the incoming bullet is simulated from a
+    // slightly-stale snapshot of where they were - so the victim's own hit detection was the LEAST
+    // reliable of anyone's, and ragdoll/death silently never triggered even as bystanders correctly
+    // saw the hit connect. UpdatePlayerStateServerRpc is already called by whichever peer reliably
+    // detects the hit (see DeathTrigger.OnTriggerEnter), so drive everything from here instead.
+    [ClientRpc]
+    private void SetPlayerDeadClientRpc(ulong clientId, ulong killerClientId)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) || client.PlayerObject == null)
+        {
+            return;
+        }
+
+        var playerObject = client.PlayerObject;
+
+        // NetworkVariable default write permission is Server, not Owner, so the server can set
+        // this directly here without needing a dedicated RPC.
+        if (IsServer && playerObject.TryGetComponent(out Death death))
+        {
+            death.isDead.Value = true;
+        }
+
+        if (playerObject.TryGetComponent(out Ragdoll ragdoll))
+        {
+            ragdoll.TriggerRagdoll(true);
+        }
+
+        if (clientId == NetworkManager.Singleton.LocalClientId &&
+            playerObject.TryGetComponent(out DeathTrigger deathTrigger))
+        {
+            deathTrigger.HandleDeath(killerClientId);
+        }
     }
 
     // RequireOwnership=false: this is called on GameManager's own NetworkObject (in-scene, owned
@@ -383,6 +425,7 @@ public class GameManager : NetworkBehaviour
         {
             ulong survivorId = team.Item1 == clientId ? team.Item2 : team.Item1;
             _teams.Remove(team);
+            SetPlayerOutlineColor(survivorId, Color.black);
 
             var clientRpcParams = new ClientRpcParams
             {
@@ -422,6 +465,10 @@ public class GameManager : NetworkBehaviour
 
         _isLeavingGame = true;
         LeaveSteamLobby();
+
+        // InteractionPromptHUD is DontDestroyOnLoad, so a prompt visible the instant the player
+        // leaves would otherwise survive the scene load and stay stuck on screen in the Lobby.
+        InteractionPromptHUD.Hide();
 
         PlayerSpawner.Instance.isStarted = false;
         Cursor.lockState = CursorLockMode.Confined;
@@ -523,7 +570,31 @@ public class GameManager : NetworkBehaviour
         PlayDapSoundClientRpc(soundPosition, isPerfectDapBool);
 
         _teams.Add((requesterId, responderId));
+
+        Color color = Color.green;
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(responderId, out var responderClient) &&
+            responderClient.PlayerObject != null &&
+            responderClient.PlayerObject.TryGetComponent(out TeamUp responderTeamUp))
+        {
+            color = responderTeamUp.teamColor;
+        }
+        SetPlayerOutlineColor(requesterId, color);
+        SetPlayerOutlineColor(responderId, color);
+
         SendTeamUpResponseClientRpc(responderId, clientRpcParams);
+    }
+
+    // Server-authoritative outline color so every peer (not just the two teamed players) sees it
+    // on both players, not just each other's local view of them.
+    private void SetPlayerOutlineColor(ulong clientId, Color color)
+    {
+        if (NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) &&
+            client.PlayerObject != null &&
+            client.PlayerObject.TryGetComponent(out TeamUp teamUp))
+        {
+            teamUp.outlineColor.Value = color;
+        }
     }
 
     [ClientRpc]
@@ -552,6 +623,10 @@ public class GameManager : NetworkBehaviour
 
         _teams.RemoveAll(team => (team.Item1 == serverRpcParams.Receive.SenderClientId && team.Item2 == teamMateId) ||
                                  (team.Item1 == teamMateId && team.Item2 == serverRpcParams.Receive.SenderClientId));
+
+        SetPlayerOutlineColor(serverRpcParams.Receive.SenderClientId, Color.black);
+        SetPlayerOutlineColor(teamMateId, Color.black);
+
         SendEndTeamUpClientRpc(clientRpcParams);
     }
 
@@ -740,11 +815,13 @@ public class GameManager : NetworkBehaviour
         return false;
     }
 
-    private void MarkPlayerInactive(ulong clientId, bool reassignGun)
+    // Returns whether this call actually transitioned the player from alive to inactive (false
+    // when they were already inactive) - callers use that to avoid re-broadcasting death effects.
+    private bool MarkPlayerInactive(ulong clientId, bool reassignGun)
     {
         if (!_playerStates.TryGetValue(clientId, out bool isAlive) || !isAlive)
         {
-            return;
+            return false;
         }
 
         _playerStates[clientId] = false;
@@ -767,6 +844,8 @@ public class GameManager : NetworkBehaviour
         {
             EndGame(GetAlivePlayerId());
         }
+
+        return true;
     }
 
     private ulong GetAlivePlayerId()

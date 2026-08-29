@@ -46,27 +46,17 @@ public class ScrollToSelected : MonoBehaviour
 
     private void Update()
     {
-        // Apply a dead zone to the stick input
-        if (Mathf.Abs(rightStickValue.y) > deadZone && IsChildSelected() && vertical)
+        // Scrolls whenever this panel's stick input comes in, regardless of which UI element
+        // currently has focus - matching how a physical scroll wheel isn't gated on selection.
+        if (Mathf.Abs(rightStickValue.y) > deadZone && vertical)
         {
             // Scroll the content based on the Y value of the right stick
             content.anchoredPosition += Vector2.down * rightStickValue.y * scrollSpeed * Time.deltaTime;
         }
-        else if (Mathf.Abs(rightStickValue.x) > deadZone && IsChildSelected() && !vertical)
+        else if (Mathf.Abs(rightStickValue.x) > deadZone && !vertical)
         {
             // Scroll the content based on the Y value of the right stick
             content.anchoredPosition += Vector2.left * rightStickValue.x * scrollSpeed * Time.deltaTime;
         }
-    }
-
-    // Checks if any child of 'content' is currently selected
-    private bool IsChildSelected()
-    {
-        GameObject currentSelected = EventSystem.current.currentSelectedGameObject;
-
-        if (currentSelected == null) return false;
-
-        // Check if the currently selected object is a child of the content
-        return currentSelected.transform.IsChildOf(content);
     }
 }

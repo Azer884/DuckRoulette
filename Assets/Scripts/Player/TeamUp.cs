@@ -25,8 +25,45 @@ public class TeamUp : NetworkBehaviour
 
     public event System.Action OnTeamUp, OnExitTeamUp;
 
+    // Server-authoritative so every peer (not just the two teamed players' own clients) sees the
+    // outline - GameManager sets this on both players' TeamUp components when a team-up is
+    // confirmed/ended (see TeamUpResponseServerRpc/EndTeamUpServerRpc), replacing what used to be
+    // a purely local material mutation that only the two participants themselves could see.
+    public NetworkVariable<Color> outlineColor = new(Color.black, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private bool isPaused;
+
+    private void OnEnable()
+    {
+        PauseMenu.OnPause += HandlePause;
+        PauseMenu.OnUnPause += HandleUnpause;
+    }
+
+    private void OnDisable()
+    {
+        PauseMenu.OnPause -= HandlePause;
+        PauseMenu.OnUnPause -= HandleUnpause;
+        InteractionPromptHUD.Hide();
+    }
+
+    private void HandlePause()
+    {
+        isPaused = true;
+        InteractionPromptHUD.Hide();
+    }
+
+    private void HandleUnpause()
+    {
+        isPaused = false;
+    }
+
     public override void OnNetworkSpawn()
     {
+        // Every peer needs this - it's what actually paints the outline on screen for whoever's
+        // looking, including bystanders who aren't part of the team-up at all.
+        outlineColor.OnValueChanged += HandleOutlineColorChanged;
+        ApplyOutlineColor(outlineColor.Value);
+
         if (!IsOwner)
         {
             enabled = false;
@@ -38,8 +75,39 @@ public class TeamUp : NetworkBehaviour
         endTeamUpAction = inputActions.FindAction("EndTeamUp");
     }
 
+    public override void OnNetworkDespawn()
+    {
+        outlineColor.OnValueChanged -= HandleOutlineColorChanged;
+    }
+
+    private void HandleOutlineColorChanged(Color oldValue, Color newValue)
+    {
+        ApplyOutlineColor(newValue);
+    }
+
+    private void ApplyOutlineColor(Color color)
+    {
+        if (renderers == null)
+        {
+            return;
+        }
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer != null)
+            {
+                renderer.material.SetColor("_Outline_Color", color);
+            }
+        }
+    }
+
     void Update()
     {
+        if (isPaused)
+        {
+            return;
+        }
+
         if (isTeamedUp)
         {
             if (endTeamUpAction.triggered)
@@ -63,15 +131,6 @@ public class TeamUp : NetworkBehaviour
         TryToTeamUp();
     }
 
-    // interactAction/endTeamUpAction each carry a Keyboard and a Gamepad binding at once, so
-    // GetBindingDisplayString() with no group returns every matching binding joined with
-    // " | " (e.g. "A | E") instead of just the one the player is actually using.
-    private static string GetBindingDisplayString(InputAction action)
-    {
-        bool isGamepad = action.activeControl != null && action.activeControl.device is Gamepad;
-        return action.GetBindingDisplayString(group: isGamepad ? "Gamepad" : "Keyboard");
-    }
-
     private void TryToTeamUp()
     {
         int numColliders = Physics.OverlapSphereNonAlloc(teamUpArea.position, teamUpRaduis, teamUpResults, otherPlayers);
@@ -90,7 +149,7 @@ public class TeamUp : NetworkBehaviour
         }
         if (validPlayers?.Count > 0)
         {
-            InteractionPromptHUD.Show("Team Up", GetBindingDisplayString(interactAction));
+            InteractionPromptHUD.Show("Team Up", interactAction);
 
             if (interactAction.triggered)
             {
@@ -166,20 +225,12 @@ public class TeamUp : NetworkBehaviour
     {
         teamMate = validPlayers[0];
         OnTeamUp?.Invoke();
-
-        foreach (Renderer renderer in teamMate.GetComponent<TeamUp>().renderers)
-        {
-            renderer.material.SetColor("_Outline_Color", teamColor);
-        }
+        // Outline color itself is applied server-side via outlineColor (see GameManager's
+        // TeamUpResponseServerRpc) so every viewer sees it, not just this client.
     }
 
     public void RemoveTeamMate()
     {
-        foreach (Renderer renderer in teamMate.GetComponent<TeamUp>().renderers)
-        {
-            renderer.material.SetColor("_Outline_Color", Color.black);
-        }
-
         teamMate = null;
     }
 

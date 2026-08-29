@@ -14,6 +14,7 @@ public class Slap : NetworkBehaviour
     private InputActionAsset inputActions;
     private InputAction slapAction;
     [SerializeField] private Transform slapArea;
+    public Transform SlapArea => slapArea;
     [SerializeField] private float slapRaduis;
     [SerializeField] private float slapCoolDown = 1f;
     [SerializeField] private Animator[] animators;
@@ -104,9 +105,30 @@ public class Slap : NetworkBehaviour
             slapLimit[player] = Random.Range(3, 10); // Set a random limit between 3 and 10
         }
 
-        // Impact sound/VFX must play where the SLAPPED player is, not at the slapper's own
-        // slapArea - using `this` slapper's position spawned the impact VFX on the wrong player.
-        PlaySlapSound(player != null ? player.transform.position : transform.position);
+        // Impact sound/VFX should land at the actual contact point between the two players, not
+        // just sit on the victim's fixed slapArea anchor (which doesn't move with the swing/the
+        // players' relative positions) - the midpoint between both hands/faces approximates where
+        // the slap actually connected. Falls back to whichever single anchor is available, then
+        // to a raw position, if one side's Slap component/area can't be resolved.
+        Transform victimSlapArea = player != null && player.TryGetComponent(out Slap victimSlap) ? victimSlap.SlapArea : null;
+        Vector3 impactPosition;
+        if (slapArea != null && victimSlapArea != null)
+        {
+            impactPosition = Vector3.Lerp(slapArea.position, victimSlapArea.position, 0.5f);
+        }
+        else if (victimSlapArea != null)
+        {
+            impactPosition = victimSlapArea.position;
+        }
+        else if (player != null)
+        {
+            impactPosition = player.transform.position;
+        }
+        else
+        {
+            impactPosition = transform.position;
+        }
+        PlaySlapSound(impactPosition);
         OnSlapTriggered?.Invoke();
         slapCount[player]++;
         
