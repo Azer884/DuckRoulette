@@ -209,6 +209,11 @@ public class GameManager : NetworkBehaviour
             ragdoll.TriggerRagdoll(true);
         }
 
+        if (VfxManager.Instance != null)
+        {
+            VfxManager.SpawnOneShot(VfxManager.Instance.deathVfxPrefab, playerObject.transform.position, VfxManager.Instance.deathVfxLifetime);
+        }
+
         if (clientId == NetworkManager.Singleton.LocalClientId &&
             playerObject.TryGetComponent(out DeathTrigger deathTrigger))
         {
@@ -236,6 +241,12 @@ public class GameManager : NetworkBehaviour
             if (playerObject != null)
             {
                 playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead: false);
+
+                if (VfxManager.Instance != null)
+                {
+                    Vector3 headPosition = playerObject.transform.position + VfxManager.Instance.stunVfxHeadOffset;
+                    VfxManager.SpawnOneShot(VfxManager.Instance.stunVfxPrefab, headPosition, VfxManager.Instance.stunVfxLifetime);
+                }
             }
         }
     }

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e524dbe5f295344a2d8fe8b55a29bc, type: 3}
   m_Name: Run
   m_EditorClassIdentifier: Assembly-CSharp::ShakeProfile
-  amplitude: 0.55
-  frequency: 2.6
+  amplitude: 12
+  frequency: 7
   duration: 0.9
   envelope:
     serializedVersion: 2

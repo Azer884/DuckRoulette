@@ -315,7 +315,7 @@ public class Shooting : NetworkBehaviour
             if (IsLocalMode)
             {
                 SpawnLocalBullet(spawnPosition);
-                PlayLocalOneShot(SFXManager.Instance.shootClip, spawnPosition);
+                PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, spawnPosition);
                 // The round was fired - require a reload before the next shot, mirroring
                 // the server-side isReloaded reset in ShootServerRpc.
                 _localIsReloaded = false;
@@ -432,10 +432,16 @@ public class Shooting : NetworkBehaviour
             bulletBehavior.initialVelocity.Value = direction;
         }
 
-        GameObject vfx = Instantiate(vfxPrefab, spawnPoint, rot);
-        NetworkObject networkVfx = vfx.GetComponent<NetworkObject>();
-        networkVfx.Spawn(); // Or SpawnWithOwnership if needed
-        StartCoroutine(DestroyVfxAfterDelay(networkVfx, GetVfxLifetime(vfx)));
+        // vfxPrefab is a per-instance override (Tutorial injects its own offline muzzle flash);
+        // the networked game leaves it unset and gets the shared one from VfxManager instead.
+        GameObject muzzlePrefab = vfxPrefab != null ? vfxPrefab : (VfxManager.Instance != null ? VfxManager.Instance.shootMuzzleVfxPrefab : null);
+        if (muzzlePrefab != null)
+        {
+            GameObject vfx = Instantiate(muzzlePrefab, spawnPoint, rot);
+            NetworkObject networkVfx = vfx.GetComponent<NetworkObject>();
+            networkVfx.Spawn(); // Or SpawnWithOwnership if needed
+            StartCoroutine(DestroyVfxAfterDelay(networkVfx, GetVfxLifetime(vfx)));
+        }
 
         PlayShootSoundClientRpc(spawnPoint);
     }
@@ -481,7 +487,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(SFXManager.Instance.reloadClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.reloadClip : null, position);
     }
 
     private void PlayTriggerSound(Vector3 position)
@@ -492,7 +498,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(SFXManager.Instance.triggerClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.triggerClip : null, position);
     }
 
     private void PlayShootSound(Vector3 position)
@@ -503,7 +509,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(SFXManager.Instance.shootClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
     }
 
     private void PlayEmptyShotSound(Vector3 position)
@@ -514,7 +520,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(SFXManager.Instance.emptyShotClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.emptyShotClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -526,7 +532,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayReloadSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(SFXManager.Instance.reloadClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.reloadClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -538,7 +544,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayTriggerSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(SFXManager.Instance.triggerClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.triggerClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -550,7 +556,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayShootSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(SFXManager.Instance.shootClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -562,7 +568,7 @@ public class Shooting : NetworkBehaviour
     [ClientRpc]
     private void PlayEmptyShotSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(SFXManager.Instance.emptyShotClip, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.emptyShotClip : null, position);
     }
 
     private void PlayLocalOneShot(AudioClip clip, Vector3 position)

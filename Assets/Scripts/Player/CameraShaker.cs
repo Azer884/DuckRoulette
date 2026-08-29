@@ -43,15 +43,27 @@ public class CameraShaker : MonoBehaviour
     {
         if (virtualCamera == null)
         {
+            // The player rig has several CinemachineCamera children (first-person, third-person,
+            // sliding, ADS) but only the first-person one has a CinemachineBasicMultiChannelPerlin
+            // extension. GetComponentInChildren<CinemachineCamera>() alone just returns whichever
+            // one hierarchy order hands back first - if that's one of the noise-less ones, shake
+            // is silently dead forever. Search for the one that actually has noise instead.
             // includeInactive: true - the first-person cam holder starts inactive for whichever
             // instance isn't the local owner yet at spawn time, so a strict active-only search
             // can permanently miss it and leave shake silently dead.
-            virtualCamera = GetComponentInChildren<CinemachineCamera>(true);
+            foreach (CinemachineCamera candidate in GetComponentsInChildren<CinemachineCamera>(true))
+            {
+                if (candidate.GetComponent<CinemachineBasicMultiChannelPerlin>() != null)
+                {
+                    virtualCamera = candidate;
+                    break;
+                }
+            }
         }
 
         if (virtualCamera == null)
         {
-            Debug.LogWarning($"{nameof(CameraShaker)} on '{name}' found no CinemachineCamera.");
+            Debug.LogWarning($"{nameof(CameraShaker)} on '{name}' found no CinemachineCamera with a CinemachineBasicMultiChannelPerlin extension.");
             return;
         }
 

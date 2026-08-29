@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
@@ -8,14 +7,6 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class Movement : NetworkBehaviour
 {
-    [System.Serializable]
-    public class SurfaceRunVfxEntry
-    {
-        public string surfaceTag;
-        public string physicMaterialName;
-        public GameObject vfxPrefab;
-    }
-
     private InputActionAsset inputActions; // Use InputActionAsset from RebindSaveLoad
     private CharacterController controller;
 
@@ -53,10 +44,6 @@ public class Movement : NetworkBehaviour
     [SerializeField] private float groundParryCooldown = 1.5f;
     [SerializeField] private ShakeProfile groundParryShakeProfile;
 
-    [Header("Ground Parry VFX"), Space]
-    [SerializeField] private GameObject groundParryVfxPrefab;
-    [SerializeField] private float groundParryVfxScale = 1f;
-    [SerializeField] private float groundParryVfxLifetime = 1.5f;
 
     // Buffers the last Jump press regardless of grounded state, so a press made shortly before
     // touchdown still parries once the landing frame arrives.
@@ -111,8 +98,9 @@ public class Movement : NetworkBehaviour
 
     [Header("Run VFX"), Space]
     [SerializeField] private Transform runVfxOrigin;
+    // Per-instance override: left unset in the networked game (VfxManager's default is used
+    // instead), but Tutorial assigns its own offline-safe dust prefab here.
     [SerializeField] private GameObject defaultRunVfxPrefab;
-    [SerializeField] private List<SurfaceRunVfxEntry> runVfxBySurface = new();
     [SerializeField] private LayerMask groundLayerMask = ~0;
     [SerializeField] private float runVfxRayDistance = 1.5f;
     [SerializeField] private float runVfxSurfaceOffset = 0.02f;
@@ -491,7 +479,7 @@ public class Movement : NetworkBehaviour
 
     private void RequestGroundParryVfx()
     {
-        if (groundParryVfxPrefab == null)
+        if (VfxManager.Instance == null || VfxManager.Instance.groundParryVfxPrefab == null)
         {
             return;
         }
@@ -533,13 +521,13 @@ public class Movement : NetworkBehaviour
 
     private void SpawnGroundParryVfx(Vector3 position)
     {
-        if (groundParryVfxPrefab == null)
+        if (VfxManager.Instance == null || VfxManager.Instance.groundParryVfxPrefab == null)
         {
             return;
         }
 
-        GameObject instance = Instantiate(groundParryVfxPrefab, position, Quaternion.identity);
-        instance.transform.localScale = Vector3.one * groundParryVfxScale;
+        GameObject instance = Instantiate(VfxManager.Instance.groundParryVfxPrefab, position, Quaternion.identity);
+        instance.transform.localScale = Vector3.one * VfxManager.Instance.groundParryVfxScale;
 
         foreach (ParticleSystem ps in instance.GetComponentsInChildren<ParticleSystem>())
         {
@@ -547,7 +535,7 @@ public class Movement : NetworkBehaviour
             ps.Play(true);
         }
 
-        Destroy(instance, groundParryVfxLifetime);
+        Destroy(instance, VfxManager.Instance.groundParryVfxLifetime);
     }
 
     private void HandleSliding()
@@ -819,28 +807,9 @@ public class Movement : NetworkBehaviour
 
     private GameObject ResolveRunVfxPrefab(string surfaceTag, string physicMaterialName)
     {
-        for (int i = 0; i < runVfxBySurface.Count; i++)
-        {
-            SurfaceRunVfxEntry entry = runVfxBySurface[i];
-            if (entry == null || entry.vfxPrefab == null)
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(surfaceTag) && !string.IsNullOrWhiteSpace(entry.surfaceTag) &&
-                string.Equals(surfaceTag, entry.surfaceTag, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-
-            if (!string.IsNullOrWhiteSpace(physicMaterialName) && !string.IsNullOrWhiteSpace(entry.physicMaterialName) &&
-                string.Equals(physicMaterialName, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-        }
-
-        return defaultRunVfxPrefab;
+        return VfxManager.Instance != null
+            ? VfxManager.Instance.ResolveGroundVfx(surfaceTag, physicMaterialName, defaultRunVfxPrefab)
+            : defaultRunVfxPrefab;
     }
 
     private bool TryGetGroundHit(out RaycastHit hit)
@@ -863,27 +832,9 @@ public class Movement : NetworkBehaviour
 
         activeRunSurfaceKey = surfaceKey;
 
-        for (int i = 0; i < runVfxBySurface.Count; i++)
-        {
-            SurfaceRunVfxEntry entry = runVfxBySurface[i];
-            if (entry == null || entry.vfxPrefab == null)
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(entry.surfaceTag) && hit.collider.CompareTag(entry.surfaceTag))
-            {
-                return entry.vfxPrefab;
-            }
-
-            if (!string.IsNullOrWhiteSpace(entry.physicMaterialName) && hit.collider.sharedMaterial != null &&
-                string.Equals(hit.collider.sharedMaterial.name, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-        }
-
-        return defaultRunVfxPrefab;
+        return VfxManager.Instance != null
+            ? VfxManager.Instance.ResolveGroundVfx(hit, defaultRunVfxPrefab)
+            : defaultRunVfxPrefab;
     }
 
     private string GetSurfaceKey(RaycastHit hit)

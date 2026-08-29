@@ -98,6 +98,7 @@ public class DeathTrigger : MonoBehaviour
         if (bullet.IsOwner)
         {
             GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
+            bullet.SpawnImpactVfxServerRpc(bullet.transform.position);
         }
 
         GameManager.Instance.UpdatePlayerStateServerRpc(victimId, bullet.OwnerClientId);

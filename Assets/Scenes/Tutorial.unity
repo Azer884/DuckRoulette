@@ -2188,6 +2188,7 @@ GameObject:
   m_Component:
   - component: {fileID: 696230872}
   - component: {fileID: 696230871}
+  - component: {fileID: 696230873}
   m_Layer: 3
   m_Name: LegsSFX
   m_TagString: Untagged
@@ -2307,6 +2308,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 201442159421196726}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &696230873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 696230870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e554a039bc6cfd478a99e4deb46997e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  stepRate: 0.5
+  stepCoolDown: 0.25
+  movement: {fileID: 4839201756382910471}
+  footstepSource: {fileID: 696230871}
+  walkShakeProfile: {fileID: 11400000, guid: d28abfa0cac6671488c000d838cdf45d, type: 2}
+  runShakeProfile: {fileID: 11400000, guid: d8263b7a4ab8a174aa02abd06b8ff511, type: 2}
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 129
+  groundRayDistance: 1.25
+  surfaceOffset: 0.02
+  vfxLifetime: 1.25
 --- !u!1 &698599724
 GameObject:
   m_ObjectHideFlags: 0
@@ -18162,10 +18188,7 @@ MonoBehaviour:
   groundParrySpeedBoostMultiplier: 1.25
   groundParrySpeedBoostDuration: 2
   groundParryCooldown: 1.5
-  groundParryShakeProfile: {fileID: 0}
-  groundParryVfxPrefab: {fileID: 4361026281742437505, guid: 6ff1343b2b6fd9b40888a62d36b410c7, type: 3}
-  groundParryVfxScale: 1
-  groundParryVfxLifetime: 1.5
+  groundParryShakeProfile: {fileID: 11400000, guid: 4ac82c9c568f45d4685cdf6848739983, type: 2}
   initHeight: 0
   crouchHeight: 2.5
   isCrouched: 0
@@ -18184,7 +18207,7 @@ MonoBehaviour:
   fullBody: {fileID: 0}
   thirdPersonCam: {fileID: 0}
   realMovementSpeed: 0
-  jumpShakeProfile: {fileID: 0}
+  jumpShakeProfile: {fileID: 11400000, guid: 0aa7143c3478eed419f2f5065818ebfd, type: 2}
   iceFriction: 0.7
   slidingSpeedMultiplier: 2
   slidingFriction: 0.95
@@ -18197,7 +18220,6 @@ MonoBehaviour:
   fovLerpSpeed: 2
   runVfxOrigin: {fileID: 696230872}
   defaultRunVfxPrefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
-  runVfxBySurface: []
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -19867,7 +19889,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  shootShakeProfile: {fileID: 0}
+  shootShakeProfile: {fileID: 11400000, guid: 27109d52cb034dd12414c4a531c6a4e7, type: 2}
   bulletPrefab: {fileID: 6737399816244376482, guid: 5a997dede9a67b2479a8d0b92064b7f0, type: 3}
   spawnPt: {fileID: 6379040416006691213}
   cam: {fileID: 0}
@@ -22898,6 +22920,8 @@ MonoBehaviour:
   stepRate: 0.5
   stepCoolDown: 0
   footstepSource: {fileID: 696230871}
+  walkShakeProfile: {fileID: 11400000, guid: d28abfa0cac6671488c000d838cdf45d, type: 2}
+  runShakeProfile: {fileID: 11400000, guid: d8263b7a4ab8a174aa02abd06b8ff511, type: 2}
   slapArea: {fileID: 5800746379302730392}
   slapRaduis: 0.82
   slapCoolDown: 1.5
@@ -22944,7 +22968,7 @@ MonoBehaviour:
   Hands: {fileID: 5496963465276041828}
   rig: {fileID: 987856351302393156}
   slidingCam: {fileID: 830279870}
-  jumpShakeProfile: {fileID: 0}
+  jumpShakeProfile: {fileID: 11400000, guid: 0aa7143c3478eed419f2f5065818ebfd, type: 2}
   bulletPrefab: {fileID: 6737399816244376482, guid: 5a997dede9a67b2479a8d0b92064b7f0, type: 3}
   vfxPrefab: {fileID: 5277833064454356266, guid: 8c73d6cd65ce64749aaff02b108e6dd5, type: 3}
   spawnPt: {fileID: 6379040416006691213}

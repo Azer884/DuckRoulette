@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98e524dbe5f295344a2d8fe8b55a29bc, type: 3}
-  m_Name: Jump
+  m_Name: Parry
   m_EditorClassIdentifier: Assembly-CSharp::ShakeProfile
-  amplitude: 2
-  frequency: 1
-  duration: 0.5
+  amplitude: 8.92
+  frequency: 0.62
+  duration: 0.99
   envelope:
     serializedVersion: 2
     m_Curve:

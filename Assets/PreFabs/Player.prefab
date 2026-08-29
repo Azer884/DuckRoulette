@@ -3652,9 +3652,6 @@ MonoBehaviour:
   groundParrySpeedBoostDuration: 2
   groundParryCooldown: 3
   groundParryShakeProfile: {fileID: 0}
-  groundParryVfxPrefab: {fileID: 4361026281742437505, guid: 6ff1343b2b6fd9b40888a62d36b410c7, type: 3}
-  groundParryVfxScale: 1
-  groundParryVfxLifetime: 1.5
   initHeight: 0
   crouchHeight: 2.5
   isCrouched: 0
@@ -3684,8 +3681,7 @@ MonoBehaviour:
   runFov: 95
   fovLerpSpeed: 2
   runVfxOrigin: {fileID: 6926125661347908700}
-  defaultRunVfxPrefab: {fileID: 6096989812176507171, guid: 8b1482eea1723b54284d23e6746c8b2a, type: 3}
-  runVfxBySurface: []
+  defaultRunVfxPrefab: {fileID: 0}
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -3722,7 +3718,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  shootShakeProfile: {fileID: 0}
+  shootShakeProfile: {fileID: 11400000, guid: 27109d52cb034dd12414c4a531c6a4e7, type: 2}
   bulletPrefab: {fileID: 9175873306992830966, guid: 563706a6b67a24a498184f3413f9bec4, type: 3}
   spawnPt: {fileID: 6379040414650745114}
   cam: {fileID: 6566756217050747349}
@@ -3753,7 +3749,7 @@ MonoBehaviour:
   slapScript: {fileID: 4858632074287071628}
   shotCounter: 0
   emptyShots: 0
-  vfxPrefab: {fileID: 5277833064454356266, guid: eede70b7f9c52cb46a111b92aaa290fa, type: 3}
+  vfxPrefab: {fileID: 0}
   _localPinnedBulletPosition: 1
 --- !u!114 &8323436409233549481
 MonoBehaviour:
@@ -3783,9 +3779,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  slapShakeProfile: {fileID: 0}
-  slapReceivedShakeProfile: {fileID: 0}
+  slapShakeProfile: {fileID: 11400000, guid: b382ee9196ede75bdbec15929ef7cd86, type: 2}
+  slapReceivedShakeProfile: {fileID: 11400000, guid: 05881df1e9c42eb7fd43ba376e66f209, type: 2}
   slapArea: {fileID: 5800746380646867471}
+  handTransform: {fileID: 5097031644825521132}
   slapRaduis: 0.82
   slapCoolDown: 1.5
   animators:
@@ -3796,8 +3793,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4096
   slapAudio: {fileID: 8837185115997718649}
-  impactVfxPrefab: {fileID: 5880797563127281583, guid: 265d3a5ba69981a4698ceabcedf368b0, type: 3}
-  impactVfxLifetime: 1.5
 --- !u!114 &4094662510134437379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4445,8 +4440,17 @@ MonoBehaviour:
   teamUpArea: {fileID: 3915796451998639849}
   haveRequest: 0
   dapPosition: {fileID: 5097031644825521132}
-  renderers: []
-  teamColor: {r: 0, g: 1, b: 0, a: 1}
+  renderers:
+  - {fileID: 7365002991867158603}
+  - {fileID: 93237497360091503}
+  - {fileID: 6611295453059689895}
+  - {fileID: 2764494379678518831}
+  teamColor: {r: 0, g: 0.49411765, b: 1, a: 1}
+  outlineColor:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &3511677419663132241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14904,8 +14908,6 @@ MonoBehaviour:
   footstepSource: {fileID: 4521806343263086695}
   walkShakeProfile: {fileID: 11400000, guid: d28abfa0cac6671488c000d838cdf45d, type: 2}
   runShakeProfile: {fileID: 11400000, guid: d8263b7a4ab8a174aa02abd06b8ff511, type: 2}
-  defaultFootstepVfxPrefab: {fileID: 6096989812176507171, guid: 8b1482eea1723b54284d23e6746c8b2a, type: 3}
-  footstepVfxBySurface: []
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 129

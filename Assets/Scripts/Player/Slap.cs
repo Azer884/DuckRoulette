@@ -15,10 +15,16 @@ public class Slap : NetworkBehaviour
     private InputAction slapAction;
     [SerializeField] private Transform slapArea;
     public Transform SlapArea => slapArea;
+    // The actual swinging hand bone (visible to other players), so the impact VFX/sound land
+    // where the hand touches the victim instead of on the static, non-animated slapArea sensor.
+    [SerializeField] private Transform handTransform;
+    public Transform HandTransform => handTransform;
     [SerializeField] private float slapRaduis;
     [SerializeField] private float slapCoolDown = 1f;
     [SerializeField] private Animator[] animators;
     [SerializeField] private LayerMask otherPlayers;
+    [SerializeField] private float slapRaycastDistance = 2.5f;
+    private Transform mainCameraTransform;
     private Collider[] slapResults = new Collider[10];
     private bool canSlap = true;
 
@@ -27,8 +33,6 @@ public class Slap : NetworkBehaviour
     private Dictionary<GameObject, int> slapLimit = new();
     private Dictionary<GameObject, Coroutine> slapCoroutines = new();
     public AudioSource slapAudio;
-    [SerializeField] private GameObject impactVfxPrefab;
-    [SerializeField] private float impactVfxLifetime = 1.5f;
 
     public override void OnNetworkSpawn()
     {
@@ -105,29 +109,7 @@ public class Slap : NetworkBehaviour
             slapLimit[player] = Random.Range(3, 10); // Set a random limit between 3 and 10
         }
 
-        // Impact sound/VFX should land at the actual contact point between the two players, not
-        // just sit on the victim's fixed slapArea anchor (which doesn't move with the swing/the
-        // players' relative positions) - the midpoint between both hands/faces approximates where
-        // the slap actually connected. Falls back to whichever single anchor is available, then
-        // to a raw position, if one side's Slap component/area can't be resolved.
-        Transform victimSlapArea = player != null && player.TryGetComponent(out Slap victimSlap) ? victimSlap.SlapArea : null;
-        Vector3 impactPosition;
-        if (slapArea != null && victimSlapArea != null)
-        {
-            impactPosition = Vector3.Lerp(slapArea.position, victimSlapArea.position, 0.5f);
-        }
-        else if (victimSlapArea != null)
-        {
-            impactPosition = victimSlapArea.position;
-        }
-        else if (player != null)
-        {
-            impactPosition = player.transform.position;
-        }
-        else
-        {
-            impactPosition = transform.position;
-        }
+        Vector3 impactPosition = ResolveImpactPosition(player);
         PlaySlapSound(impactPosition);
         OnSlapTriggered?.Invoke();
         slapCount[player]++;
@@ -145,6 +127,44 @@ public class Slap : NetworkBehaviour
             if (slapCoroutines.ContainsKey(player)) StopCoroutine(slapCoroutines[player]);
             slapCoroutines[player] = StartCoroutine(ResetSlapCountAfterOneMinute(player));
         }
+    }
+
+    // Impact sound/VFX should land where the attacker was actually looking when the hand connected
+    // - raycasting from the camera is what makes the effect line up with what's on screen instead
+    // of a fixed anchor. Falls back to the hand/slapArea midpoint when the camera isn't aimed
+    // squarely at the victim (slap detection is a lenient overlap sphere, not aim-dependent), then
+    // to whichever single anchor is available, then to a raw position.
+    private Vector3 ResolveImpactPosition(GameObject player)
+    {
+        if (mainCameraTransform == null)
+        {
+            mainCameraTransform = Camera.main != null ? Camera.main.transform : null;
+        }
+
+        if (mainCameraTransform != null &&
+            Physics.Raycast(mainCameraTransform.position, mainCameraTransform.forward, out RaycastHit hit, slapRaycastDistance, otherPlayers))
+        {
+            if (player != null && hit.collider.GetComponentInParent<Slap>()?.gameObject == player)
+            {
+                return hit.point;
+            }
+        }
+
+        Transform victimSlapArea = player != null && player.TryGetComponent(out Slap victimSlap) ? victimSlap.SlapArea : null;
+        Transform attackerHand = handTransform != null ? handTransform : slapArea;
+        if (attackerHand != null && victimSlapArea != null)
+        {
+            return Vector3.Lerp(attackerHand.position, victimSlapArea.position, 0.5f);
+        }
+        if (victimSlapArea != null)
+        {
+            return victimSlapArea.position;
+        }
+        if (attackerHand != null)
+        {
+            return attackerHand.position;
+        }
+        return player != null ? player.transform.position : transform.position;
     }
 
     // Reset slap count after 1 minute if the player hasn't been stunned
@@ -206,12 +226,13 @@ public class Slap : NetworkBehaviour
 
     private void SpawnImpactVfx(Vector3 position)
     {
-        if (impactVfxPrefab == null)
+        GameObject prefab = VfxManager.Instance != null ? VfxManager.Instance.slapImpactVfxPrefab : null;
+        if (prefab == null)
         {
             return;
         }
 
-        GameObject instance = Instantiate(impactVfxPrefab, position, Quaternion.identity);
+        GameObject instance = Instantiate(prefab, position, Quaternion.identity);
 
         if (instance.TryGetComponent(out ParticleSystem impactParticleSystem))
         {
@@ -219,7 +240,7 @@ public class Slap : NetworkBehaviour
             impactParticleSystem.Play(true);
         }
 
-        Destroy(instance, impactVfxLifetime);
+        Destroy(instance, VfxManager.Instance.slapImpactVfxLifetime);
     }
 
     private AudioClip GetSlapClip()

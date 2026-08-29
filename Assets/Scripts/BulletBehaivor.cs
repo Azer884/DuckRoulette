@@ -60,6 +60,26 @@ public class BulletBehavior : NetworkBehaviour
         ScheduleDestroy(delay);
     }
 
+    // Called once per real hit, from the same dedupe-gated spot as kill credit (see
+    // DeathTrigger.OnTriggerEnter) - not from DestroyServerRpc, which can fire multiple times per
+    // bullet in one frame across this player's several hitbox colliders.
+    [ServerRpc]
+    public void SpawnImpactVfxServerRpc(Vector3 position)
+    {
+        SpawnImpactVfxClientRpc(position);
+    }
+
+    [ClientRpc]
+    private void SpawnImpactVfxClientRpc(Vector3 position)
+    {
+        if (VfxManager.Instance == null)
+        {
+            return;
+        }
+
+        VfxManager.SpawnOneShot(VfxManager.Instance.bulletImpactVfxPrefab, position, VfxManager.Instance.bulletImpactVfxLifetime);
+    }
+
     private void ScheduleDestroy(float delay)
     {
         if (destroyRoutine != null)

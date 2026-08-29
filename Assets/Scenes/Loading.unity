@@ -155,7 +155,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  <InScenePlaced>k__BackingField: 0
+  <InScenePlaced>k__BackingField: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -983,6 +983,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &5672752343481487591
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8113528663145672095}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5802599042603391668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8113528663145672095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c4e689989014c1e373eed45503d5df2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slapImpactVfxPrefab: {fileID: 5880797563127281583, guid: 265d3a5ba69981a4698ceabcedf368b0, type: 3}
+  slapImpactVfxLifetime: 1.5
+  shootMuzzleVfxPrefab: {fileID: 5277833064454356266, guid: eede70b7f9c52cb46a111b92aaa290fa, type: 3}
+  groundParryVfxPrefab: {fileID: 4361026281742437505, guid: 6ff1343b2b6fd9b40888a62d36b410c7, type: 3}
+  groundParryVfxScale: 1
+  groundParryVfxLifetime: 1.5
+  defaultGroundVfxPrefab: {fileID: 6096989812176507171, guid: 8b1482eea1723b54284d23e6746c8b2a, type: 3}
+  groundVfxBySurface: []
+  bulletImpactVfxPrefab: {fileID: 0}
+  bulletImpactVfxLifetime: 1.5
+  deathVfxPrefab: {fileID: 0}
+  deathVfxLifetime: 2
+  stunVfxPrefab: {fileID: 0}
+  stunVfxLifetime: 2
+  stunVfxHeadOffset: {x: 0, y: 1.8, z: 0}
+  teamUpDapVfxPrefab: {fileID: 0}
+  teamUpDapVfxLifetime: 1.5
 --- !u!114 &7037724272676747992
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1022,6 +1066,23 @@ MonoBehaviour:
   - {fileID: 8300000, guid: ba4a078066d9aae4cbc2362273873cbb, type: 3}
   - {fileID: 8300000, guid: 1144b0ed3d83b594f846472cb1d93550, type: 3}
   uiSource: {fileID: 0}
+--- !u!1 &8113528663145672095
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5672752343481487591}
+  - component: {fileID: 5802599042603391668}
+  m_Layer: 0
+  m_Name: VfxManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1032,6 +1093,7 @@ SceneRoots:
   - {fileID: 616574355}
   - {fileID: 119620256}
   - {fileID: 2354864023488966241}
+  - {fileID: 5672752343481487591}
   - {fileID: 408759100}
   - {fileID: 25697713}
   - {fileID: 2119555548}

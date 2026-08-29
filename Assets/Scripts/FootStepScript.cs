@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
@@ -6,14 +5,6 @@ using UnityEngine;
 using Player;
 
 public class FootStepScript : NetworkBehaviour {
-    [System.Serializable]
-    public class SurfaceFootstepVfxEntry
-    {
-        public string surfaceTag;
-        public string physicMaterialName;
-        public GameObject vfxPrefab;
-    }
-
     public float stepRate = 0.5f;
     public float stepCoolDown;
     public Movement movement;
@@ -24,8 +15,6 @@ public class FootStepScript : NetworkBehaviour {
     private CameraShaker cameraShaker;
 
     [Header("Footstep VFX")]
-    [SerializeField] private GameObject defaultFootstepVfxPrefab;
-    [SerializeField] private List<SurfaceFootstepVfxEntry> footstepVfxBySurface = new();
     [SerializeField] private LayerMask groundLayerMask = ~0;
     [SerializeField] private float groundRayDistance = 1.25f;
     [SerializeField] private float surfaceOffset = 0.02f;
@@ -37,7 +26,10 @@ public class FootStepScript : NetworkBehaviour {
     private void Awake()
     {
         controller = movement.GetComponent<CharacterController>();
-        inputActions = transform.parent.parent.GetComponent<InputSystem>().inputActions;
+        // A hardcoded transform.parent.parent assumed one specific hierarchy depth (Player.prefab's)
+        // and NRE'd wherever FootStepScript sits at a different depth (e.g. the Tutorial rig's
+        // extra "Rig" grouping object) - search upward for whichever ancestor actually has it.
+        inputActions = GetComponentInParent<InputSystem>().inputActions;
         moveAction = inputActions.FindAction("Move");
         cameraShaker = CameraShaker.GetOrAdd(movement.gameObject);
     }
@@ -156,53 +148,12 @@ public class FootStepScript : NetworkBehaviour {
 
     private GameObject ResolveFootstepVfxPrefab(RaycastHit hit)
     {
-        for (int i = 0; i < footstepVfxBySurface.Count; i++)
-        {
-            SurfaceFootstepVfxEntry entry = footstepVfxBySurface[i];
-            if (entry == null || entry.vfxPrefab == null)
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(entry.surfaceTag) && hit.collider.CompareTag(entry.surfaceTag))
-            {
-                return entry.vfxPrefab;
-            }
-
-            if (!string.IsNullOrWhiteSpace(entry.physicMaterialName) && hit.collider.sharedMaterial != null &&
-                string.Equals(hit.collider.sharedMaterial.name, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-        }
-
-        return defaultFootstepVfxPrefab;
+        return VfxManager.Instance != null ? VfxManager.Instance.ResolveGroundVfx(hit) : null;
     }
 
     private GameObject ResolveFootstepVfxPrefab(string surfaceTag, string physicMaterialName)
     {
-        for (int i = 0; i < footstepVfxBySurface.Count; i++)
-        {
-            SurfaceFootstepVfxEntry entry = footstepVfxBySurface[i];
-            if (entry == null || entry.vfxPrefab == null)
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(surfaceTag) && !string.IsNullOrWhiteSpace(entry.surfaceTag) &&
-                string.Equals(surfaceTag, entry.surfaceTag, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-
-            if (!string.IsNullOrWhiteSpace(physicMaterialName) && !string.IsNullOrWhiteSpace(entry.physicMaterialName) &&
-                string.Equals(physicMaterialName, entry.physicMaterialName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.vfxPrefab;
-            }
-        }
-
-        return defaultFootstepVfxPrefab;
+        return VfxManager.Instance != null ? VfxManager.Instance.ResolveGroundVfx(surfaceTag, physicMaterialName) : null;
     }
 
 }

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98e524dbe5f295344a2d8fe8b55a29bc, type: 3}
   m_Name: Walk
   m_EditorClassIdentifier: Assembly-CSharp::ShakeProfile
-  amplitude: 0.3
-  frequency: 2
-  duration: 1.4
+  amplitude: 10
+  frequency: 5
+  duration: 0.62
   envelope:
     serializedVersion: 2
     m_Curve:

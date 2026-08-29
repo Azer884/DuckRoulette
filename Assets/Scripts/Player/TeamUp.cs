@@ -215,6 +215,11 @@ public class TeamUp : NetworkBehaviour
 
     public void PlayDapSound(Vector3 dapPosition, bool perfectDap)
     {
+        if (VfxManager.Instance != null)
+        {
+            VfxManager.SpawnOneShot(VfxManager.Instance.teamUpDapVfxPrefab, dapPosition, VfxManager.Instance.teamUpDapVfxLifetime);
+        }
+
         if (SFXManager.Instance == null) return;
 
         AudioClip clipToPlay = perfectDap ? SFXManager.Instance.perfectDapSound : SFXManager.Instance.dapSound;

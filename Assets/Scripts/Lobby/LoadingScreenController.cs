@@ -60,12 +60,20 @@ public class LoadingScreenController : NetworkBehaviour
     public TextMeshProUGUI tipText;
     public string[] tips;
 
+    [Header("Fake Progress")]
+    // The bar fakes its climb from 0 to 99% on a timer instead of following the real
+    // AsyncOperation.progress curve (which jumps in big irregular steps and looks frozen between
+    // them). It only ever reaches 100% once the real load has actually finished (see
+    // TrackMyProgress) - the fake ramp can never claim completion by itself.
+    public float minFakeLoadSeconds = 1.5f;
+    public float maxFakeLoadSeconds = 3f;
+
     private readonly NetworkList<ProgressEntry> progress = new NetworkList<ProgressEntry>();
     private readonly NetworkList<PlayerNameEntry> playerNames = new NetworkList<PlayerNameEntry>();
     // GameNetworkManager.PendingGameSceneName only exists locally on whichever peer called
     // StartGame() (the host) - every other client needs the target scene name too, or their
     // OnLoad below never recognizes it, never holds/reports their load, and the host then
-    // waits forever at 90% for a progress report that never arrives - so the player never spawns.
+    // waits forever for a progress report that never arrives - so the player never spawns.
     private readonly NetworkVariable<FixedString64Bytes> pendingSceneName = new();
     private readonly Dictionary<ulong, Slider> otherBars = new();
     private readonly Dictionary<ulong, TextMeshProUGUI> otherLabels = new();
@@ -196,19 +204,34 @@ public class LoadingScreenController : NetworkBehaviour
         StartCoroutine(TrackMyProgress());
     }
 
+    // Fakes the climb from 0 to 99% on a timer (real AsyncOperation.progress jumps in big
+    // irregular steps and looks frozen between them) - but 100% and the ready-report only fire
+    // once pendingOp.progress shows the real load actually reached its held point (0.9, i.e. done
+    // loading, just waiting on activation). So the number always moves, but only a genuinely
+    // loaded player ever reports/shows 100%.
     private IEnumerator TrackMyProgress()
     {
-        while (pendingOp != null && !pendingOp.isDone)
+        float displayed = 0f;
+        float fakeDuration = Random.Range(minFakeLoadSeconds, maxFakeLoadSeconds);
+
+        while (pendingOp != null)
         {
-            float p = Mathf.Clamp01(pendingOp.progress / 0.9f);
-            if (myProgressBar != null) myProgressBar.value = p;
+            bool reallyDone = pendingOp.progress >= 0.9f;
+            if (reallyDone)
+            {
+                if (myProgressBar != null) myProgressBar.value = 1f;
+                if (myPercentText != null) myPercentText.text = $"{SteamClient.Name} - 100%";
+                ReportProgressServerRpc(1f);
+                yield break;
+            }
+
+            displayed = Mathf.Min(0.99f, displayed + Time.deltaTime / fakeDuration);
+            if (myProgressBar != null) myProgressBar.value = displayed;
             // No separate name field on the "my progress" row - fold it into the existing
             // percent text instead of adding new UI.
-            if (myPercentText != null) myPercentText.text = $"{SteamClient.Name} - {Mathf.RoundToInt(p * 100)}%";
+            if (myPercentText != null) myPercentText.text = $"{SteamClient.Name} - {Mathf.RoundToInt(displayed * 100)}%";
+            ReportProgressServerRpc(displayed);
 
-            ReportProgressServerRpc(p);
-
-            if (p >= 1f) yield break;
             yield return null;
         }
     }
@@ -229,6 +252,8 @@ public class LoadingScreenController : NetworkBehaviour
         CheckEveryoneReady();
     }
 
+    // Server only: don't activate the game scene for anyone until every connected player's real
+    // load has actually reached 100%.
     private void CheckEveryoneReady()
     {
         if (activationSent) return;
