@@ -234,7 +234,19 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         lookPivot = viewType == ViewType.FirstPerson
             ? (hidingCamera != null ? hidingCamera.transform : null)
             : thirdPersonLookTarget;
-        if (lookPivot != null) lookPivotRestRotation = lookPivot.localRotation;
+
+        if (lookPivot != null)
+        {
+            // Level against world up instead of taking the pivot's own rest rotation as-is - a
+            // tilted hiding prop (e.g. a fallen log) bakes its own roll into that rest rotation,
+            // which would otherwise make the camera visibly tilt/roll as the player looks around.
+            Vector3 levelForward = Vector3.ProjectOnPlane(lookPivot.forward, Vector3.up);
+            if (levelForward.sqrMagnitude < 0.0001f)
+            {
+                levelForward = Vector3.ProjectOnPlane(lookPivot.up, Vector3.up);
+            }
+            lookPivotRestRotation = Quaternion.LookRotation(levelForward.normalized, Vector3.up);
+        }
 
         if (hidingCamera != null) hidingCamera.gameObject.SetActive(true);
     }
@@ -297,10 +309,10 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         yaw = Mathf.Clamp(yaw + look.x * sensitivityX * Time.deltaTime, minYaw, maxYaw);
         pitch = Mathf.Clamp(pitch - look.y * sensitivityY * Time.deltaTime, minPitch, maxPitch);
 
-        // Composed onto the pivot's own authored rest rotation, not overwritten - a FirstPerson
-        // hidingCamera or ThirdPerson tracking target placed at some non-identity aim direction
-        // keeps that baseline instead of snapping to world axes.
-        lookPivot.localRotation = lookPivotRestRotation * Quaternion.Euler(pitch, yaw, 0f);
+        // World-space, not local: lookPivotRestRotation is already levelled against world up
+        // (see EnterLocalHidingView), so applying pitch/yaw here keeps the camera level
+        // regardless of how the hiding prop itself is tilted/parented.
+        lookPivot.rotation = lookPivotRestRotation * Quaternion.Euler(pitch, yaw, 0f);
     }
 
     // Mirrors DeathTrigger.OnTriggerEnter's peer-detection pattern, just against this spot's own

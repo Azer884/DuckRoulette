@@ -116,8 +116,15 @@ public class CameraShaker : MonoBehaviour
         for (int i = activeShakes.Count - 1; i >= 0; i--)
         {
             ActiveShake shake = activeShakes[i];
+            float elapsed = Time.time - shake.startTime - shake.profile.delay;
+            if (elapsed < 0f)
+            {
+                // Still waiting out the profile's delay - not started yet, but not expired either.
+                continue;
+            }
+
             float duration = Mathf.Max(shake.profile.duration, 0.0001f);
-            float t = (Time.time - shake.startTime) / duration;
+            float t = elapsed / duration;
             if (t >= 1f)
             {
                 activeShakes.RemoveAt(i);

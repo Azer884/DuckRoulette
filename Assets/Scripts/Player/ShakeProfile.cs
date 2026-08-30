@@ -16,6 +16,9 @@ public class ShakeProfile : ScriptableObject
     [Tooltip("How long the shake lasts, in seconds.")]
     public float duration = 0.15f;
 
+    [Tooltip("Delay before the shake starts, in seconds - e.g. to line it up with a muzzle flash or animation hit frame instead of the trigger call itself.")]
+    public float delay = 0f;
+
     [Tooltip("Amplitude multiplier over the shake's lifetime, x = normalized time (0-1), y = multiplier (0-1). Shape the attack/decay here.")]
     public AnimationCurve envelope = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 

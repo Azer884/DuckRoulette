@@ -15,6 +15,7 @@ MonoBehaviour:
   amplitude: 6
   frequency: 4
   duration: 0.18
+  delay: 1
   envelope:
     serializedVersion: 2
     m_Curve:
