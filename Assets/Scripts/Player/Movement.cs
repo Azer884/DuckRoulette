@@ -149,22 +149,28 @@ public class Movement : NetworkBehaviour
         }
         else
         {
+            // Spawn-slot positioning is a one-time, spawn-only concern (a networked-game concept -
+            // the offline tutorial keeps whatever position the scene placed it at). It used to live
+            // inside ApplyOwnerVisualState, but that method is also re-run later by
+            // Movement.SetModelVisible(true) (HidingSpot's exit path) to restore cam/layer state -
+            // which was silently teleporting the player back to their spawn slot instead of wherever
+            // they actually stood before hiding.
+            if (!IsLocalMode)
+            {
+                transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
+            }
+
             ApplyOwnerVisualState();
         }
     }
 
     // Owner-side camera/layer setup. Split out of OnNetworkSpawn so the offline tutorial
     // (which never gets a NetworkObject/OnNetworkSpawn call) can run the same setup from
-    // Start(). Every reference is optional: the tutorial player doesn't carry the full set.
+    // Start(), and so Movement.SetModelVisible(true) can re-run just the cam/layer part without
+    // re-placing the player at their spawn slot. Every reference is optional: the tutorial
+    // player doesn't carry the full set.
     private void ApplyOwnerVisualState()
     {
-        // Spawn-slot positioning is a networked-game concept (per-client z offset);
-        // the offline tutorial keeps whatever position the scene placed it at.
-        if (!IsLocalMode)
-        {
-            transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
-        }
-
         if (cam != null) cam.SetActive(true);
         if (thirdPersonCam != null) thirdPersonCam.SetActive(false);
         if (camHolder != null) camHolder.gameObject.SetActive(true);
@@ -919,5 +925,32 @@ public class Movement : NetworkBehaviour
     private bool IsHoldingGun()
     {
         return shootingComponent != null && shootingComponent.HasGun;
+    }
+
+    // Used by HidingSpot: while hidden this player must be fully invisible on every client
+    // (not just the owner), which normal owner/remote visual state never needed to do.
+    public void SetModelVisible(bool visible)
+    {
+        if (!visible)
+        {
+            if (fullBody != null) fullBody.SetActive(false);
+            if (thirdPersonCam != null) thirdPersonCam.SetActive(false);
+            if (legs != null) legs.SetActive(false);
+            if (FPShadow != null) FPShadow.SetActive(false);
+            if (Hands != null) Hands.SetActive(false);
+            if (camHolder != null) camHolder.gameObject.SetActive(false);
+            if (secondCamHolder != null) secondCamHolder.SetActive(false);
+            return;
+        }
+
+        if (fullBody != null) fullBody.SetActive(true);
+        if (legs != null) legs.SetActive(true);
+        if (FPShadow != null) FPShadow.SetActive(true);
+        if (Hands != null) Hands.SetActive(true);
+
+        // Owner vs. remote disagree on which cam/rig should end up active - let the existing
+        // per-role setup decide instead of duplicating that logic here.
+        if (IsOwner) ApplyOwnerVisualState();
+        else ApplyRemoteVisualState();
     }
 }

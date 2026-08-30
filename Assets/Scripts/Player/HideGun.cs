@@ -2,38 +2,47 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
+// Runs even while Shooting is disabled (that's the whole point): keeps the assigned player's
+// gun hidden until they explicitly draw it with the Change Weapon input, and forces it back
+// down the instant their turn ends - mirrors TutorialManager's offline HandleWeaponSwitching.
 public class HideGun : MonoBehaviour
 {
-    public bool haveGun;
-    [SerializeField]private Shooting gunScript;
-    private InputActionAsset _inputActions;
-    private InputAction _changeWeaponAction;
-    private NetworkObject _networkObject;
-    [HideInInspector] public float survivedTime;
+    [SerializeField] private Shooting gunScript;
+    private InputAction changeWeaponAction;
+    private NetworkObject networkObject;
+
     private void Awake()
     {
-        _inputActions = GetComponent<InputSystem>().inputActions;
-        _changeWeaponAction = _inputActions.FindAction("Change Weapon");
-        _networkObject = GetComponent<NetworkObject>();
+        changeWeaponAction = GetComponent<InputSystem>().inputActions.FindAction("Change Weapon");
+        networkObject = GetComponent<NetworkObject>();
     }
-
 
     private void Update()
     {
-        haveGun = _networkObject.OwnerClientId == GameManager.Instance.playerWithGun.Value;
-        if(!haveGun)
+        if (!networkObject.IsSpawned || !networkObject.IsOwner || GameManager.Instance == null)
         {
-            survivedTime += Time.deltaTime;
+            return;
         }
-        
-        haveGun = haveGun && GameManager.Instance.canShoot.Value && gunScript.canTrigger && gunScript.canShoot;
-        if (haveGun)
+
+        bool isMyTurn = GameManager.Instance.playerWithGun.Value == networkObject.OwnerClientId
+            && GameManager.Instance.canShoot.Value;
+
+        if (!isMyTurn)
         {
-            if (_changeWeaponAction.triggered)
-            {
-                gunScript.enabled = !gunScript.enabled;
-            }
+            gunScript.enabled = false;
+            return;
+        }
+
+        // Mid Trigger/Reload animation: block switching away so the gun can't vanish
+        // half-way through firing.
+        if (gunScript.enabled && (!gunScript.canTrigger || !gunScript.canShoot))
+        {
+            return;
+        }
+
+        if (changeWeaponAction.triggered)
+        {
+            gunScript.enabled = !gunScript.enabled;
         }
     }
 }

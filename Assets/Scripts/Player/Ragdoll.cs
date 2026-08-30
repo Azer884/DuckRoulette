@@ -53,7 +53,6 @@ public class Ragdoll : NetworkBehaviour
     private float _timeToWakeUp;
     private float _elapsedResetBonesTime;
     private bool _isFacingUp;
-    private bool shootingStates;
     private string _currentStandUpAnim;
 
     public override void OnNetworkSpawn()
@@ -196,8 +195,6 @@ public class Ragdoll : NetworkBehaviour
         {
             sfxHandler.PainSound();
         }
-        
-        shootingStates = shooting.enabled;
 
         SetScriptsEnabled(false);
         SetVisualsEnabled(false);
@@ -233,13 +230,10 @@ public class Ragdoll : NetworkBehaviour
 
         if (state)
         {
-            if (shootingStates)
-                shooting.enabled = true;
-            else
-            {
-                shooting.enabled = false;
-                slap.enabled = true;
-            }
+            // Getting knocked down always lowers the gun, same as HidingSpot's exit - the
+            // player has to switch back to it explicitly instead of it reappearing on its own.
+            shooting.enabled = false;
+            slap.enabled = true;
         }
         else
         {

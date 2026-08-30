@@ -126,7 +126,10 @@ public class GameManager : NetworkBehaviour
         NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
         if (localPlayerObject != null && localPlayerObject.TryGetComponent<Shooting>(out var shootingScript))
         {
-            shootingScript.enabled = NetworkManager.Singleton.LocalClientId == shooterClientId;
+            // Every turn hand-off starts with the gun hidden - HideGun (always running, even
+            // while Shooting is disabled) is what lets the newly assigned holder draw it back
+            // out via the Change Weapon input.
+            shootingScript.enabled = false;
         }
     }
 
