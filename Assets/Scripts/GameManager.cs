@@ -53,6 +53,29 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        }
+    }
+
+    // OnNetworkSpawn only ever snapshots ConnectedClientsIds once, at the moment GameManager
+    // itself spawns - a client whose connection is still finishing right at that instant (real
+    // Steam/Facepunch latency, not the same-machine editor case) would never make it into
+    // _playerStates, and MarkPlayerInactive's TryGetValue-miss treats an unknown id as already
+    // dead: shooting them would credit the kill and destroy the bullet, but they'd never actually
+    // ragdoll/die - looking like "this client can't be killed". Covers anyone who connects after
+    // that snapshot too, in addition to it (not instead of).
+    private void OnClientConnected(ulong clientId)
+    {
+        if (!IsServer || _playerStates.ContainsKey(clientId))
+        {
+            return;
+        }
+
+        _playerStates[clientId] = true;
+        _alivePlayersCount.Value++;
+        if (!_playersKills.ContainsKey(clientId))
+        {
+            _playersKills[clientId] = 0;
         }
     }
 
@@ -72,6 +95,24 @@ public class GameManager : NetworkBehaviour
         if (IsServer)
         {
             _alivePlayersCount.Value = NetworkManager.Singleton.ConnectedClientsIds.Count;
+
+            // Player objects are spawned once (in the Loading scene, see PlayerSpawner) and
+            // persist across matches rather than being recreated per match - isDead is only
+            // ever set true (see UpdatePlayerStateServerRpc/SetPlayerDeadClientRpc above),
+            // never reset, so without this, anyone who died in a PREVIOUS match starts this
+            // one still flagged dead: DeathTrigger.OnTriggerEnter's isValidHit check reads
+            // isDead.Value directly, so they'd be permanently unshootable from their second
+            // match onward even though GameManager itself considers them alive again.
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) &&
+                    client.PlayerObject != null &&
+                    client.PlayerObject.TryGetComponent(out Death death))
+                {
+                    death.isDead.Value = false;
+                }
+            }
+
             if (_alivePlayersCount.Value > 0)
             {
                 playerWithGun.Value = GetRandomClientId();
@@ -126,6 +167,14 @@ public class GameManager : NetworkBehaviour
         NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
         if (localPlayerObject != null && localPlayerObject.TryGetComponent<Shooting>(out var shootingScript))
         {
+            // Mid Trigger/Reload animation: don't cut it off on a turn hand-off - HideGun's own
+            // per-frame check (which runs regardless of this RPC) hides it as soon as the current
+            // action actually finishes, instead of hard-cancelling it mid-play.
+            if (shootingScript.enabled && (!shootingScript.canTrigger || !shootingScript.canShoot))
+            {
+                return;
+            }
+
             // Every turn hand-off starts with the gun hidden - HideGun (always running, even
             // while Shooting is disabled) is what lets the newly assigned holder draw it back
             // out via the Change Weapon input.
@@ -177,10 +226,26 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void UpdatePlayerStateServerRpc(ulong clientId, ulong killerClientId)
     {
-        if (MarkPlayerInactive(clientId, reassignGun: false))
+        // Gated on Death.isDead.Value directly - the single authoritative source of truth for
+        // "is this player already dead" - instead of on MarkPlayerInactive's own _playerStates
+        // bookkeeping. _playerStates is a SEPARATE dictionary that can desync from isDead (e.g.
+        // OnClientDisconnect marks an entry inactive on its own path), and StunPlayerServerRpc's
+        // working knockout broadcast never had this second, independently-fallible gate at all -
+        // it just broadcasts unconditionally. If _playerStates had already (incorrectly) marked
+        // this client inactive before they were ever actually shot, MarkPlayerInactive's own
+        // guard would silently return false and the ragdoll/isDead broadcast below - the part
+        // that actually kills the victim on every client's screen - would never fire, even
+        // though the hit itself was completely valid.
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var victimClient) ||
+            victimClient.PlayerObject == null ||
+            !victimClient.PlayerObject.TryGetComponent(out Death victimDeath) ||
+            victimDeath.isDead.Value)
         {
-            SetPlayerDeadClientRpc(clientId, killerClientId);
+            return;
         }
+
+        MarkPlayerInactive(clientId, reassignGun: false);
+        SetPlayerDeadClientRpc(clientId, killerClientId);
     }
 
     // Server-authoritative death/ragdoll broadcast. Death used to expose owner-gated ServerRpcs so
@@ -207,9 +272,21 @@ public class GameManager : NetworkBehaviour
             death.isDead.Value = true;
         }
 
+        // Isolated: an exception here (e.g. a missing rig reference on some prefab variant)
+        // must never stop the rest of this broadcast from running - the dying player's own
+        // deathTrigger.HandleDeath call below is what actually moves them into spectate, and
+        // a swallowed exception higher up used to silently strand them "dead" but stuck
+        // controlling their corpse forever, looking like they can't be killed.
         if (playerObject.TryGetComponent(out Ragdoll ragdoll))
         {
-            ragdoll.TriggerRagdoll(true);
+            try
+            {
+                ragdoll.TriggerRagdoll(true);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         if (VfxManager.Instance != null)
@@ -217,10 +294,19 @@ public class GameManager : NetworkBehaviour
             VfxManager.SpawnOneShot(VfxManager.Instance.deathVfxPrefab, playerObject.transform.position, VfxManager.Instance.deathVfxLifetime);
         }
 
-        if (clientId == NetworkManager.Singleton.LocalClientId &&
-            playerObject.TryGetComponent(out DeathTrigger deathTrigger))
+        // DeathTrigger only ever exists on the 13 per-hitbox child colliders, never on
+        // playerObject's own root GameObject - TryGetComponent (unlike GetComponentInChildren)
+        // only ever checks the exact GameObject it's called on, so this silently never matched
+        // and HandleDeath (which starts the death-banner/spectate coroutine) never ran for
+        // anyone, ever. Any one of the 13 works identically - they all derive victimId from the
+        // same parent NetworkObject.
+        if (clientId == NetworkManager.Singleton.LocalClientId)
         {
-            deathTrigger.HandleDeath(killerClientId);
+            DeathTrigger deathTrigger = playerObject.GetComponentInChildren<DeathTrigger>();
+            if (deathTrigger != null)
+            {
+                deathTrigger.HandleDeath(killerClientId);
+            }
         }
     }
 
@@ -467,6 +553,7 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
         }
     }
 

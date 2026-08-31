@@ -12,6 +12,29 @@ public class Death : NetworkBehaviour
     // component, so this dedupes each client's own redundant hitbox triggers for one death event
     // without blocking other clients from independently reporting it too.
     private bool _deathReported;
+
+    private void Awake()
+    {
+        isDead.OnValueChanged += HandleIsDeadChanged;
+    }
+
+    private void OnDestroy()
+    {
+        isDead.OnValueChanged -= HandleIsDeadChanged;
+    }
+
+    // Without this, _deathReported stayed true forever after a player's first death - every
+    // hitbox on every peer's copy of them would keep failing TryReportDeath for the rest of the
+    // session, so UpdatePlayerStateServerRpc never got called again for them by anyone: they
+    // could die exactly once, then never again, in every subsequent round.
+    private void HandleIsDeadChanged(bool oldValue, bool newValue)
+    {
+        if (!newValue)
+        {
+            _deathReported = false;
+        }
+    }
+
     public bool TryReportDeath()
     {
         if (_deathReported)

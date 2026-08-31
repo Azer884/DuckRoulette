@@ -40,6 +40,18 @@ public class Interact : NetworkBehaviour
         }
     }
 
+    /// <summary>Clears the held-object reference without re-invoking the interactable's own
+    /// Drop() - for an interactable (e.g. HidingSpot) whose exit can be driven externally
+    /// (kicked out, timed out) instead of only through this script's own Interact-press flow,
+    /// so a stale reference doesn't linger and swallow the next Interact press.</summary>
+    public void ClearHeldObjectIfMatches(Transform obj)
+    {
+        if (pickedUpObject == obj)
+        {
+            pickedUpObject = null;
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         enabled = IsOwner;

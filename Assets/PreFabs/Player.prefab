@@ -3393,6 +3393,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &2298629822584221449
 GameObject:
   m_ObjectHideFlags: 0
@@ -3533,6 +3534,8 @@ GameObject:
   - component: {fileID: 199935326035327325}
   - component: {fileID: 8286541738520930516}
   - component: {fileID: 421624338261724200}
+  - component: {fileID: 2525809605068775718}
+  - component: {fileID: 4164781119588655087}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -3871,9 +3874,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8803da0d9a71a5a45bc08b5e48422b3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  haveGun: 0
   gunScript: {fileID: 1816800951425717793}
-  survivedTime: 0
 --- !u!114 &6013514408361184799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4541,6 +4542,33 @@ AudioReverbFilter:
   m_LFReference: 250
   m_ReflectionsDelay: 0
   m_ReverbPreset: 3
+--- !u!114 &2525809605068775718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1359e84e4ee2a094392eeccbf9efcd7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlapFeedback
+  flashColor: {r: 0.6, g: 0, b: 0, a: 1}
+  flashIntensity: 0.45
+  flashDuration: 0.5
+--- !u!114 &4164781119588655087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 603186e842cda354a965b990f334a915, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeathFeedback
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0
@@ -4955,6 +4983,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &2898965705102119121
 GameObject:
   m_ObjectHideFlags: 0
@@ -12156,6 +12185,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &5216240541306959293
 GameObject:
   m_ObjectHideFlags: 0
@@ -13919,6 +13949,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &6083381873751538247
 GameObject:
   m_ObjectHideFlags: 0
@@ -14192,6 +14223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &6118486770462720333
 GameObject:
   m_ObjectHideFlags: 0
@@ -14445,6 +14477,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &6135710292150506373
 GameObject:
   m_ObjectHideFlags: 0
@@ -15683,6 +15716,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &6759577807201132906
 GameObject:
   m_ObjectHideFlags: 0
@@ -15970,6 +16004,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &6793254267692532319
 GameObject:
   m_ObjectHideFlags: 0
@@ -17501,6 +17536,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &7501096427791117936
 GameObject:
   m_ObjectHideFlags: 0
@@ -18219,6 +18255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &8067574633643268596
 GameObject:
   m_ObjectHideFlags: 0
@@ -19423,6 +19460,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &8514358568732455892
 GameObject:
   m_ObjectHideFlags: 0
@@ -19592,6 +19630,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &8520281858186888498
 GameObject:
   m_ObjectHideFlags: 0
@@ -20281,6 +20320,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc42c765cfc87e7428fa176063275cda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  deathShakeProfile: {fileID: 11400000, guid: c1011496f1ceada44a8866e1ec23865c, type: 2}
 --- !u!1 &8941252745668558624
 GameObject:
   m_ObjectHideFlags: 0
@@ -23852,7 +23892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4903708150599931203, guid: 8cde49381ff47784ba42dfe2a9a29a83, type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7462035538184935658, guid: 8cde49381ff47784ba42dfe2a9a29a83, type: 3}
       propertyPath: m_Layer

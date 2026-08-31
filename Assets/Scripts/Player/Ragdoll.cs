@@ -196,8 +196,13 @@ public class Ragdoll : NetworkBehaviour
             sfxHandler.PainSound();
         }
 
-        SetScriptsEnabled(false);
+        // Visuals hidden BEFORE scripts disable, mirroring DisableRagdoll's own ordering note in
+        // reverse: SetScriptsEnabled(false) disables Shooting, whose OnDisable reparents/toggles
+        // the held-gun hierarchy (HandsState/fPHands.SwitchParent) - doing that while `hands` is
+        // still visible made the gun visibly pop/snap out of the held pose for a frame right as
+        // the ragdoll took over. Hiding first means that pop happens on already-invisible objects.
         SetVisualsEnabled(false);
+        SetScriptsEnabled(false);
 
         _characterController.enabled = false;
     }

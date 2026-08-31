@@ -248,7 +248,16 @@ public class HidingSpot : NetworkBehaviour, IInteractable
             lookPivotRestRotation = Quaternion.LookRotation(levelForward.normalized, Vector3.up);
         }
 
-        if (hidingCamera != null) hidingCamera.gameObject.SetActive(true);
+        if (hidingCamera != null)
+        {
+            // The player's own gameplay cams sit at explicit boosted priorities (CameraHolder 10,
+            // SlidingCamHolder 15, ...) so a default/unboosted hidingCamera can never actually win
+            // the live-camera vote against them - whatever the player was last looking through
+            // (e.g. their normal third-person cam, easy to mistake for a "spectate" view) just
+            // kept showing instead of the hiding view.
+            hidingCamera.Priority = new PrioritySettings { Enabled = true, Value = 20 };
+            hidingCamera.gameObject.SetActive(true);
+        }
     }
 
     private void ExitLocalHidingView()
@@ -268,6 +277,18 @@ public class HidingSpot : NetworkBehaviour, IInteractable
             localPlayer.transform.SetPositionAndRotation(hidePosition, hideRotation);
 
             SetLocalScriptsEnabled(localPlayer.gameObject, true);
+
+            // A kick-out (shot/timeout) never goes through Interact.DropObject() - it's driven
+            // straight from HidingSpot (KillHolderServerRpc/CountDown), not the player's own E
+            // press - so Interact's pickedUpObject was left pointing at this spot. The first E
+            // press afterward would silently consume itself clearing that stale reference instead
+            // of re-triggering Interact(), requiring a second press to actually rehide. Cleared
+            // directly (not via DropHeldObject/Drop()) since IsHeld is still true at this point in
+            // the kick-out flow - going through Drop() again would re-fire ExitServerRpc.
+            if (localPlayer.TryGetComponent(out Interact interact))
+            {
+                interact.ClearHeldObjectIfMatches(transform);
+            }
         }
     }
 
@@ -315,17 +336,19 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         lookPivot.rotation = lookPivotRestRotation * Quaternion.Euler(pitch, yaw, 0f);
     }
 
-    // Mirrors DeathTrigger.OnTriggerEnter's peer-detection pattern, just against this spot's own
-    // (solid, non-trigger) collider instead of a player hitbox - whoever's hiding here has no
-    // hitbox of their own to be hit while hidden, so a shot has to land on the spot itself.
-    private void OnCollisionEnter(Collision collision)
+    // Mirrors DeathTrigger.OnTriggerEnter's peer-detection pattern, against this spot's own
+    // collider instead of a player hitbox - whoever's hiding here has no hitbox of their own to
+    // be hit while hidden, so a shot has to land on the spot itself. Bullet.prefab's own collider
+    // is a trigger (see DeathTrigger), so this has to be OnTriggerEnter too - OnCollisionEnter
+    // never fires against a trigger collider, which silently made the log unshootable.
+    private void OnTriggerEnter(Collider other)
     {
         if (!IsHeld || hitReported)
         {
             return;
         }
 
-        BulletBehavior bullet = collision.collider.GetComponentInParent<BulletBehavior>();
+        BulletBehavior bullet = other.GetComponentInParent<BulletBehavior>();
         if (bullet == null)
         {
             return;
@@ -351,7 +374,7 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         {
             bullet.DestroyServerRpc(0);
             GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
-            bullet.SpawnImpactVfxServerRpc(collision.GetContact(0).point);
+            bullet.SpawnImpactVfxServerRpc(bullet.transform.position);
         }
 
         // Leave hiding first so the model/camera/hitbox/position all reset before ragdoll takes

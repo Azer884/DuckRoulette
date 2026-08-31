@@ -8,6 +8,10 @@ public class Slap : NetworkBehaviour
 {
     public event System.Action OnSlap, OnSlapTriggered;
     public event System.Action OnSlapRecived;
+    // Separate from OnSlapRecived (additive, not a breaking signature change for its existing
+    // subscribers) - carries the attacker's world position so listeners (e.g. SlapFeedback) can
+    // work out which direction the slap came from.
+    public event System.Action<Vector3> OnSlapRecivedFrom;
     public ShakeProfile slapShakeProfile;
     public ShakeProfile slapReceivedShakeProfile;
     private CameraShaker cameraShaker;
@@ -113,8 +117,8 @@ public class Slap : NetworkBehaviour
         PlaySlapSound(impactPosition);
         OnSlapTriggered?.Invoke();
         slapCount[player]++;
-        
-        SlapImpactServerRpc(player.GetComponent<NetworkObject>().OwnerClientId);
+
+        SlapImpactServerRpc(player.GetComponent<NetworkObject>().OwnerClientId, transform.position);
 
         //Major error: Debug.Log($"Player {player.name} has been slapped {slapCount[player]} times (Limit: {slapLimit[player]})");
 
@@ -189,9 +193,9 @@ public class Slap : NetworkBehaviour
     }
 
     [ServerRpc]
-    private void SlapImpactServerRpc(ulong clientId)
+    private void SlapImpactServerRpc(ulong clientId, Vector3 attackerPosition)
     {
-        SlapImpactClientRpc(clientId);
+        SlapImpactClientRpc(clientId, attackerPosition);
     }
 
     private void PlaySlapSound(Vector3 position)
@@ -267,7 +271,7 @@ public class Slap : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void SlapImpactClientRpc(ulong clientId)
+    private void SlapImpactClientRpc(ulong clientId, Vector3 attackerPosition)
     {
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
@@ -279,6 +283,7 @@ public class Slap : NetworkBehaviour
             if (playerObject != null && playerObject.TryGetComponent(out Slap victimSlap))
             {
                 victimSlap.OnSlapRecived?.Invoke();
+                victimSlap.OnSlapRecivedFrom?.Invoke(attackerPosition);
                 if (victimSlap.cameraShaker != null)
                 {
                     victimSlap.cameraShaker.Shake(victimSlap.slapReceivedShakeProfile);

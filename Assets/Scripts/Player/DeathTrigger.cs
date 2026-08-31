@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
 using System.Collections;
@@ -7,12 +7,25 @@ using Unity.Cinemachine;
 
 public class DeathTrigger : MonoBehaviour
 {
-    private ulong victimId;
+    [SerializeField] private ShakeProfile deathShakeProfile;
+
     private ulong spectatedPlayerId;
     private CinemachineCamera spectatorCamera;
     private Death death;
     private NetworkObject parentNetworkObject;
     private InputAction spectateNextAction;
+
+    // Read live instead of cached: NGO instantiates the player prefab (running Awake on every
+    // component) and only assigns NetworkObject.OwnerClientId afterwards - on the spawning peer in
+    // SpawnAsPlayerObject, and on every other peer in NonAuthorityLocalSpawn, both of which run
+    // strictly after CreateLocalNetworkObject. Caching it in Awake therefore captured the
+    // pre-spawn default of 0, which is the HOST's client id, for every player on every peer. That
+    // made isValidHit's `bullet.OwnerClientId != VictimId` check reject any host-fired bullet that
+    // hit a client (the client simply never died, while the host - whose real id is 0 - died
+    // normally, since the stale default happened to be correct for them), and made a bullet fired
+    // by another client report client 0 as the victim. Player objects never change ownership
+    // mid-match, so reading the property directly is equivalent minus the ordering trap.
+    private ulong VictimId => parentNetworkObject != null ? parentNetworkObject.OwnerClientId : 0;
 
     // Only true once the camera has actually cut to spectate (after the dramatic death delay
     // below) - guards Update() so cycling/auto-retarget can't run against spectatedPlayerId
@@ -24,10 +37,6 @@ public class DeathTrigger : MonoBehaviour
     {
         death = GetComponentInParent<Death>();
         parentNetworkObject = GetComponentInParent<NetworkObject>();
-
-        // Was only ever set inside OnTriggerEnter, which the victim's own client can't be relied
-        // on to ever fire (see HandleDeath) - set it here instead so it's always valid.
-        victimId = parentNetworkObject.OwnerClientId;
 
         InputSystem inputSystem = GetComponentInParent<InputSystem>();
         if (inputSystem != null)
@@ -80,7 +89,7 @@ public class DeathTrigger : MonoBehaviour
         //  - alive-state + death/ragdoll: any peer that detects it, via GameManager (server-
         //    authoritative from there - see GameManager.SetPlayerDeadClientRpc).
         bool isFriendlyFire = GetComponentInParent<TeamUp>().isTeamedUp && (int)bullet.OwnerClientId == GetComponentInParent<TeamUp>().teamMateId;
-        bool isValidHit = bullet.OwnerClientId != victimId && !death.isDead.Value && !isFriendlyFire;
+        bool isValidHit = bullet.OwnerClientId != VictimId && !death.isDead.Value && !isFriendlyFire;
 
         if (bullet.IsOwner)
         {
@@ -101,8 +110,8 @@ public class DeathTrigger : MonoBehaviour
             bullet.SpawnImpactVfxServerRpc(bullet.transform.position);
         }
 
-        GameManager.Instance.UpdatePlayerStateServerRpc(victimId, bullet.OwnerClientId);
-        Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {victimId}");
+        GameManager.Instance.UpdatePlayerStateServerRpc(VictimId, bullet.OwnerClientId);
+        Debug.Log($"Collision detected with {other.name}. Bullet Owner: {bullet.OwnerClientId}, Victim Owner: {VictimId}");
     }
 
     // Called on the victim's own client by GameManager.SetPlayerDeadClientRpc once the server has
@@ -113,10 +122,11 @@ public class DeathTrigger : MonoBehaviour
         spectatedPlayerId = shooterId;
 
         string shooterName = GameManager.Instance.GetPlayerNickname(shooterId);
-        string victimName = GameManager.Instance.GetPlayerNickname(victimId);
+        string victimName = GameManager.Instance.GetPlayerNickname(VictimId);
         Debug.Log($"{shooterName} killed {victimName}");
 
         SpectateHUD.ShowDeathBanner(shooterName);
+        CameraShaker.GetOrAdd(parentNetworkObject.gameObject).Shake(deathShakeProfile);
 
         StartCoroutine(WaitBeforeSpctate(5f));
     }
@@ -132,6 +142,11 @@ public class DeathTrigger : MonoBehaviour
             isSpectating = true;
             spectateValidityCheckTimer = 0f;
             ShowSpectateHud();
+
+            // The dead/desaturated screen treatment is for the dramatic death moment, not the
+            // whole time spent spectating afterward - fade it away now that the camera has
+            // actually cut over, same as DeathFeedback fades it on an eventual respawn.
+            DeathVignette.GetOrAdd(parentNetworkObject.gameObject).SetDead(false);
         }
     }
 
@@ -217,7 +232,7 @@ public class DeathTrigger : MonoBehaviour
 
         foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
         {
-            if (client.ClientId == victimId || client.PlayerObject == null)
+            if (client.ClientId == VictimId || client.PlayerObject == null)
             {
                 continue;
             }
