@@ -2067,6 +2067,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6163822289197614792, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7354727990356955966, guid: 9cf67b3dc5c964248ba65044e5e89812, type: 3}
       propertyPath: m_Name
       value: BlackjackTable
@@ -4813,6 +4817,10 @@ PrefabInstance:
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 150.268
+      objectReference: {fileID: 0}
+    - target: {fileID: 7302101831396685493, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

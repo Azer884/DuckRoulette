@@ -218,7 +218,10 @@ public class DeathTrigger : MonoBehaviour
     private void ShowSpectateHud()
     {
         string targetName = GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(spectatedPlayerId) : "";
-        string hint = spectateNextAction != null ? $"[{spectateNextAction.GetBindingDisplayString()}] Next" : "";
+        // Via InteractionPromptHUD so the spectate hint names the same device as every other
+        // on-screen instruction: the bare GetBindingDisplayString() used here before always
+        // concatenated every scheme's binding ("Space | A") regardless of what the player holds.
+        string hint = spectateNextAction != null ? InteractionPromptHUD.FormatHint("Next", spectateNextAction) : "";
         SpectateHUD.ShowSpectating(targetName, hint);
     }
 

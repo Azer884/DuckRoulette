@@ -3694,6 +3694,7 @@ MonoBehaviour:
   canMove: 1
   canJump: 1
   canCrouch: 1
+  gamepadLookDegreesPerSecond: 180
 --- !u!114 &1816800951425717793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3862,6 +3863,8 @@ MonoBehaviour:
   shadow: {fileID: 3007406930311217395}
   hands: {fileID: 5496963464485810931}
   dizzy: {fileID: 4927615344269541544}
+  minScreenDizzyLingerSeconds: 3
+  maxScreenDizzyLingerSeconds: 5
 --- !u!114 &8323436409233549481
 MonoBehaviour:
   m_ObjectHideFlags: 0

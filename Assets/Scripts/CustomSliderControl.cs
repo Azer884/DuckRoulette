@@ -49,11 +49,16 @@ public class CustomSliderControl : MonoBehaviour
 
         if (Mathf.Abs(rightStickValue.x) > 0.1f && EventSystem.current.currentSelectedGameObject == gameObject) // Deadzone threshold
         {
-            // Modify the slider value based on right stick input
-            float newValue = targetSlider.value + rightStickValue.x * sliderSensitivity * Time.deltaTime;
+            // Stepped and clamped against the slider's OWN range, not a hard-coded 0..1. The
+            // sensitivity sliders in SettingsMenu run 0.01 to 5, so Mathf.Clamp01 made the stick
+            // physically unable to push any of them past 1 - and at 1 the handle sat about a fifth
+            // of the way along its track, which is the "slider isn't full when it hits 1" part.
+            // Scaling the step by the range keeps the same end-to-end travel time on any slider
+            // instead of taking five times as long on a 0..5 one.
+            float range = targetSlider.maxValue - targetSlider.minValue;
+            float newValue = targetSlider.value + rightStickValue.x * sliderSensitivity * range * Time.deltaTime;
 
-            // Clamp the new value between 0 and 1 and assign it back to the slider
-            targetSlider.value = Mathf.Clamp01(newValue);
+            targetSlider.value = Mathf.Clamp(newValue, targetSlider.minValue, targetSlider.maxValue);
         }
     }
 

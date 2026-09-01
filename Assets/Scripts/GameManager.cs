@@ -318,18 +318,22 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void StunPlayerServerRpc(ulong clientId)
     {
-        StunPlayerClientRpc(clientId);
+        // Rolled once here and broadcast, not rolled per peer inside Ragdoll: the ragdoll recovery
+        // state machine now runs on every copy of the player (it has to - it is what re-enables
+        // their Animators), so a per-peer roll would have the same knockout last a different
+        // length of time on every screen.
+        StunPlayerClientRpc(clientId, Random.Range(3f, 6f));
     }
 
     [ClientRpc]
-    private void StunPlayerClientRpc(ulong clientId)
+    private void StunPlayerClientRpc(ulong clientId, float wakeUpTime)
     {
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
         {
             var playerObject = client.PlayerObject;
             if (playerObject != null)
             {
-                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead: false);
+                playerObject.GetComponent<Ragdoll>().TriggerRagdoll(isDead: false, wakeUpTime);
 
                 if (VfxManager.Instance != null)
                 {

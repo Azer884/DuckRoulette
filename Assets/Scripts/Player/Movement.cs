@@ -136,6 +136,10 @@ public class Movement : NetworkBehaviour
     public bool IsSliding => isSliding;
     public bool IsRunning => isRunning;
 
+    // Degrees per second a fully deflected stick turns the player at controller sensitivity 1.
+    // See DoLooking for why gamepad look needs this and mouse look does not.
+    [SerializeField] private float gamepadLookDegreesPerSecond = 180f;
+
     float mouseXSmooth = 0f;
 
     public override void OnNetworkSpawn()
@@ -319,8 +323,16 @@ public class Movement : NetworkBehaviour
             }
         }
 
-        float lookX = looking.x * sensitivityX * Time.deltaTime;
-        float lookY = looking.y * sensitivityY * Time.deltaTime;
+        // A gamepad stick reports a normalised [-1, 1] value; the mouse reports a per-frame pixel
+        // delta, which is tens of units. Feeding both through the same multiplier meant a stick held
+        // at full tilt turned the player about one degree per SECOND at sensitivity 1 - the whole
+        // reason controller look felt unusably slow even with the setting maxed. Gamepad look is
+        // scaled into degrees per second here so sensitivity 1 is a normal turn rate; the mouse path
+        // is left exactly as it was so existing mouse sensitivity settings still feel the same.
+        float deviceScale = isGamepadLook ? gamepadLookDegreesPerSecond : 1f;
+
+        float lookX = looking.x * sensitivityX * deviceScale * Time.deltaTime;
+        float lookY = looking.y * sensitivityY * deviceScale * Time.deltaTime;
 
         xRotation -= lookY;
         xRotation = Mathf.Clamp(xRotation, -85f, 75f);

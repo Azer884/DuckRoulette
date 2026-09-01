@@ -510,8 +510,10 @@ MonoBehaviour:
   - 'Tip: Watch the other duck''s hands, not the gun.'
   - 'Tip: An empty chamber is still a chance you''re taking.'
   - 'Tip: Coins buy confidence, not survival.'
-  minFakeLoadSeconds: 1.5
-  maxFakeLoadSeconds: 3
+  phaseOneRampSeconds: 2.5
+  barSmoothingSpeed: 2.5
+  reportsPerSecond: 10
+  activationGraceSeconds: 15
 --- !u!114 &325197885
 MonoBehaviour:
   m_ObjectHideFlags: 0

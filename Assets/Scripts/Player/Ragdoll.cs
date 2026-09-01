@@ -34,6 +34,13 @@ public class Ragdoll : NetworkBehaviour
 
     [SerializeField] private GameObject cam, foots, shadow, hands, dizzy;
 
+    // How long the full-screen daze holds on AFTER the player is back on their feet, before it
+    // starts fading. Rolled locally rather than server-picked, unlike _timeToWakeUp: this is a
+    // first-person-only effect that no other peer can see, so there is no shared timeline for it
+    // to disagree with.
+    [SerializeField] private float minScreenDizzyLingerSeconds = 2f;
+    [SerializeField] private float maxScreenDizzyLingerSeconds = 3f;
+
     private Rigidbody[] _ragdollRigidbodies;
     private CharacterController _characterController;
     private Movement movement;
@@ -54,11 +61,24 @@ public class Ragdoll : NetworkBehaviour
     private float _elapsedResetBonesTime;
     private bool _isFacingUp;
     private string _currentStandUpAnim;
+    private Coroutine _dizzyRoutine;
+    private Coroutine _screenDizzyLingerRoutine;
 
-    public override void OnNetworkSpawn()
-    {
-        if (!IsOwner) enabled = false;
-    }
+    // True on the copy of this player that this client actually controls: the owner in a networked
+    // session, and the never-spawned offline tutorial player. Everything gated on it is either
+    // owner-authoritative (the transform, NetworkVariables, the animator parameters
+    // OwnerNetworkAnimator replicates) or first-person-only visuals that must never be switched on
+    // for somebody else's player.
+    private bool IsLocalPlayer => !IsSpawned || IsOwner;
+
+    // Deliberately no OnNetworkSpawn override disabling this component on non-owners any more.
+    // TriggerRagdoll is broadcast to EVERY peer (GameManager.StunPlayerClientRpc and
+    // SetPlayerDeadClientRpc both call it on every client's copy of the victim), and Update() is
+    // the only thing that ever advances Ragdoll -> ResettingBones -> StandingUp -> Idle. With the
+    // component disabled off-owner, a remote copy ran EnableRagdoll (Animators off, first-person
+    // visuals off, CharacterController off) and then had nothing left running to undo any of it:
+    // every other player saw that player as a limp, frozen, non-animating ragdoll for the rest of
+    // the match, gun included, no matter what they did on their own screen.
 
     void Awake()
     {
@@ -102,23 +122,36 @@ public class Ragdoll : NetworkBehaviour
 
     /* ===================== PUBLIC ===================== */
 
-    public void TriggerRagdoll(bool isDead = false)
+    /// <param name="wakeUpTime">How long to stay down, in seconds. The server picks this once and
+    /// passes the same value to every peer (see GameManager.StunPlayerClientRpc) - now that this
+    /// whole recovery runs on every copy of the player, each peer rolling its own Random.Range
+    /// would have every screen standing the same player up at a different moment. Non-positive
+    /// falls back to a local roll, for the offline tutorial and for a plain stun with no server
+    /// value behind it.</param>
+    public void TriggerRagdoll(bool isDead = false, float wakeUpTime = -1f)
     {
         EnableRagdoll();
 
         if (isDead)
         {
             _currentState = PlayerState.Dead;
+            // Dying out of an existing knockout hands the screen over to DeathVignette, which owns
+            // the "you're dead" treatment - drop the daze rather than layering the two.
+            SetScreenDizziness(false);
             return;
         }
 
-        _timeToWakeUp = Random.Range(3f, 6f);
+        _timeToWakeUp = wakeUpTime > 0f ? wakeUpTime : Random.Range(3f, 6f);
         _currentState = PlayerState.Ragdoll;
 
-        if (CanSendNetworkRpc())
-        {
-            EnableDizzinessServerRpc(OwnerClientId, _timeToWakeUp + 2f);
-        }
+        // Shown directly instead of through a ServerRpc -> ClientRpc round trip: this method is
+        // already running on every peer, so the round trip only added latency plus one duplicate
+        // broadcast per connected client for a purely local visual.
+        ShowDizziness(_timeToWakeUp + 2f);
+
+        // The world-space stars above the head (ShowDizziness) tell everyone ELSE that this player
+        // is out; this tells the player themselves, on their own screen only.
+        SetScreenDizziness(true);
     }
 
     /* ===================== STATES ===================== */
@@ -129,6 +162,11 @@ public class Ragdoll : NetworkBehaviour
 
         if (_timeToWakeUp <= 0f)
         {
+            // The daze does not end with the knockout: it holds through the stand-up and for a
+            // couple of seconds of regained control before it starts fading, so getting slapped
+            // down still costs the victim something after they are back on their feet.
+            LingerScreenDizziness();
+
             _isFacingUp = _hipsBone.forward.y > 0f;
             AlignPositionToHips();
             PopulateBoneTransforms(_ragdollBoneTransforms);
@@ -224,29 +262,81 @@ public class Ragdoll : NetworkBehaviour
         SetScriptsEnabled(true);
 
         _characterController.enabled = true;
+
+        ReapplyGunAnimatorState();
+    }
+
+    // Every Animator on this rig has "Keep Animator State On Disable" off, so the enable/disable
+    // pair above resets its parameters to the controller defaults. HaveAGun is replicated by
+    // OwnerNetworkAnimator, which only pushes a parameter when it CHANGES on the owner - a reset
+    // that lands on every peer at the same time therefore never gets corrected by replication, and
+    // a player who was knocked down holding the gun kept playing the unarmed animation with a
+    // visible gun in hand (GunStateChanger keeps that gun on screen off haveGun.Value alone).
+    // Re-assert the pose from that same authoritative value once the animators are live again.
+    private void ReapplyGunAnimatorState()
+    {
+        bool hasGun = shooting != null && shooting.HasGun;
+
+        SetHaveAGun(_animator, hasGun);
+        foreach (var anim in otherAnimators)
+        {
+            SetHaveAGun(anim, hasGun);
+        }
+    }
+
+    private static void SetHaveAGun(Animator animator, bool hasGun)
+    {
+        // Not every animator on the rig declares HaveAGun (Ragdoll drives a different, wider set
+        // than Shooting does) and writing a parameter a controller doesn't have logs a warning
+        // every time.
+        if (animator == null || !animator.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.type == AnimatorControllerParameterType.Bool && parameter.name == "HaveAGun")
+            {
+                animator.SetBool("HaveAGun", hasGun);
+                return;
+            }
+        }
     }
 
     /* ===================== ORIGINAL METHODS KEPT ===================== */
 
     public void SetScriptsEnabled(bool state)
     {
-        movement.enabled = state;
-        teamUp.enabled = state;
-
-        if (state)
+        // Owner-only. Movement/TeamUp/Shooting/Slap are all disabled on every remote copy by their
+        // own OnNetworkSpawn, and this method runs on EVERY peer (TriggerRagdoll is a broadcast) -
+        // so a stand-up handed a remote copy of somebody else's player back its Movement (which
+        // then reads THIS machine's input in Update and drives a player it has no authority over)
+        // and its Slap, and re-ran their OnEnable side effects on a copy that must never run them.
+        // HidingSpot.SetLocalScriptsEnabled already documents the same invariant for the same four
+        // components; this was the one place breaking it.
+        if (IsLocalPlayer)
         {
-            // Getting knocked down always lowers the gun, same as HidingSpot's exit - the
-            // player has to switch back to it explicitly instead of it reappearing on its own.
-            shooting.enabled = false;
-            slap.enabled = true;
-        }
-        else
-        {
-            slap.enabled = false;
-            shooting.enabled = false;
+            movement.enabled = state;
+            teamUp.enabled = state;
+
+            if (state)
+            {
+                // Getting knocked down always lowers the gun, same as HidingSpot's exit - the
+                // player has to switch back to it explicitly instead of it reappearing on its own.
+                shooting.enabled = false;
+                slap.enabled = true;
+            }
+            else
+            {
+                slap.enabled = false;
+                shooting.enabled = false;
+            }
         }
 
-        if (CanSendNetworkRpc())
+        // Owner-gated too: every peer used to fire this same ServerRpc for the same knockout, so
+        // one stun produced N identical broadcasts.
+        if (IsOwner && CanSendNetworkRpc())
         {
             EnableServerRpc(OwnerClientId, state);
         }
@@ -254,7 +344,15 @@ public class Ragdoll : NetworkBehaviour
 
     public void SetVisualsEnabled(bool state)
     {
-        cam.SetActive(state);
+        // cam is this player's first-person camera, which Movement.ApplyRemoteVisualState turns off
+        // on every remote copy and which has to stay off there. Now that recovery runs on every
+        // peer, an ungated SetActive(true) here would switch the local view to whichever other
+        // player just stood up from a knockout.
+        if (IsLocalPlayer)
+        {
+            cam.SetActive(state);
+        }
+
         hands.SetActive(state);
         foots.SetActive(state);
         shadow.SetActive(state);
@@ -308,6 +406,15 @@ public class Ragdoll : NetworkBehaviour
 
     private void AlignPositionToHips()
     {
+        // The root transform is owner-authoritative (ClientNetworkTransform), so only the owner
+        // may move it. A remote copy writing its own locally-simulated hip position here - ragdoll
+        // physics diverges per peer - just fought the next incoming transform update and showed as
+        // a snap. The owner's own align replicates to everyone anyway.
+        if (!IsLocalPlayer)
+        {
+            return;
+        }
+
         _hipsBone.GetPositionAndRotation(out var p, out var r);
         transform.SetPositionAndRotation(
             new Vector3(p.x, transform.position.y, p.z),
@@ -337,25 +444,93 @@ public class Ragdoll : NetworkBehaviour
             _characterController.enabled = state;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void EnableDizzinessServerRpc(ulong clientId, float waitTime)
+    // Replaces the old EnableDizziness ServerRpc/ClientRpc pair. TriggerRagdoll already runs on
+    // every peer, so that round trip bought nothing but latency and one duplicate broadcast per
+    // connected client for a purely cosmetic effect.
+    private void ShowDizziness(float waitTime)
     {
-        EnableDizzinessClientRpc(clientId, waitTime);
-    }
-
-    [ClientRpc]
-    private void EnableDizzinessClientRpc(ulong clientId, float waitTime)
-    {
-        if (OwnerClientId != clientId) return;
+        if (dizzy == null)
+        {
+            return;
+        }
 
         dizzy.SetActive(true);
-        StartCoroutine(DisableDizzyAfter(waitTime));
+        if (_dizzyRoutine != null)
+        {
+            StopCoroutine(_dizzyRoutine);
+        }
+        _dizzyRoutine = StartCoroutine(DisableDizzyAfter(waitTime));
     }
 
     private IEnumerator DisableDizzyAfter(float t)
     {
         yield return new WaitForSeconds(t);
         dizzy.SetActive(false);
+        _dizzyRoutine = null;
+    }
+
+    // The full-screen post-processing daze (DizzinessEffect), as opposed to the world-space stars
+    // ShowDizziness puts above the victim's head, which every peer is supposed to see.
+    //
+    // IsLocalPlayer is load-bearing here, not defensive: TriggerRagdoll is a broadcast
+    // (GameManager.StunPlayerClientRpc reaches every client) and this whole state machine runs on
+    // every peer's copy of every player, so without the gate one player getting slapped down would
+    // swim the screen of everybody in the match at once.
+    private void SetScreenDizziness(bool isDizzy)
+    {
+        if (!IsLocalPlayer)
+        {
+            return;
+        }
+
+        // Any explicit call wins over a linger still counting down - a fresh knockout mid-linger
+        // must not be cleared by the previous one's timer, and dying mid-linger hands the screen
+        // straight to DeathVignette.
+        if (_screenDizzyLingerRoutine != null)
+        {
+            StopCoroutine(_screenDizzyLingerRoutine);
+            _screenDizzyLingerRoutine = null;
+        }
+
+        if (!isDizzy)
+        {
+            // Only clear an effect that actually exists - a wake-up or a death that never went
+            // through a knockout has nothing to ramp out, and GetOrAdd would install the component
+            // (and its runtime Volume) purely to tell it to do nothing.
+            if (TryGetComponent(out DizzinessEffect existing))
+            {
+                existing.SetDizzy(false);
+            }
+            return;
+        }
+
+        DizzinessEffect.GetOrAdd(gameObject).SetDizzy(true);
+    }
+
+    // Keeps the daze at full strength for a beat after the player wakes up, then ramps it out
+    // through DizzinessEffect's normal fade.
+    private void LingerScreenDizziness()
+    {
+        if (!IsLocalPlayer)
+        {
+            return;
+        }
+
+        if (_screenDizzyLingerRoutine != null)
+        {
+            StopCoroutine(_screenDizzyLingerRoutine);
+        }
+        _screenDizzyLingerRoutine = StartCoroutine(ClearScreenDizzinessAfterLinger());
+    }
+
+    private IEnumerator ClearScreenDizzinessAfterLinger()
+    {
+        yield return new WaitForSeconds(Random.Range(minScreenDizzyLingerSeconds, maxScreenDizzyLingerSeconds));
+
+        // Cleared before the call so SetScreenDizziness doesn't try to stop the coroutine it is
+        // currently running inside.
+        _screenDizzyLingerRoutine = null;
+        SetScreenDizziness(false);
     }
 
     private bool CanSendNetworkRpc()
