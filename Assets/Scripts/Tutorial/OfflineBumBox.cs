@@ -12,6 +12,11 @@ public class OfflineBumBox : MonoBehaviour, IInteractable
     public string InteractionPrompt => "Pick Up";
     public int holderId = -1;
 
+    [Tooltip("Tracks cycled by the Change Music key (N), same as the networked BumBox.")]
+    public AudioClip[] playlist;
+
+    private int trackIndex = -1;
+
 
     public void Interact(ulong clientId)
     {
@@ -52,5 +57,22 @@ public class OfflineBumBox : MonoBehaviour, IInteractable
         }
 
         MuteToggled?.Invoke();
+    }
+
+    public void ChangeMusic()
+    {
+        if (playlist == null || playlist.Length == 0 || !TryGetComponent(out AudioSource audioSource))
+        {
+            return;
+        }
+
+        trackIndex = (trackIndex + 1) % playlist.Length;
+        if (playlist[trackIndex] == null)
+        {
+            return;
+        }
+
+        audioSource.clip = playlist[trackIndex];
+        audioSource.Play();
     }
 }

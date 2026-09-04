@@ -3,15 +3,17 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+// The local player's side of a blackjack seat: reads the Draw / Done / Leave keys and mirrors the
+// hand the server dealt. It holds no authority - the sum shown here is the one the server sent.
 public class BlackJack : NetworkBehaviour
 {
     public List<Card> hand;
     public Transform handTransform;
     public float cardSpacing = .1f;
     private int handSum;
-    public bool canBlackjack, canDraw, canDone;
-    public bool drawnFirstCard = false;
-    private InputAction drawAction, doneAction, blackjackAction, leaveAction;
+    public bool canDraw, canDone;
+    public bool IsSeated { get; private set; }
+    private InputAction drawAction, doneAction, leaveAction;
 
     public override void OnNetworkSpawn()
     {
@@ -28,13 +30,19 @@ public class BlackJack : NetworkBehaviour
             InputActionAsset inputActions = RebindSaveLoad.Instance.actions;
             drawAction = inputActions.FindAction("Draw");
             doneAction = inputActions.FindAction("Done");
-            blackjackAction = inputActions.FindAction("Blackjack");
             leaveAction = inputActions.FindAction("LeaveBlackjack");
         }
     }
 
     void Update()
     {
+        // Every one of these used to be live from the moment the player spawned, so the Leave key
+        // fired ExitGame at a table nobody was sitting at.
+        if (!IsSeated)
+        {
+            return;
+        }
+
         if (canDraw && drawAction != null && drawAction.triggered)
         {
             DrawCard();
@@ -43,32 +51,60 @@ public class BlackJack : NetworkBehaviour
         {
             Done();
         }
-        if (canBlackjack && blackjackAction != null && blackjackAction.triggered)
-        {
-            Blackjack();
-        }
         if (leaveAction != null && leaveAction.triggered)
         {
-            CardDeck.instance.ExitGame(OwnerClientId);
+            CardDeck.instance.ExitGame();
         }
     }
 
-    public void DrawCard(bool isFirstCard = false)
+    /// <summary>Called on this client once the server has given it a chair. The first card is on
+    /// its way; the player can act from here.</summary>
+    public void OnSeated()
     {
-        // Null check
+        IsSeated = true;
+        hand.Clear();
+        handSum = 0;
+        canDraw = true;
+        canDone = false;
+    }
+
+    /// <summary>Called when the seat is given up, so the keys go quiet again.</summary>
+    public void OnLeftTable()
+    {
+        IsSeated = false;
+        canDraw = false;
+        canDone = false;
+        hand.Clear();
+        handSum = 0;
+
+        // Sitting down latches the player onto the table through Interact (that is what makes the
+        // next Interact press stand up again). Leaving with the Leave key instead of the Interact
+        // key skipped that release, so the player stayed latched to a table they had left and
+        // could not interact with anything else until they pressed Interact once into thin air.
+        // Owner-gated: BlackjackTable.Instance is one shared scene object, so a remote player's
+        // copy of this component clearing it would unset the *local* player's seated flag - and
+        // every remote copy runs OnDisable the instant it spawns.
+        if ((!IsSpawned || IsOwner) && BlackjackTable.Instance != null)
+        {
+            BlackjackTable.Instance.ReleaseLocalPlayer(this);
+        }
+    }
+
+    public void DrawCard()
+    {
         if (CardDeck.instance == null)
         {
             Debug.LogError("CardDeck instance is null!");
             return;
         }
 
-        // The server now picks the card, updates the real deck count, and tracks the running
-        // hand sum - this client only finds out the result via ReceiveDealtCard below.
-        CardDeck.instance.RequestDrawCardServerRpc(isFirstCard);
+        // The server picks the card, updates the shoe, tracks the hand sum and places the card
+        // object - this client only finds out the result via ReceiveDealtCard below.
+        CardDeck.instance.RequestDraw();
     }
 
-    // Called by CardDeck once the server has authoritatively resolved a draw request.
-    public void ReceiveDealtCard(int cardListIndex, int newHandSum, bool deckEmpty, bool isFirstCard)
+    // Called by CardDeck once the server has authoritatively resolved a draw.
+    public void ReceiveDealtCard(int cardListIndex, int newHandSum, bool deckEmpty)
     {
         if (deckEmpty)
         {
@@ -77,94 +113,49 @@ public class BlackJack : NetworkBehaviour
             return;
         }
 
-        Card newCard = CardDeck.instance.cardDeck[cardListIndex];
-        hand.Add(newCard);
+        if (cardListIndex >= 0 && cardListIndex < CardDeck.instance.cardDeck.Count)
+        {
+            hand.Add(CardDeck.instance.cardDeck[cardListIndex]);
+        }
+
         handSum = newHandSum;
 
-        int index = hand.Count - 1; // Get the index of the newly added card
-        float positionX = (index % 2 == 0 ? 1 : -1) * Mathf.Ceil(index / 2f) * cardSpacing;
-        Vector3 worldPosition = handTransform.TransformPoint(new Vector3(positionX, 0, 0));
-
-        CardDeck.instance.SpawnCardServerRpc(OwnerClientId, worldPosition, handTransform.rotation, cardListIndex, isFirstCard);
-
-        if (hand.Count >= 2)
-        {
-            canDone = true;
-        }
-
-        if (handSum > 21)
-        {
-            LostThisGameServerRpc();
-
-            Invoke(nameof(LostMsg), .5f);
-            canDraw = false;
-            canDone = false;
-        }
-        else if (handSum == 21)
-        {
-            canBlackjack = true;
-        }
-    }
-
-    private void LostMsg()
-    {
-        CardDeck.instance.SendMsgServerRpc($"{GameManager.Instance.GetPlayerNickname(OwnerClientId)} lost this game!", OwnerClientId);
+        // Standing needs a hand to stand on, and a decided hand takes no more input - the server
+        // has already busted or paid out at this point and will reset everyone shortly.
+        canDone = hand.Count >= 1 && handSum < 21;
+        canDraw = handSum < 21;
     }
 
     public void RestartHand()
     {
-        canDraw = true;
-        canDone = true;
-        canBlackjack = false;
         hand.Clear();
         handSum = 0;
+
+        // A reset only puts a player back in play if they still have a chair.
+        canDraw = IsSeated;
+        canDone = false;
     }
-    
+
     public void Done()
     {
-        FinishTurnServerRpc();
-        if (CardDeck.instance.playerTurn.Value == OwnerClientId)
-        {
-            CardDeck.instance.GetNextPlayerServerRpc();
-        }
+        // One server call decides everything: mark this player done, pass the turn, and settle the
+        // round if that was the last one. This used to be three RPCs fired back to back with the
+        // client deciding from its own copy of playerTurn whether to advance it.
+        CardDeck.instance.Stand();
         canDraw = false;
         canDone = false;
-
-        CardDeck.instance.CheckIfAllPlayersDoneServerRpc();
-    }
-
-    public void Blackjack()
-    {
-        CardDeck.instance.BlackjackServerRpc();
-    }
-
-    // No clientId parameter needed - [ServerRpc] (RequireOwnership defaults to true) already
-    // guarantees this only ever runs for this NetworkObject's own owner, so OwnerClientId is
-    // trustworthy here.
-    [ServerRpc]
-    private void FinishTurnServerRpc()
-    {
-        if (CardDeck.instance.playerInCurrentGameList.TryGetValue(OwnerClientId, out var entry))
-        {
-            CardDeck.instance.playerInCurrentGameList[OwnerClientId] = (true, entry.Item2);
-        }
-    }
-
-    [ServerRpc]
-    private void LostThisGameServerRpc()
-    {
-        if (CardDeck.instance.playerInCurrentGameList.ContainsKey(OwnerClientId))
-        {
-            CardDeck.instance.playerInCurrentGameList.Remove(OwnerClientId);
-        }
-        CardDeck.instance.CheckIfAllPlayersDoneServerRpc();
     }
 
     void OnDisable()
     {
-        if (CardDeck.instance != null)
+        // Only the owner has a seat to give up. This used to run on every remote player's copy of
+        // the component too - which are disabled the instant they spawn - so each remote spawn
+        // fired an ExitGame that took the *local* player off the table.
+        if (IsOwner && IsSeated && CardDeck.instance != null)
         {
-            CardDeck.instance.ExitGame(OwnerClientId);
+            CardDeck.instance.ExitGame();
         }
+
+        OnLeftTable();
     }
 }

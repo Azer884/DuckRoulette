@@ -12,7 +12,7 @@ public class Interact : NetworkBehaviour
     private Transform pickedUpObject;
     private Transform mainCameraTransform;
     public Shooting shooting;
-    private InputAction interactAction, muteAction;
+    private InputAction interactAction, muteAction, changeMusicAction;
 
     // Raised whenever the local player picks up / drops an interactable, so external
     // systems (e.g. TutorialManager step tracking) don't have to poll for it.
@@ -81,6 +81,7 @@ public class Interact : NetworkBehaviour
         InputActionAsset inputActions = GetComponent<InputSystem>().inputActions;
         interactAction = inputActions.FindAction("Interact");
         muteAction = inputActions.FindAction("Mute");
+        changeMusicAction = inputActions.FindAction("ChangeMusic");
     }
 
     private void OnEnable()
@@ -154,6 +155,12 @@ public class Interact : NetworkBehaviour
             {
                 TryToMute(hit.transform);
             }
+
+            // Try change music
+            if (changeMusicAction != null && changeMusicAction.triggered)
+            {
+                TryToChangeMusic(hit.transform);
+            }
         }
         else
         {
@@ -193,6 +200,11 @@ public class Interact : NetworkBehaviour
             {
                 TryToMute(pickedUpObject);
             }
+
+            if (changeMusicAction != null && changeMusicAction.triggered)
+            {
+                TryToChangeMusic(pickedUpObject);
+            }
         }
     }
 
@@ -207,7 +219,7 @@ public class Interact : NetworkBehaviour
     {
         if (shooting.enabled ||
             !collider.TryGetComponent(out IInteractable interactable) ||
-            interactable.IsHeld)
+            !interactable.CanInteract)
         {
             InteractionPromptHUD.Hide();
             return;
@@ -218,9 +230,18 @@ public class Interact : NetworkBehaviour
 
     private void PickUpObject(Collider collider)
     {
-        if(collider.TryGetComponent(out IInteractable interactable) && !interactable.IsHeld)
+        if(collider.TryGetComponent(out IInteractable interactable) && interactable.CanInteract)
         {
             interactable.Interact(IsLocalMode ? 0 : OwnerClientId);
+
+            // A one-shot interaction (a task objective) is finished the moment it's pressed.
+            // Latching the player onto it would make their next Interact press a "drop" of
+            // something they were never holding.
+            if (!interactable.LatchesPlayer)
+            {
+                return;
+            }
+
             pickedUpObject = collider.transform;
 
             if (IsLocalMode)
@@ -251,6 +272,18 @@ public class Interact : NetworkBehaviour
 
         pickedUpObject = null;
         ObjectDropped?.Invoke();
+    }
+
+    private void TryToChangeMusic(Transform obj)
+    {
+        if (obj.TryGetComponent(out BumBox bumBox))
+        {
+            bumBox.ChangeMusic();
+        }
+        else if (obj.TryGetComponent(out OfflineBumBox offlineBumBox))
+        {
+            offlineBumBox.ChangeMusic();
+        }
     }
 
     private void TryToMute(Transform obj)

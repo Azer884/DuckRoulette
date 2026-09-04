@@ -3536,6 +3536,7 @@ GameObject:
   - component: {fileID: 421624338261724200}
   - component: {fileID: 2525809605068775718}
   - component: {fileID: 4164781119588655087}
+  - component: {fileID: 3983335862939526960}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -4572,6 +4573,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 603186e842cda354a965b990f334a915, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeathFeedback
+--- !u!114 &3983335862939526960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431616952988622430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6460ec91908cb6342964afc23108ea98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlackJack
+  ShowTopMostFoldoutHeaderGroup: 1
+  hand: []
+  handTransform: {fileID: 0}
+  cardSpacing: 0.1
+  canDraw: 0
+  canDone: 0
 --- !u!1 &2467759632112175086
 GameObject:
   m_ObjectHideFlags: 0
@@ -14030,11 +14049,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TaskManager
   ShowTopMostFoldoutHeaderGroup: 1
   tasks:
-  - {fileID: 11400000, guid: 0867fa44c5713384fb0b45dcff918937, type: 2}
-  - {fileID: 11400000, guid: ce1df3d21161fd74c9d1e9c3bd8b1b44, type: 2}
   - {fileID: 11400000, guid: 8c7bad63cc03da14db9b6f5b85b6e349, type: 2}
+  - {fileID: 11400000, guid: ce1df3d21161fd74c9d1e9c3bd8b1b44, type: 2}
+  - {fileID: 11400000, guid: 0867fa44c5713384fb0b45dcff918937, type: 2}
   - {fileID: 11400000, guid: 1f2f22862e3cc074980eb9d4835fb4e7, type: 2}
   - {fileID: 11400000, guid: 6127d27d42d630b49bc2d6241c60e1e2, type: 2}
+  tasksPerRound: 3
 --- !u!1 &6094000583348113555
 GameObject:
   m_ObjectHideFlags: 0

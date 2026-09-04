@@ -253,6 +253,15 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ChangeMusic"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000031"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -550,6 +559,28 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
                     ""action"": ""Mute"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000031"",
+                    ""path"": ""<Keyboard>/n"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""ChangeMusic"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000032"",
+                    ""path"": ""<Gamepad>/dpad/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""ChangeMusic"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1043,6 +1074,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_PlayerControls_Done = m_PlayerControls.FindAction("Done", throwIfNotFound: true);
         m_PlayerControls_Blackjack = m_PlayerControls.FindAction("Blackjack", throwIfNotFound: true);
         m_PlayerControls_LeaveBlackjack = m_PlayerControls.FindAction("LeaveBlackjack", throwIfNotFound: true);
+        m_PlayerControls_ChangeMusic = m_PlayerControls.FindAction("ChangeMusic", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Pause = m_UI.FindAction("Pause", throwIfNotFound: true);
@@ -1155,6 +1187,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Done;
     private readonly InputAction m_PlayerControls_Blackjack;
     private readonly InputAction m_PlayerControls_LeaveBlackjack;
+    private readonly InputAction m_PlayerControls_ChangeMusic;
     /// <summary>
     /// Provides access to input actions defined in input action map "PlayerControls".
     /// </summary>
@@ -1239,6 +1272,10 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @LeaveBlackjack => m_Wrapper.m_PlayerControls_LeaveBlackjack;
         /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/ChangeMusic".
+        /// </summary>
+        public InputAction @ChangeMusic => m_Wrapper.m_PlayerControls_ChangeMusic;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_PlayerControls; }
@@ -1318,6 +1355,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @LeaveBlackjack.started += instance.OnLeaveBlackjack;
             @LeaveBlackjack.performed += instance.OnLeaveBlackjack;
             @LeaveBlackjack.canceled += instance.OnLeaveBlackjack;
+            @ChangeMusic.started += instance.OnChangeMusic;
+            @ChangeMusic.performed += instance.OnChangeMusic;
+            @ChangeMusic.canceled += instance.OnChangeMusic;
         }
 
         /// <summary>
@@ -1383,6 +1423,9 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @LeaveBlackjack.started -= instance.OnLeaveBlackjack;
             @LeaveBlackjack.performed -= instance.OnLeaveBlackjack;
             @LeaveBlackjack.canceled -= instance.OnLeaveBlackjack;
+            @ChangeMusic.started -= instance.OnChangeMusic;
+            @ChangeMusic.performed -= instance.OnChangeMusic;
+            @ChangeMusic.canceled -= instance.OnChangeMusic;
         }
 
         /// <summary>
@@ -1781,6 +1824,13 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnLeaveBlackjack(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "ChangeMusic" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnChangeMusic(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

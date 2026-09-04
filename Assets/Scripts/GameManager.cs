@@ -28,7 +28,8 @@ public class GameManager : NetworkBehaviour
     // responderId -> requesterId, tracks requests the server actually sent out so a
     // TeamUpResponseServerRpc call can be validated against a real pending request.
     private readonly Dictionary<ulong, ulong> _pendingTeamUpRequests = new();
-    private readonly Dictionary<ulong, List<PlayerTask>> _allPlayersTasks = new();
+    // Reused by DistributeTasks so the per-round hand-out doesn't allocate a fresh list each time.
+    private readonly List<ulong> _taskRecipients = new();
     private Coroutine _switchPlayerRoutine;
 
     #region Events
@@ -823,23 +824,26 @@ public class GameManager : NetworkBehaviour
 
     #region Tasks
 
+    // The results used to live in a private dictionary here that nothing ever read, wrote a
+    // completion to, or replicated. TaskManager owns them now: it replicates the assignments so
+    // each client can draw its own list, and answers HasCompletedAllTasks below.
     private void DistributeTasks()
     {
+        if (!IsServer || TaskManager.Instance == null || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        _taskRecipients.Clear();
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            if (!_playerStates.TryGetValue(clientId, out var isAlive) || !isAlive)
-                continue;
-
-            if (_allPlayersTasks.TryGetValue(clientId, out var existingTasks))
+            if (_playerStates.TryGetValue(clientId, out bool isAlive) && isAlive)
             {
-                existingTasks.RemoveAll(t => t.completed);
-                existingTasks.AddRange(TaskManager.Instance.GenerateTasks());
-            }
-            else
-            {
-                _allPlayersTasks[clientId] = TaskManager.Instance.GenerateTasks();
+                _taskRecipients.Add(clientId);
             }
         }
+
+        TaskManager.Instance.DistributeTasks(_taskRecipients);
     }
 
     #endregion
@@ -869,7 +873,10 @@ public class GameManager : NetworkBehaviour
             return ulong.MaxValue;
         }
 
-        List<ulong> eligibleClientIds = new();
+        List<ulong> aliveClientIds = new();
+        // Alive AND finished everything they were handed last round - the gun is the reward for
+        // getting your tasks done, so an idle player keeps getting passed over.
+        List<ulong> taskCompleteClientIds = new();
 
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
@@ -880,9 +887,19 @@ public class GameManager : NetworkBehaviour
 
             if (_playerStates.TryGetValue(clientId, out bool isAlive) && isAlive)
             {
-                eligibleClientIds.Add(clientId);
+                aliveClientIds.Add(clientId);
+
+                if (TaskManager.Instance == null || TaskManager.Instance.HasCompletedAllTasks(clientId))
+                {
+                    taskCompleteClientIds.Add(clientId);
+                }
             }
         }
+
+        // Falling back to the full alive pool is deliberate: if a whole round goes by and nobody
+        // finishes their tasks, the hand-off still has to happen or the match just stops. Task
+        // completion decides WHO gets the gun, it never decides whether the game continues.
+        List<ulong> eligibleClientIds = taskCompleteClientIds.Count > 0 ? taskCompleteClientIds : aliveClientIds;
 
         if (eligibleClientIds.Count == 0)
         {
@@ -964,19 +981,5 @@ public class GameManager : NetworkBehaviour
         }
 
         return ulong.MaxValue;
-    }
-}
-
-
-[System.Serializable]
-public class PlayerTask
-{
-    public Challenge challenge;
-    public bool completed;
-
-    public PlayerTask(Challenge challenge)
-    {
-        this.challenge = challenge;
-        completed = false;
     }
 }

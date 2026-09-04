@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: BlackJack
   m_EditorClassIdentifier: Assembly-CSharp::Challenge
   taskName: BlackJack
-  taskDiscription: play black jack
+  taskDiscription: Finish a blackjack round (3+ players)
+  interactionVerb: Play Blackjack
+  icon: {fileID: 0}
   difficulty: 2
   taskType: 2

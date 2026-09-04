@@ -10,9 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 086586a6b8e441f408598de9662e9c05, type: 3}
-  m_Name: Campfire
+  m_Name: Boombox
   m_EditorClassIdentifier: Assembly-CSharp::Challenge
-  taskName: Campfire
-  taskDiscription: Light up campfire
-  difficulty: 2
+  taskName: Boombox
+  taskDiscription: Change the boombox track (N)
+  interactionVerb: Pick Up
+  icon: {fileID: 0}
+  difficulty: 1
   taskType: 1
