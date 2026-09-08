@@ -10,6 +10,9 @@ public class InpToSlider : MonoBehaviour
     [SerializeField] private Slider sliderSens;
     [SerializeField] private TMP_InputField sliderSensInp;
     [SerializeField] private string sectionName = "MasterVolume";
+    [SerializeField, Tooltip("Decimal places shown in the input box. Whole-number sliders (field of " +
+        "view) want 0 so the value fits; the 0-1 sliders want 2.")]
+    private int decimals = 2;
 
     // sectionName holds the AudioMixer's exposed parameter name, which doesn't always match
     // the Settings.ini key SettingsManager reads on load - map it so changes actually persist.
@@ -22,6 +25,8 @@ public class InpToSlider : MonoBehaviour
     };
 
     private bool isUpdating = false; // Flag to prevent recursive updates
+
+    private string ValueFormat => "F" + Mathf.Clamp(decimals, 0, 3);
 
     private void OnEnable() {
         sliderSens.onValueChanged.AddListener(OnSliderValueChange);
@@ -52,7 +57,7 @@ public class InpToSlider : MonoBehaviour
 
         value = Mathf.Clamp(value, sliderSens.minValue, sliderSens.maxValue);
         sliderSens.value = value;
-        sliderSensInp.text = value.ToString("F2");
+        sliderSensInp.text = value.ToString(ValueFormat);
 
         if (!string.IsNullOrWhiteSpace(sectionName) && SettingsManager.Instance != null)
         {
@@ -86,13 +91,13 @@ public class InpToSlider : MonoBehaviour
             PersistVolume(number);
 
             // Format the value to ensure proper display
-            value = number.ToString("F2");
+            value = number.ToString(ValueFormat);
             sliderSens.value = number; // Update slider value
         }
         else
         {
             // Reset to current slider value if input is invalid
-            value = sliderSens.value.ToString("F2");
+            value = sliderSens.value.ToString(ValueFormat);
         }
 
         // Update the input field
@@ -115,7 +120,7 @@ public class InpToSlider : MonoBehaviour
         PersistVolume(value);
 
         // Update the input field and format the value
-        sliderSensInp.text = value.ToString("F2");
+        sliderSensInp.text = value.ToString(ValueFormat);
         sliderSens.value = value;
 
         isUpdating = false;

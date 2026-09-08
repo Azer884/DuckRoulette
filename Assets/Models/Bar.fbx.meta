@@ -1,0 +1,359 @@
+fileFormatVersion: 2
+guid: 5b6b8be0d0102a3489ce601aa72253b3
+ModelImporter:
+  serializedVersion: 24501
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ashtray_Metal
+    second: {fileID: 2100000, guid: 8b6e41a2cdb9c734ab6c64e68a1a719b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BackBar_Counter_Wood
+    second: {fileID: 2100000, guid: 0c24d977a9deb394ab45ba5f50abc9f4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bar_Counter_Black
+    second: {fileID: 2100000, guid: d4b1129d297e64941b160ae280d88743, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bar_Stool_Legs_Metal
+    second: {fileID: 2100000, guid: ec8947359a9c15d4dbae7353b90fb575, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bar_Stool_Seat_Leather
+    second: {fileID: 2100000, guid: 1597efd10ac6fc946ba742fcf0b84fad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Beer_Bottle_Glass_Green
+    second: {fileID: 2100000, guid: 6409349106b4ae648b3f485692abb4fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Beer_Bottle_Label_Gold
+    second: {fileID: 2100000, guid: 258182abd35cf114899bdd57445ed1f4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Beer_Mug_Body
+    second: {fileID: 2100000, guid: f7fcddb7294cbcf41b7187b2df705eb0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Beer_Mug_Metal_Bands
+    second: {fileID: 2100000, guid: 57891fa558a1682429747de3794b59f4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cash_Register_Body_Cream
+    second: {fileID: 2100000, guid: e0b799ccea3594540b021e45d3d108f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cash_Register_Keys_Black
+    second: {fileID: 2100000, guid: 31fafa4f8a7eb6a4cb02cf20d83b2e02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cash_Register_Metal
+    second: {fileID: 2100000, guid: 9d0fca246329f974a8125b09ebc3a2b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cash_Register_Screen
+    second: {fileID: 2100000, guid: 7c459c93c491a4346a14f3798b1f0fa3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ceiling_Black
+    second: {fileID: 2100000, guid: 880ae8d5fb534d74eb54135fe97617d3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ceiling_Pipe_Metal
+    second: {fileID: 2100000, guid: fa686cf0c94a1ed4c9ef54f79add94fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Couch_Fabric_Black
+    second: {fileID: 2100000, guid: 519d5fc035e9b744a97104093d0ce04a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Couch_Pillow_Fabric_Red
+    second: {fileID: 2100000, guid: ced3de297dbbbd84cb80032fed4adfe4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Door_Handle_Metal
+    second: {fileID: 2100000, guid: 71c44b44ded35044db29b24cfe3d565e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Door_Mat_Backing
+    second: {fileID: 2100000, guid: 11dce25be0505644881b7189232b99a9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Door_Mat_Fibers_Mat
+    second: {fileID: 2100000, guid: 6b3d8f3045983ff4898bf0b193071df4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Door_White
+    second: {fileID: 2100000, guid: 020f4bcb7a7597c45a36b74ea4afd547, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Emission_Blank_Unused
+    second: {fileID: 2100000, guid: 3d4a442b667e0874fad6fda4aaa727a2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Floor_Black
+    second: {fileID: 2100000, guid: e1a82eb00bbaa72428e708aec9138787, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Glass_Clear
+    second: {fileID: 2100000, guid: 7484dc78b39b0d640afd100eb69811be, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Metal_Chrome_Unused
+    second: {fileID: 2100000, guid: c82c8ab439e56454c8d9cc233f626cd3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Metal_Red_Unused
+    second: {fileID: 2100000, guid: 9210484d3560832468f6a9a6b7efeb77, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Paint_Black_Bar
+    second: {fileID: 2100000, guid: 6377bce433c1dd046a1541c9998a0c21, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Palm_Extra_Leaf_Texture
+    second: {fileID: 2100000, guid: ae203f82152349a4eb133df2617cb6bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Palm_Leaf
+    second: {fileID: 2100000, guid: fa84c0123dabbeb45aa799005f2bb6d6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Palm_Leaf_Back
+    second: {fileID: 2100000, guid: 66adc80eedb7381468f860bae50d8c17, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Palm_Leaves_A
+    second: {fileID: 2100000, guid: 671853ba49fb3114bb5fcb6cadbf6168, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Palm_Leaves_B
+    second: {fileID: 2100000, guid: bcacfb1e434474d40bda4d2b7f3405b9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Pendant_Lamp_Aluminium
+    second: {fileID: 2100000, guid: ffc49119549b0f6458218e008dc0457c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plant_Pot_Dark
+    second: {fileID: 2100000, guid: 25a34fbadcc29c4409b7fae5a7e6dba6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plant_Soil
+    second: {fileID: 2100000, guid: 6cd6a9f02ad11df43b5a574c6c5dfcd5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plastic_Black_Unused
+    second: {fileID: 2100000, guid: 58c6d8cecc301f846bd143e528b5db43, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Shaker_Metal
+    second: {fileID: 2100000, guid: ca7532d9c59a7e349a30d052df3fdb58, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Spotlight_Body_Black
+    second: {fileID: 2100000, guid: f79db6f567e8dea4a84a0f2e4c536d2a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Spotlight_Emitter
+    second: {fileID: 2100000, guid: c664e16a36d40314894d6dabd2d42406, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Trim_Dark_Brown
+    second: {fileID: 2100000, guid: d4b7c6eed4811ea4f9c0d5ffc4ffca7e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Vodka_Bottle_Cap
+    second: {fileID: 2100000, guid: 59cdb5964ab2d89499cde8a61dcfef78, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Vodka_Bottle_Glass_Clear
+    second: {fileID: 2100000, guid: 1d05970f7a260eb4a84506c8ad6a2f24, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wall_Black_Matte
+    second: {fileID: 2100000, guid: 758c257b144905449a1541222edf96bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wall_Grey
+    second: {fileID: 2100000, guid: cd78465785a02644fb7acc9659337e83, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Whiskey_Bottle_Glass_Amber
+    second: {fileID: 2100000, guid: f4aab8f00d5098148aa18a8d8b32c0d6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Whiskey_Bottle_Label_Black
+    second: {fileID: 2100000, guid: d7df34f08a0b89647aff06160189cbce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wood_Dark_Brown
+    second: {fileID: 2100000, guid: f01c71aa41982764faba5a03c729dfb0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wood_Furniture_Walnut
+    second: {fileID: 2100000, guid: 7a343949644cc264482599a6e894f432, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wood_Medium_Brown
+    second: {fileID: 2100000, guid: 9df7bde867a28dc48b0d29cce35581cf, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -108,6 +108,9 @@ public class Movement : NetworkBehaviour
 
     private CinemachineCamera playerCamera;
     private float targetFov;
+    private float runFovOffset;
+    private bool sprintToggled;
+    private bool crouchToggled;
     private Shooting shootingComponent;
     private InputAction moveAction, lookAction, runAction, jumpAction, crouchAction;
     private GameObject activeRunVfxPrefab;
@@ -226,6 +229,23 @@ public class Movement : NetworkBehaviour
         DestroyLocalRunVfx();
     }
 
+    // Unsubscribed here rather than in OnDisable: the subscription is set up once from Start, so
+    // dropping it on every disable would leave a re-enabled Movement deaf to setting changes.
+    public override void OnDestroy()
+    {
+        GameplaySettings.Changed -= ApplyFieldOfViewSetting;
+        base.OnDestroy();
+    }
+
+    // Pushes the Game tab's Field of View onto this player's camera. Called once at Start and
+    // again whenever the setting changes, so dragging the slider updates the view live.
+    private void ApplyFieldOfViewSetting()
+    {
+        walkFov = GameplaySettings.FieldOfView;
+        runFov = walkFov + runFovOffset;
+        targetFov = isRunning ? runFov : walkFov;
+    }
+
     public override void OnNetworkDespawn()
     {
         if (IsServer)
@@ -265,6 +285,12 @@ public class Movement : NetworkBehaviour
             walkFov = playerCamera.Lens.FieldOfView;
             targetFov = walkFov;
         }
+
+        // The Game tab's Field of View slider replaces the authored walk FOV; the sprint FOV keeps
+        // its authored offset above it so the run kick still reads the same at any setting.
+        runFovOffset = runFov - walkFov;
+        ApplyFieldOfViewSetting();
+        GameplaySettings.Changed += ApplyFieldOfViewSetting;
 
         lastPosition = transform.position;
 
@@ -334,6 +360,11 @@ public class Movement : NetworkBehaviour
         float lookX = looking.x * sensitivityX * deviceScale * Time.deltaTime;
         float lookY = looking.y * sensitivityY * deviceScale * Time.deltaTime;
 
+        if (GameplaySettings.InvertLookY)
+        {
+            lookY = -lookY;
+        }
+
         xRotation -= lookY;
         xRotation = Mathf.Clamp(xRotation, -85f, 75f);
 
@@ -387,7 +418,29 @@ public class Movement : NetworkBehaviour
         {
             movement = Vector2.zero;
         }
-        isRunning = runAction.ReadValue<float>() > 0 && movement.y > 0 && !isCrouched;
+        // Hold-to-sprint by default; the Game tab can flip it to a toggle, which latches on a
+        // press and drops again as soon as the player stops driving forward.
+        bool sprintHeld = runAction.ReadValue<float>() > 0;
+        if (GameplaySettings.ToggleSprint)
+        {
+            if (runAction.triggered)
+            {
+                sprintToggled = !sprintToggled;
+            }
+
+            if (movement.y <= 0)
+            {
+                sprintToggled = false;
+            }
+
+            sprintHeld = sprintToggled;
+        }
+        else
+        {
+            sprintToggled = false;
+        }
+
+        isRunning = sprintHeld && movement.y > 0 && !isCrouched;
         speedMultiplier = isRunning ? 2.0f : 1.0f;
         targetFov = isRunning ? runFov : walkFov;
 
@@ -896,9 +949,28 @@ public class Movement : NetworkBehaviour
             return;
         }
 
+        // Hold-to-crouch by default; the Game tab can flip it to a toggle. Either way the stand-up
+        // half still has to clear the ceiling check, so a toggled crouch under a low roof stays
+        // down until there is room - same behaviour hold-to-crouch already had.
+        bool crouchWanted;
+        if (GameplaySettings.ToggleCrouch)
+        {
+            if (crouchAction.triggered)
+            {
+                crouchToggled = !crouchToggled;
+            }
+
+            crouchWanted = crouchToggled;
+        }
+        else
+        {
+            crouchToggled = false;
+            crouchWanted = crouchAction.ReadValue<float>() > 0;
+        }
+
         if (!isSliding)
         {
-            if (crouchAction.ReadValue<float>() > 0)
+            if (crouchWanted)
             {
                 controller.height = crouchHeight;
                 isCrouched = true;
@@ -909,6 +981,12 @@ public class Movement : NetworkBehaviour
                 {
                     controller.height = initHeight;
                     isCrouched = false;
+                }
+                else
+                {
+                    // Blocked - keep the toggle latched so releasing under a ceiling does not
+                    // leave the setting and the actual pose disagreeing.
+                    crouchToggled = GameplaySettings.ToggleCrouch;
                 }
             }
         }

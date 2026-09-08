@@ -83,9 +83,13 @@ public class DeathVignette : MonoBehaviour
         float duration = targetWeight > currentWeight ? rampInDuration : rampOutDuration;
         currentWeight = Mathf.MoveTowards(currentWeight, targetWeight, Time.deltaTime / Mathf.Max(duration, 0.01f));
 
+        // Accessibility's Screen Effects slider scales the whole treatment; this one multiplies
+        // into each value by hand because that is how the ramp already works here.
+        float strength = currentWeight * GameplaySettings.ScreenEffectScale;
+
         vignette.color.value = vignetteColor;
-        vignette.intensity.value = peakVignetteIntensity * currentWeight;
-        colorAdjustments.saturation.value = peakSaturation * currentWeight;
-        colorAdjustments.postExposure.value = peakExposure * currentWeight;
+        vignette.intensity.value = peakVignetteIntensity * strength;
+        colorAdjustments.saturation.value = peakSaturation * strength;
+        colorAdjustments.postExposure.value = peakExposure * strength;
     }
 }

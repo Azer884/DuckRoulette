@@ -159,7 +159,9 @@ public class DizzinessEffect : MonoBehaviour
         // centre, the scale) have a non-zero neutral value, so scaling them toward zero would ramp
         // them the wrong way; blending the whole volume in lets URP interpolate each one from its
         // own neutral instead.
-        volume.weight = currentWeight;
+        // Accessibility's Screen Effects slider rides on top of the master ramp - at 0 the whole
+        // volume blends out and the screen stays still even while the player is stunned.
+        volume.weight = currentWeight * GameplaySettings.ScreenEffectScale;
 
         float distortionWave = Mathf.Sin(phase * lensDistortionFrequency * Mathf.PI * 2f);
         lensDistortion.intensity.value = lensDistortionAmount * distortionWave;

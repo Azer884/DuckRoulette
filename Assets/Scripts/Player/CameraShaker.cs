@@ -140,6 +140,10 @@ public class CameraShaker : MonoBehaviour
             }
         }
 
+        // One multiplier for every shake source: the Game tab's Camera Shake slider, forced to 0
+        // by Accessibility's Reduce Motion.
+        amplitude *= GameplaySettings.CameraShakeScale;
+
         noise.NoiseProfile = shape;
         noise.AmplitudeGain = amplitude;
         noise.FrequencyGain = frequency;

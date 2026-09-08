@@ -476,6 +476,17 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""d416a629-7c6d-4b9c-b205-7f8a1de74053"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""Shoot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""2e5c4800-3a4a-43ef-a0bd-89235d8f0fd6"",
                     ""path"": ""<Gamepad>/rightTrigger"",
                     ""interactions"": """",

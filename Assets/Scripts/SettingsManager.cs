@@ -123,6 +123,18 @@ public class SettingsManager : MonoBehaviour
         SetSetting("Mouse", "SensitivityY", "1.0");
         SetSetting("Controller", "ControllerSensitivityX", "1.0");
         SetSetting("Controller", "ControllerSensitivityY", "1.0");
+
+        SetSetting("Game", "FieldOfView", "60");
+        SetSetting("Game", "CameraShake", "1.0");
+        SetSetting("Game", "InvertLookY", "false");
+        SetSetting("Game", "ToggleCrouch", "false");
+        SetSetting("Game", "ToggleSprint", "false");
+        SetSetting("Game", "ShowTaskList", "true");
+
+        SetSetting("Accessibility", "ReduceMotion", "false");
+        SetSetting("Accessibility", "FlashingEffects", "true");
+        SetSetting("Accessibility", "ScreenEffects", "1.0");
+        SetSetting("Accessibility", "UIScale", "1.0");
     }
 
     public void ApplyMouseSettings()
@@ -145,6 +157,7 @@ public class SettingsManager : MonoBehaviour
         ApplyGraphicsSettings();
         ApplyAudioSettings();
         ApplyMouseSettings();
+        GameplaySettings.Invalidate();
     }
     public void ApplyGraphicsSettings()
     {
@@ -274,6 +287,13 @@ public class SettingsManager : MonoBehaviour
             case "Mouse":
             case "Controller":
                 ApplyMouseSettings();
+                break;
+            // The Game and Accessibility tabs are read on demand by whatever they affect
+            // (Movement, CameraShaker, the screen effects, the HUD) - there is nothing to push,
+            // only a cache to drop so the next read sees the new value.
+            case GameplaySettings.GameSection:
+            case GameplaySettings.AccessibilitySection:
+                GameplaySettings.Invalidate();
                 break;
             default:
                 ApplyAllSettings();

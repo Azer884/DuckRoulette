@@ -258,15 +258,21 @@ public class Shooting : NetworkBehaviour
 
     private void Shoot()
     {
-        // The Trigger action (RT on gamepad) drives both phases now: Trigger() above only cocks
-        // on the frame it consumes a press. Input System doesn't re-trigger a Button action until
-        // its control is released and pressed again, so any triggerAction.triggered on a LATER
-        // frame is inherently "released and re-clicked" - including a digital, click-only RT that
-        // can't be told apart from an analog one any other way. shootAction (left mouse) stays a
-        // separate, independent path for keyboard/mouse.
-        bool secondTriggerPress = triggerAction.triggered && lastTriggerConsumedFrame != Time.frameCount;
+        // The Trigger action (RT on gamepad) drives both phases: Trigger() above only cocks on the
+        // frame it consumes a press. Input System doesn't re-trigger a Button action until its
+        // control is released and pressed again, so any triggerAction.triggered on a LATER frame is
+        // inherently "released and re-clicked" - including a digital, click-only RT that can't be
+        // told apart from an analog one any other way.
+        //
+        // Shoot now carries a Gamepad binding on the same RT so the Controls tab has something to
+        // display and rebind for it (it had a keyboard binding only, which is why the gamepad Shoot
+        // row rendered blank). That means shootAction fires on the SAME frame as the cocking press
+        // on a pad, so the "not the frame we consumed the cock on" guard has to cover both paths -
+        // otherwise one RT pull would cock and fire at once.
+        bool shootPress = (shootAction.triggered || triggerAction.triggered)
+            && lastTriggerConsumedFrame != Time.frameCount;
 
-        if ((shootAction.triggered || secondTriggerPress) && canShoot && isTriggered)
+        if (shootPress && canShoot && isTriggered)
         {
             ExecuteShot();
         }

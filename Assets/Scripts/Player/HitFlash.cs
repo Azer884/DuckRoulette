@@ -87,7 +87,11 @@ public class HitFlash : MonoBehaviour
             ? t / attackFraction
             : 1f - (t - attackFraction) / (1f - attackFraction);
 
-        vignette.intensity.value = Mathf.Lerp(baseIntensity, peakIntensity, envelope);
+        // Accessibility gates this one twice: Flashing Effects kills the punch outright (it is the
+        // sharpest thing on screen), and Screen Effects scales what is left.
+        float strength = GameplaySettings.FlashingEffects ? GameplaySettings.ScreenEffectScale : 0f;
+
+        vignette.intensity.value = Mathf.Lerp(baseIntensity, peakIntensity, envelope * strength);
         vignette.color.value = peakColor;
     }
 }
