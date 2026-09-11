@@ -29,10 +29,26 @@ public class RoundManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+        _isRoundActiveNetworked.OnValueChanged += HandleRoundActiveChanged;
         if (IsServer)
         {
             _remainingTime.Value = roundDuration;
         }
+    }
+    public override void OnNetworkDespawn()
+    {
+        _isRoundActiveNetworked.OnValueChanged -= HandleRoundActiveChanged;
+        base.OnNetworkDespawn();
+    }
+    // A round starting was previously silent on every client, so the shot clock began counting
+    // down with nothing marking the moment it started.
+    private void HandleRoundActiveChanged(bool wasActive, bool isActive)
+    {
+        if (wasActive || !isActive || SFXManager.Instance == null)
+        {
+            return;
+        }
+        SFXManager.Instance.PlayUI(SFXManager.Instance.roundStartClip);
     }
     private void Update()
     {

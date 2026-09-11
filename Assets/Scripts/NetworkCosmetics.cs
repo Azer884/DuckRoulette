@@ -42,8 +42,6 @@ public class NetworkCosmetics : NetworkBehaviour
 
     private void ChangeCosmetic(GameObject[] items, Transform shadowParent, Transform parent, int newValue)
     {
-        Debug.Log($"Cosmetic index changed to {newValue}");
-
         foreach (Transform child in parent)
         {
             Destroy(child.gameObject);
@@ -74,8 +72,6 @@ public class NetworkCosmetics : NetworkBehaviour
     }
     private void ChangeCosmetic(GameObject[] items, GameObject[] shadowitems, int newValue)
     {
-        Debug.Log($"Cosmetic index changed to {newValue}");
-
         if (newValue == 0) return;
 
         GameObject mainItem = items[newValue - 1];

@@ -51,7 +51,6 @@ public class SelectionManager : MonoBehaviour
         if (selected != null && registeredButtons.Contains(selected))
         {
             lastSelected = selected;
-            Debug.Log($"Last Selected Updated: {lastSelected.name}");
         }
     }
 

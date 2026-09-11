@@ -39,6 +39,40 @@ public class SFXManager : MonoBehaviour
     [Header("Footsteps")]
     public AudioClip[] footstepClips;
 
+    [Header("Death")]
+    public AudioClip deathClip;
+    public AudioClip[] bodyImpactClips;
+
+    [Header("Slap Stun")]
+    public AudioClip stunClip;
+
+    [Header("Bullet Impact")]
+    public AudioClip bulletImpactClip;
+
+    [Header("Gun Handling")]
+    public AudioClip gunSpinClip;
+    public AudioClip gunSpinAfterShotClip;
+    // Played to the new holder only, so a player never has to look down to notice the gun
+    // arrived - the previous hand-off had no cue of any kind.
+    public AudioClip turnStartClip;
+
+    [Header("Hiding Spot")]
+    public AudioClip hideEnterClip;
+    public AudioClip hideExitClip;
+
+    [Header("Round Flow")]
+    public AudioClip roundStartClip;
+    public AudioClip shotClockTickClip;
+    public AudioClip shotClockUrgentTickClip;
+
+    [Header("Match End")]
+    public AudioClip victoryClip;
+    public AudioClip defeatClip;
+
+    [Header("Rewards")]
+    public AudioClip coinRewardClip;
+    public AudioClip taskCompleteClip;
+
     [SerializeField] private AudioSource uiSource;
 
     private void Awake()
@@ -148,6 +182,13 @@ public class SFXManager : MonoBehaviour
     {
         return footstepClips != null && footstepClips.Length > 0
             ? footstepClips[Random.Range(0, footstepClips.Length)]
+            : null;
+    }
+
+    public AudioClip RandomBodyImpact()
+    {
+        return bodyImpactClips != null && bodyImpactClips.Length > 0
+            ? bodyImpactClips[Random.Range(0, bodyImpactClips.Length)]
             : null;
     }
 }

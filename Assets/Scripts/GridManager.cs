@@ -70,8 +70,6 @@ public class GridManager : NetworkBehaviour
 
     private void OnCharactersListChanged(NetworkListEvent<NetworkObjectReference> changeEvent)
     {
-        Debug.Log($"NetworkList changed. Event type: {changeEvent.Type}");
-
         RefreshCharacterCache();
     }
 
@@ -85,7 +83,6 @@ public class GridManager : NetworkBehaviour
             if (netObjRef.TryGet(out NetworkObject networkObject))
             {
                 characters.Add(networkObject.transform);
-                Debug.Log($"Character added: {networkObject.name}");
             }
             else
             {

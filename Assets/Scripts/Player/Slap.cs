@@ -84,8 +84,6 @@ public class Slap : NetworkBehaviour
         {
             cameraShaker.Shake(slapShakeProfile);
         }
-        Debug.Log("Slap!");
-        
         int numColliders = Physics.OverlapSphereNonAlloc(slapArea.position, slapRaduis, slapResults, otherPlayers);
 
         List<GameObject> validSlappedPlayers = new();
@@ -97,7 +95,6 @@ public class Slap : NetworkBehaviour
                 validSlappedPlayers.Add(slapRes.gameObject);
             }
         }
-        Debug.Log($"{validSlappedPlayers.Count} Players can be slapped");
         if (validSlappedPlayers.Count > 0)
         {
             SlapPlayer(validSlappedPlayers[0]);

@@ -72,6 +72,11 @@ public class BulletBehavior : NetworkBehaviour
     [ClientRpc]
     private void SpawnImpactVfxClientRpc(Vector3 position)
     {
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayAt(SFXManager.Instance.bulletImpactClip, position);
+        }
+
         if (VfxManager.Instance == null)
         {
             return;

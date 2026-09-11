@@ -46,16 +46,9 @@ public class VoiceChatRaycast : NetworkBehaviour
 
             float distanceToOtherPlayer = Vector3.Distance(transform.position, otherPlayer.position);
 
-            if (!audioSourceCache.TryGetValue(otherPlayer, out AudioSource voiceAudio) || voiceAudio == null)
-            {
-                voiceAudio = otherPlayer.GetComponent<AudioSource>();
-                audioSourceCache[otherPlayer] = voiceAudio;
-            }
-
-            // Safety check for AudioSource
+            AudioSource voiceAudio = ResolveVoiceAudio(otherPlayer);
             if (voiceAudio == null)
             {
-                Debug.LogWarning($"VoiceChatRaycast: No AudioSource found on {otherPlayer.name}");
                 continue;
             }
 
@@ -79,7 +72,6 @@ public class VoiceChatRaycast : NetworkBehaviour
 
                 if (wallInTheWay)
                 {
-                    Debug.Log("Wall detected between players");
                     voiceAudio.volume *= 0.5f;
                     ApplyLowPassFilter(true, otherPlayer);
                 }
@@ -93,6 +85,43 @@ public class VoiceChatRaycast : NetworkBehaviour
                 voiceAudio.volume = 0f;
             }
         }
+    }
+
+    // The voice AudioSource lives on the VoiceChat component's own GameObject, which is a CHILD
+    // of the player root this list holds - a plain GetComponent on the root found nothing, so
+    // every player was skipped (no proximity falloff at all) while logging a warning per player
+    // per frame. Misses are cached as a null entry too, so a player that genuinely has no voice
+    // source costs one lookup instead of one GetComponent every frame forever.
+    private AudioSource ResolveVoiceAudio(Transform otherPlayer)
+    {
+        if (audioSourceCache.TryGetValue(otherPlayer, out AudioSource cached) && cached != null)
+        {
+            return cached;
+        }
+
+        if (cached == null && audioSourceCache.ContainsKey(otherPlayer))
+        {
+            return null;
+        }
+
+        AudioSource resolved = null;
+        VoiceChat voiceChat = otherPlayer.GetComponentInChildren<VoiceChat>(true);
+        if (voiceChat != null && voiceChat.audioSource != null)
+        {
+            resolved = voiceChat.audioSource;
+        }
+        else
+        {
+            resolved = otherPlayer.GetComponentInChildren<AudioSource>(true);
+        }
+
+        audioSourceCache[otherPlayer] = resolved;
+        if (resolved == null)
+        {
+            Debug.LogWarning($"VoiceChatRaycast: no voice AudioSource under {otherPlayer.name}; proximity voice is disabled for them.");
+        }
+
+        return resolved;
     }
 
     // Function to check if a ray hits a wall

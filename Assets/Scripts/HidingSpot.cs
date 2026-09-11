@@ -89,6 +89,8 @@ public class HidingSpot : NetworkBehaviour, IInteractable
 
         if (hidingModel != null) hidingModel.SetActive(true);
 
+        PlayHidingFeedback(enter: true);
+
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerNetworkObjectId, out NetworkObject playerObject))
         {
             return;
@@ -143,6 +145,8 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     [ClientRpc]
     private void ExitClientRpc(ulong clientId, ulong playerNetworkObjectId)
     {
+        PlayHidingFeedback(enter: false);
+
         if (NetworkManager.Singleton.LocalClientId == clientId)
         {
             ExitLocalHidingView();
@@ -395,5 +399,27 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         yield return new WaitForSeconds(hideDuration);
 
         Drop();
+    }
+
+    // Both RPCs already run on every peer, so a nearby player hears someone dive into (or pop
+    // out of) a hiding spot instead of it happening in silence.
+    private void PlayHidingFeedback(bool enter)
+    {
+        Vector3 position = transform.position;
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayAt(
+                enter ? SFXManager.Instance.hideEnterClip : SFXManager.Instance.hideExitClip,
+                position);
+        }
+
+        if (VfxManager.Instance != null)
+        {
+            VfxManager.SpawnOneShot(
+                enter ? VfxManager.Instance.hideEnterVfxPrefab : VfxManager.Instance.hideExitVfxPrefab,
+                position,
+                VfxManager.Instance.hideVfxLifetime);
+        }
     }
 }

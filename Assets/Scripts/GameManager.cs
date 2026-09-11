@@ -84,6 +84,10 @@ public class GameManager : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
+        // Every peer listens, but HandleGunHolderChanged only reacts on the client that just
+        // received the gun - the whole game is not knowing who is holding it.
+        playerWithGun.OnValueChanged += HandleGunHolderChanged;
+
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             _playerStates[clientId] = true;
@@ -295,6 +299,15 @@ public class GameManager : NetworkBehaviour
             VfxManager.SpawnOneShot(VfxManager.Instance.deathVfxPrefab, playerObject.transform.position, VfxManager.Instance.deathVfxLifetime);
         }
 
+        // This RPC already runs on every peer, so the elimination is audible to the whole lobby
+        // from where it happened rather than only to the victim.
+        if (SFXManager.Instance != null)
+        {
+            Vector3 deathPosition = playerObject.transform.position;
+            SFXManager.Instance.PlayAt(SFXManager.Instance.deathClip, deathPosition);
+            SFXManager.Instance.PlayAt(SFXManager.Instance.RandomBodyImpact(), deathPosition);
+        }
+
         // DeathTrigger only ever exists on the 13 per-hitbox child colliders, never on
         // playerObject's own root GameObject - TryGetComponent (unlike GetComponentInChildren)
         // only ever checks the exact GameObject it's called on, so this silently never matched
@@ -340,6 +353,12 @@ public class GameManager : NetworkBehaviour
                 {
                     Vector3 headPosition = playerObject.transform.position + VfxManager.Instance.stunVfxHeadOffset;
                     VfxManager.SpawnOneShot(VfxManager.Instance.stunVfxPrefab, headPosition, VfxManager.Instance.stunVfxLifetime);
+                }
+
+                if (SFXManager.Instance != null)
+                {
+                    SFXManager.Instance.PlayAt(SFXManager.Instance.stunClip, playerObject.transform.position);
+                    SFXManager.Instance.PlayAt(SFXManager.Instance.RandomBodyImpact(), playerObject.transform.position);
                 }
             }
         }
@@ -479,6 +498,30 @@ public class GameManager : NetworkBehaviour
             if (Coin.Instance != null && localCoinReward > 0)
             {
                 Coin.Instance.UpdateCoinAmount(localCoinReward);
+
+                if (SFXManager.Instance != null)
+                {
+                    SFXManager.Instance.PlayUI(SFXManager.Instance.coinRewardClip);
+                }
+            }
+
+            // Local-player result stinger. PlayUI (2D) on purpose: the match is over and the
+            // camera is on the results panel, so a positional one-shot would be inaudible.
+            bool localPlayerWon = NetworkManager.Singleton.LocalClientId == winnerId;
+            if (SFXManager.Instance != null)
+            {
+                SFXManager.Instance.PlayUI(localPlayerWon
+                    ? SFXManager.Instance.victoryClip
+                    : SFXManager.Instance.defeatClip);
+            }
+
+            if (localPlayerWon && VfxManager.Instance != null &&
+                NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject() != null)
+            {
+                VfxManager.SpawnOneShot(
+                    VfxManager.Instance.victoryVfxPrefab,
+                    NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().transform.position,
+                    VfxManager.Instance.victoryVfxLifetime);
             }
         }
     }
@@ -543,8 +586,35 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    // Turn hand-off had no feedback of any kind: the gun could arrive silently mid-walk and the
+    // 30s shot clock would already be running before the holder noticed.
+    private void HandleGunHolderChanged(ulong previousHolder, ulong newHolder)
+    {
+        if (NetworkManager.Singleton == null || newHolder != NetworkManager.Singleton.LocalClientId ||
+            previousHolder == newHolder)
+        {
+            return;
+        }
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.turnStartClip);
+        }
+
+        NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (VfxManager.Instance != null && localPlayerObject != null)
+        {
+            VfxManager.SpawnOneShot(
+                VfxManager.Instance.turnStartVfxPrefab,
+                localPlayerObject.transform.position,
+                VfxManager.Instance.turnStartVfxLifetime);
+        }
+    }
+
     public void OnDisable()
     {
+        playerWithGun.OnValueChanged -= HandleGunHolderChanged;
+
         if (this == Instance)
         {
             OnHostDisconnected?.Invoke();
@@ -809,10 +879,7 @@ public class GameManager : NetworkBehaviour
         if (!_hasRained)
         {
             float percentageChance = Mathf.Pow(1.0155f, Time.timeSinceLevelLoad);
-            Debug.Log(percentageChance);
-
             bool shouldRain = Percentage(percentageChance);
-            Debug.Log(shouldRain);
 
             if (shouldRain)
             {

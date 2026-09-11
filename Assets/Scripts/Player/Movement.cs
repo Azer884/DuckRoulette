@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
@@ -58,6 +59,22 @@ public class Movement : NetworkBehaviour
     public float initHeight;
     public float crouchHeight;
     public bool isCrouched;
+
+    [Header("Crouch/Jump Camera Offset"), Space]
+    // The first-person camera is a Cinemachine vcam that follows the player root through
+    // CinemachineFollow, so its position comes from FollowOffset - camHolder's own localPosition
+    // is overwritten every frame. Crouching only shrinks the CharacterController, which leaves the
+    // camera at standing height inside the crouched model; these offsets push it clear again.
+    [Tooltip("Offset added to the first-person camera while crouched, in player-local space (x = right, y = up, z = forward).")]
+    [SerializeField] private Vector3 crouchCamOffset = new Vector3(0f, -0.5f, 0.35f);
+    [Tooltip("Offset added to the first-person camera while airborne, in player-local space (x = right, y = up, z = forward).")]
+    [SerializeField] private Vector3 jumpCamOffset = new Vector3(0f, 0f, 0.2f);
+    [Tooltip("How quickly the camera blends to its crouch/air offset. Higher is snappier.")]
+    [SerializeField] private float camOffsetLerpSpeed = 10f;
+
+    private CinemachineFollow camFollow;
+    private Vector3 baseCamFollowOffset;
+    private Vector3 currentCamOffset;
 
     public Animator[] animators;
     public Animator handAnim;
@@ -307,6 +324,7 @@ public class Movement : NetworkBehaviour
         DoMovement();
         DoCrouch();
         DoLooking();
+        UpdateCameraOffset();
         UpdateFov();
         UpdateRunVfx(isRunning);
         Vector3 currentPos = transform.position;
@@ -325,6 +343,60 @@ public class Movement : NetworkBehaviour
         var lens = playerCamera.Lens;
         lens.FieldOfView = Mathf.Lerp(lens.FieldOfView, targetFov, fovLerpSpeed * Time.deltaTime);
         playerCamera.Lens = lens;
+    }
+
+    // Keeps the first-person camera out of the crouched/airborne model. The vcam's authored
+    // FollowOffset stays the base standing pose - move Player/CameraHolder's Follow Offset to
+    // retune that - and crouchCamOffset/jumpCamOffset are added on top in player-local space, so
+    // their z pushes the camera along the direction the player is facing.
+    private void UpdateCameraOffset()
+    {
+        if (!ResolveCamFollow())
+        {
+            return;
+        }
+
+        Vector3 targetOffset = Vector3.zero;
+        if (isCrouched)
+        {
+            targetOffset += crouchCamOffset;
+        }
+        if (!grounded)
+        {
+            targetOffset += jumpCamOffset;
+        }
+
+        // Framerate-independent smoothing, so the blend feels the same at 60 and 240 fps.
+        float blend = 1f - Mathf.Exp(-Mathf.Max(0f, camOffsetLerpSpeed) * Time.deltaTime);
+        currentCamOffset = Vector3.Lerp(currentCamOffset, targetOffset, blend);
+
+        // The vcam's binding mode is WorldSpace, so a raw z in FollowOffset would always mean
+        // world +Z. Rotating by the player's yaw first is what makes it read as "forward".
+        camFollow.FollowOffset = baseCamFollowOffset + transform.rotation * currentCamOffset;
+    }
+
+    private bool ResolveCamFollow()
+    {
+        if (camFollow != null)
+        {
+            return true;
+        }
+
+        // camHolder is injected at runtime by TutorialManager in the offline tutorial, so this
+        // can't just be resolved once in Start().
+        if (camHolder == null)
+        {
+            return false;
+        }
+
+        camFollow = camHolder.GetComponent<CinemachineFollow>();
+        if (camFollow == null)
+        {
+            return false;
+        }
+
+        baseCamFollowOffset = camFollow.FollowOffset;
+        return true;
     }
 
     private void DoLooking()
@@ -920,25 +992,86 @@ public class Movement : NetworkBehaviour
         return $"{tagKey}|{materialKey}";
     }
 
+    // Not every controller in `animators` declares every parameter (Legs.controller declares
+    // none at all, HandsController has no IsCrouched/Turning). Setting a parameter a controller
+    // doesn't have logs "Parameter 'X' does not exist." - once per parameter, per animator, per
+    // frame, per player - so the console filled with thousands of warnings a second during a
+    // match. Each animator's parameter set is scanned once and cached here instead.
+    private static readonly int XVelocityHash = Animator.StringToHash("XVelocity");
+    private static readonly int YVelocityHash = Animator.StringToHash("YVelocity");
+    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int IsCrouchedHash = Animator.StringToHash("IsCrouched");
+    private static readonly int TurningHash = Animator.StringToHash("Turning");
+    private static readonly int IsSlidingHash = Animator.StringToHash("IsSliding");
+
+    private readonly Dictionary<Animator, HashSet<int>> animatorParameterCache = new();
+
+    private HashSet<int> GetAnimatorParameters(Animator animator)
+    {
+        if (animatorParameterCache.TryGetValue(animator, out HashSet<int> cached))
+        {
+            return cached;
+        }
+
+        HashSet<int> parameters = new();
+        // A controller that hasn't bound yet reports zero parameters; leave it uncached so the
+        // real set is picked up on a later frame instead of being frozen as "has nothing".
+        if (animator.runtimeAnimatorController == null || !animator.isInitialized)
+        {
+            return parameters;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            parameters.Add(parameter.nameHash);
+        }
+
+        animatorParameterCache[animator] = parameters;
+        return parameters;
+    }
+
+    private void SetAnimatorFloat(Animator animator, HashSet<int> parameters, int hash, float value)
+    {
+        if (parameters.Contains(hash))
+        {
+            animator.SetFloat(hash, value);
+        }
+    }
+
+    private void SetAnimatorBool(Animator animator, HashSet<int> parameters, int hash, bool value)
+    {
+        if (parameters.Contains(hash))
+        {
+            animator.SetBool(hash, value);
+        }
+    }
+
     private void UpdateAnimator(float xVelocity, float yVelocity)
     {
         foreach (Animator animator in animators)
         {
-            animator.SetFloat("XVelocity", xVelocity);
-            animator.SetFloat("YVelocity", yVelocity);
-            animator.SetBool("IsGrounded", grounded);
-            animator.SetBool("IsCrouched", isCrouched);
-            animator.SetFloat("Turning", mouseXSmooth);
-            animator.SetBool("IsSliding", isSliding);
+            if (animator == null)
+            {
+                continue;
+            }
+
+            HashSet<int> parameters = GetAnimatorParameters(animator);
+            SetAnimatorFloat(animator, parameters, XVelocityHash, xVelocity);
+            SetAnimatorFloat(animator, parameters, YVelocityHash, yVelocity);
+            SetAnimatorBool(animator, parameters, IsGroundedHash, grounded);
+            SetAnimatorBool(animator, parameters, IsCrouchedHash, isCrouched);
+            SetAnimatorFloat(animator, parameters, TurningHash, mouseXSmooth);
+            SetAnimatorBool(animator, parameters, IsSlidingHash, isSliding);
         }
         if (handAnim == null)
         {
             return;
         }
-        handAnim.SetFloat("XVelocity", xVelocity);
-        handAnim.SetFloat("YVelocity", yVelocity);
-        handAnim.SetBool("IsGrounded", grounded);
-        handAnim.SetBool("IsSliding", isSliding);
+        HashSet<int> handParameters = GetAnimatorParameters(handAnim);
+        SetAnimatorFloat(handAnim, handParameters, XVelocityHash, xVelocity);
+        SetAnimatorFloat(handAnim, handParameters, YVelocityHash, yVelocity);
+        SetAnimatorBool(handAnim, handParameters, IsGroundedHash, grounded);
+        SetAnimatorBool(handAnim, handParameters, IsSlidingHash, isSliding);
     }
 
     private void DoCrouch()

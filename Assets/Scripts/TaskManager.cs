@@ -271,6 +271,7 @@ public class TaskManager : NetworkBehaviour
 
             entry.Completed = true;
             assignedTasks[i] = entry;
+            NotifyTaskCompleted(clientId);
             return;
         }
     }
@@ -296,7 +297,41 @@ public class TaskManager : NetworkBehaviour
 
             entry.Completed = true;
             assignedTasks[i] = entry;
+            NotifyTaskCompleted(clientId);
             return;
+        }
+    }
+
+    // Only the player who finished it gets the cue - a task is a private objective, so
+    // broadcasting it would tell the whole lobby something they aren't meant to know.
+    private void NotifyTaskCompleted(ulong clientId)
+    {
+        TaskCompletedFeedbackClientRpc(new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+        });
+    }
+
+    [ClientRpc]
+    private void TaskCompletedFeedbackClientRpc(ClientRpcParams rpcParams = default)
+    {
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.taskCompleteClip);
+        }
+
+        if (VfxManager.Instance == null || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        NetworkObject localPlayer = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayer != null)
+        {
+            VfxManager.SpawnOneShot(
+                VfxManager.Instance.taskCompleteVfxPrefab,
+                localPlayer.transform.position,
+                VfxManager.Instance.taskCompleteVfxLifetime);
         }
     }
 

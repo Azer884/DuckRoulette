@@ -22,6 +22,8 @@ public class ShotClockUI : MonoBehaviour
     [SerializeField] private Color urgentColor = new(1f, 0.25f, 0.2f, 1f);
     [SerializeField] private float urgentThreshold = 5f;
 
+    private int _lastTickSecond = -1;
+
     private void Awake()
     {
         if (root != null)
@@ -80,5 +82,29 @@ public class ShotClockUI : MonoBehaviour
         root.transform.localScale = urgent
             ? Vector3.one * (1f + Mathf.PingPong(Time.time * 4f, 0.12f))
             : Vector3.one;
+
+        TickAudio(remaining, urgent);
+    }
+
+    // One tick per whole second, tracked by the second the clock is currently showing rather
+    // than a timer of our own, so it can never drift out of sync with the number on screen.
+    private void TickAudio(float remaining, bool urgent)
+    {
+        if (!RoundManager.Instance.IsRoundActive)
+        {
+            _lastTickSecond = -1;
+            return;
+        }
+
+        int second = Mathf.CeilToInt(remaining);
+        if (second == _lastTickSecond || second <= 0 || SFXManager.Instance == null)
+        {
+            return;
+        }
+
+        _lastTickSecond = second;
+        SFXManager.Instance.PlayUI(urgent
+            ? SFXManager.Instance.shotClockUrgentTickClip
+            : SFXManager.Instance.shotClockTickClip);
     }
 }

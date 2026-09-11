@@ -51,6 +51,25 @@ public class VfxManager : MonoBehaviour
     public GameObject teamUpDapVfxPrefab;
     public float teamUpDapVfxLifetime = 1.5f;
 
+    [Header("Hiding Spot")]
+    public GameObject hideEnterVfxPrefab;
+    public GameObject hideExitVfxPrefab;
+    public float hideVfxLifetime = 1.5f;
+
+    [Header("Turn Handoff")]
+    public GameObject turnStartVfxPrefab;
+    public float turnStartVfxLifetime = 2f;
+
+    [Header("Match End")]
+    public GameObject victoryVfxPrefab;
+    public float victoryVfxLifetime = 5f;
+
+    [Header("Rewards")]
+    public GameObject coinRewardVfxPrefab;
+    public float coinRewardVfxLifetime = 2f;
+    public GameObject taskCompleteVfxPrefab;
+    public float taskCompleteVfxLifetime = 2f;
+
     // Shared by every simple "spawn a one-shot particle burst here, clean it up after a fixed
     // lifetime" caller (bullet impact, death, stun, team-up dap) so each doesn't reimplement the
     // Instantiate/Clear/Play/Destroy boilerplate.

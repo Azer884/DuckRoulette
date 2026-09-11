@@ -527,6 +527,7 @@ public class Shooting : NetworkBehaviour
         }
 
         PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.emptyShotClip : null, position);
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.gunSpinAfterShotClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -575,6 +576,9 @@ public class Shooting : NetworkBehaviour
     private void PlayEmptyShotSoundClientRpc(Vector3 position)
     {
         PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.emptyShotClip : null, position);
+        // The chamber advances on a dry click too - that rotation was the one part of the
+        // roulette loop with no sound at all.
+        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.gunSpinAfterShotClip : null, position);
     }
 
     private void PlayLocalOneShot(AudioClip clip, Vector3 position)
