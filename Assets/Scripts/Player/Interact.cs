@@ -298,10 +298,17 @@ public class Interact : NetworkBehaviour
         }
     }
 
+    // objToMove used to be any spawned NetworkObject and position anywhere, so a modified client
+    // could teleport bullets, rocks, hiding spots, cards... Only a pickable box this player is
+    // actually holding may move, and only to within arm's reach of the server's view of them.
+    private const float MaxHeldObjectDistance = 5f;
+
     [ServerRpc]
     private void MoveObjectServerRpc(ulong objToMove, Vector3 position, Quaternion rotation)
     {
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objToMove, out var networkObject))
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objToMove, out var networkObject) &&
+            networkObject.TryGetComponent(out BumBox bumBox) && bumBox.IsHeld && bumBox.holderId == (int)OwnerClientId &&
+            RpcValidation.IsWithinDistance(position, transform.position, MaxHeldObjectDistance))
         {
             networkObject.transform.SetPositionAndRotation(position, rotation);
         }

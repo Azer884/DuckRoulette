@@ -321,7 +321,7 @@ public class Shooting : NetworkBehaviour
             if (IsLocalMode)
             {
                 SpawnLocalBullet(spawnPosition);
-                PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, spawnPosition);
+                PlayGunshotOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, spawnPosition);
                 // The round was fired - require a reload before the next shot, mirroring
                 // the server-side isReloaded reset in ShootServerRpc.
                 _localIsReloaded = false;
@@ -425,13 +425,33 @@ public class Shooting : NetworkBehaviour
     [ServerRpc]
     public void ShootServerRpc(Vector3 spawnPoint, Quaternion rot, Vector3 targetAim, bool haveToReload = true, ServerRpcParams serverRpcParams = default)
     {
-        GameManager.Instance.isReloaded.Value = !haveToReload;
+        ulong senderId = serverRpcParams.Receive.SenderClientId;
+
+        // Ownership alone only proves the request came from this player's client - not that it's
+        // their turn, the gun is loaded, the chamber is live, or they haven't already fired. A
+        // modified client could otherwise fire unlimited bullets out of turn from anywhere.
+        // haveToReload is ignored: a live shot always empties the gun.
+        if (GameManager.Instance == null ||
+            !RpcValidation.IsFinite(targetAim) ||
+            !RpcValidation.IsWithinDistance(spawnPoint, transform.position, MaxShotOriginDistance) ||
+            !GameManager.Instance.TryAuthorizeShot(senderId))
+        {
+            return;
+        }
+
+        GameManager.Instance.isReloaded.Value = false;
+
+        Vector3 direction = (targetAim - spawnPoint).normalized;
+        if (direction.sqrMagnitude < 0.5f)
+        {
+            direction = transform.forward;
+        }
+
+        GameManager.Instance.RegisterShot(senderId, spawnPoint, direction);
 
         bullet = Instantiate(bulletPrefab, spawnPoint, rot);
         var bulletNetworkObject = bullet.GetComponent<NetworkObject>();
-        bulletNetworkObject.SpawnWithOwnership(serverRpcParams.Receive.SenderClientId);
-
-        Vector3 direction = (targetAim - spawnPoint).normalized;
+        bulletNetworkObject.SpawnWithOwnership(senderId);
 
         if (bullet.TryGetComponent(out BulletBehavior bulletBehavior))
         {
@@ -479,7 +499,9 @@ public class Shooting : NetworkBehaviour
     [ServerRpc]
     private void ReloadServerRpc()
     {
-        if (GameManager.Instance)
+        // A reload re-rolls the live chamber: only the holder, once per load, may do it - any
+        // player could otherwise re-roll the holder's odds, or the holder re-roll until live.
+        if (GameManager.Instance && GameManager.Instance.IsReloadAllowed(OwnerClientId))
         {
             GameManager.Instance.Reload();
         }
@@ -515,7 +537,7 @@ public class Shooting : NetworkBehaviour
             return;
         }
 
-        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
+        PlayGunshotOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
     }
 
     private void PlayEmptyShotSound(Vector3 position)
@@ -531,8 +553,9 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayReloadSoundServerRpc(Vector3 position)
+    private void PlayReloadSoundServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        if (!IsOwnSoundRequest(position, serverRpcParams)) return;
         PlayReloadSoundClientRpc(position);
     }
 
@@ -543,8 +566,9 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayTriggerSoundServerRpc(Vector3 position)
+    private void PlayTriggerSoundServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        if (!IsOwnSoundRequest(position, serverRpcParams)) return;
         PlayTriggerSoundClientRpc(position);
     }
 
@@ -555,20 +579,22 @@ public class Shooting : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayShootSoundServerRpc(Vector3 position)
+    private void PlayShootSoundServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        if (!IsOwnSoundRequest(position, serverRpcParams)) return;
         PlayShootSoundClientRpc(position);
     }
 
     [ClientRpc]
     private void PlayShootSoundClientRpc(Vector3 position)
     {
-        PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
+        PlayGunshotOneShot(SFXManager.Instance != null ? SFXManager.Instance.shootClip : null, position);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlayEmptyShotSoundServerRpc(Vector3 position)
+    private void PlayEmptyShotSoundServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        if (!IsOwnSoundRequest(position, serverRpcParams)) return;
         PlayEmptyShotSoundClientRpc(position);
     }
 
@@ -581,11 +607,31 @@ public class Shooting : NetworkBehaviour
         PlayLocalOneShot(SFXManager.Instance != null ? SFXManager.Instance.gunSpinAfterShotClip : null, position);
     }
 
+    // RequireOwnership=false on the sound RPCs is kept, but only this player's own client may
+    // trigger them, near this player - otherwise any client could spam gun sounds anywhere.
+    private const float MaxShotOriginDistance = 5f;
+    private bool IsOwnSoundRequest(Vector3 position, ServerRpcParams serverRpcParams)
+    {
+        return serverRpcParams.Receive.SenderClientId == OwnerClientId &&
+               RpcValidation.IsWithinDistance(position, transform.position, MaxShotOriginDistance);
+    }
+
     private void PlayLocalOneShot(AudioClip clip, Vector3 position)
     {
         if (SFXManager.Instance != null)
         {
             SFXManager.Instance.PlayAt(clip, position);
+        }
+    }
+
+    // The live shot is the signature moment of the match and should carry across the arena
+    // even while voice chat is ducking the SFX bus, so it gets a wider, higher-priority range
+    // than the default one-shot (reload/trigger/blank stay close-range and unchanged).
+    private void PlayGunshotOneShot(AudioClip clip, Vector3 position)
+    {
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayAt(clip, position, minDistance: 10f, maxDistance: 80f, priority: 10);
         }
     }
 

@@ -32,6 +32,35 @@ public class GameManager : NetworkBehaviour
     private readonly List<ulong> _taskRecipients = new();
     private Coroutine _switchPlayerRoutine;
 
+    // --- Server-side anti-cheat bookkeeping (see Docs/SecurityAudit.md) ---
+    // Every validated live shot, so a reported hit can be checked against a bullet that really
+    // left this shooter's gun (and credited at most once) instead of trusting the reporter.
+    private struct ShotRecord
+    {
+        public ulong ShooterId;
+        public Vector3 Origin;
+        public Vector3 Direction;
+        public float Time;
+        public bool Consumed;
+    }
+    private readonly List<ShotRecord> _recentShots = new();
+    // Bumped on every gun hand-off; a shot stamps the serial it was fired in, so one turn can't
+    // fire more than one bullet.
+    private int _turnSerial;
+    private int _shotFiredTurnSerial = -1;
+    // (attacker, victim) -> slaps the server itself counted, gates StunPlayerServerRpc.
+    private readonly Dictionary<(ulong, ulong), (int count, float lastTime)> _slapCounts = new();
+    private readonly Dictionary<ulong, float> _lastTeamUpRequestTime = new();
+    // Bullet lifetime (5s, BulletBehavior) plus late-report slack.
+    private const float ShotRecordLifetime = 6.5f;
+    private const float ShotTravelSlackSeconds = 1f;
+    // Hitbox extents + owner-authoritative position lag at ~250ms RTT.
+    public const float ShotHitLateralTolerance = 3.5f;
+    private const float SlapMaxDistance = 5f;
+    private const float SlapCountResetSeconds = 60f;
+    private const float TeamUpMaxDistance = 8f;
+    private const float TeamUpRequestCooldown = 4f;
+
     #region Events
     public delegate void OnWheaterChange();
     public static event OnWheaterChange OnWeatherChange;
@@ -120,7 +149,7 @@ public class GameManager : NetworkBehaviour
 
             if (_alivePlayersCount.Value > 0)
             {
-                playerWithGun.Value = GetRandomClientId();
+                SetGunHolder(GetRandomClientId());
                 UpdatePlayerShootingScripts();
                 CheckPlayerGunScript();
             }
@@ -135,14 +164,16 @@ public class GameManager : NetworkBehaviour
     // arbitrary clientId's shot as "true" to force that player's gun/bullet state out of turn.
     public void OnClientShotChanged(ulong clientId, bool hasShot)
     {
-        if (!IsServer || !hasShot)
+        // Only the current holder's trigger pull ends the turn - otherwise any player could flip
+        // their own hasShot to skip someone else's turn and advance the chamber.
+        if (!IsServer || !hasShot || !RpcValidation.IsGunHolder(clientId, playerWithGun.Value))
         {
             return;
         }
 
         RoundManager.Instance?.EndRound();
 
-        playerWithGun.Value = GetRandomClientId(clientId);
+        SetGunHolder(GetRandomClientId(clientId));
         UpdatePlayerShootingScripts();
         bulletPosition.Value = (bulletPosition.Value + 1) % 6;
         CheckPlayerGunScript();
@@ -158,7 +189,7 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        playerWithGun.Value = GetRandomClientId(playerWithGun.Value);
+        SetGunHolder(GetRandomClientId(playerWithGun.Value));
         UpdatePlayerShootingScripts();
         CheckPlayerGunScript();
     }
@@ -228,29 +259,151 @@ public class GameManager : NetworkBehaviour
     // killerClientId is only used to drive the victim's own death banner/spectate target - the
     // alive-state change itself (MarkPlayerInactive) doesn't need it. See SetPlayerDeadClientRpc
     // for why the ragdoll/isDead broadcast is server-driven from here instead of victim-owned RPCs.
+    //
+    // Any peer may still report the hit (bystanders detect it most reliably), but the report is
+    // no longer trusted on its own: TryValidateShotKill requires a live shot the server itself
+    // authorized for killerClientId, whose straight-line path passes near the victim, that hasn't
+    // already killed someone. A modified client can no longer kill arbitrary players by id.
     [ServerRpc(RequireOwnership = false)]
     public void UpdatePlayerStateServerRpc(ulong clientId, ulong killerClientId)
     {
-        // Gated on Death.isDead.Value directly - the single authoritative source of truth for
-        // "is this player already dead" - instead of on MarkPlayerInactive's own _playerStates
-        // bookkeeping. _playerStates is a SEPARATE dictionary that can desync from isDead (e.g.
-        // OnClientDisconnect marks an entry inactive on its own path), and StunPlayerServerRpc's
-        // working knockout broadcast never had this second, independently-fallible gate at all -
-        // it just broadcasts unconditionally. If _playerStates had already (incorrectly) marked
-        // this client inactive before they were ever actually shot, MarkPlayerInactive's own
-        // guard would silently return false and the ragdoll/isDead broadcast below - the part
-        // that actually kills the victim on every client's screen - would never fire, even
-        // though the hit itself was completely valid.
-        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var victimClient) ||
-            victimClient.PlayerObject == null ||
-            !victimClient.PlayerObject.TryGetComponent(out Death victimDeath) ||
-            victimDeath.isDead.Value)
+        if (!TryGetPlayerObject(clientId, out NetworkObject victimObject))
         {
             return;
         }
 
-        MarkPlayerInactive(clientId, reassignGun: false);
-        SetPlayerDeadClientRpc(clientId, killerClientId);
+        // Hitbox centre, not the feet pivot.
+        Vector3 victimCenter = victimObject.transform.position + Vector3.up;
+        if (!TryValidateShotKill(clientId, killerClientId, victimCenter, ShotHitLateralTolerance))
+        {
+            return;
+        }
+
+        ApplyShotKill(clientId, killerClientId);
+    }
+
+    /// <summary>Server only. Records a shot ShootServerRpc already authorized, so later hit reports
+    /// can be validated against it.</summary>
+    public void RegisterShot(ulong shooterId, Vector3 origin, Vector3 direction)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        PruneShotRecords();
+        _recentShots.Add(new ShotRecord { ShooterId = shooterId, Origin = origin, Direction = direction, Time = Time.time });
+    }
+
+    /// <summary>Server only. True (and marks this turn's shot as fired) when senderId may fire a
+    /// live round right now.</summary>
+    public bool TryAuthorizeShot(ulong senderId)
+    {
+        if (!IsServer || _isGameEnded)
+        {
+            return false;
+        }
+
+        if (!RpcValidation.IsShotAllowed(senderId, playerWithGun.Value, canShoot.Value, isReloaded.Value,
+                _shotFiredTurnSerial == _turnSerial, bulletPosition.Value, randomBulletPosition.Value))
+        {
+            return false;
+        }
+
+        _shotFiredTurnSerial = _turnSerial;
+        return true;
+    }
+
+    /// <summary>Server only. Whether senderId may reload right now.</summary>
+    public bool IsReloadAllowed(ulong senderId)
+    {
+        return IsServer && !_isGameEnded &&
+               RpcValidation.IsReloadAllowed(senderId, playerWithGun.Value, canShoot.Value, isReloaded.Value);
+    }
+
+    /// <summary>Server only. Validates a reported bullet hit on victimId by killerId: victim alive
+    /// and not killerId's teammate, and an unconsumed shot by killerId whose path passes within
+    /// lateralTolerance of hitReferencePoint. Consumes that shot on success (one kill per bullet).
+    /// Does not apply the kill - call ApplyShotKill.</summary>
+    public bool TryValidateShotKill(ulong victimId, ulong killerId, Vector3 hitReferencePoint, float lateralTolerance)
+    {
+        if (!IsServer || _isGameEnded || !TryGetPlayerObject(victimId, out NetworkObject victimObject))
+        {
+            return false;
+        }
+
+        // Gated on Death.isDead.Value directly - the single authoritative source of truth for
+        // "is this player already dead" - instead of on MarkPlayerInactive's own _playerStates
+        // bookkeeping, which can desync from isDead (e.g. OnClientDisconnect's own path).
+        bool victimDead = !victimObject.TryGetComponent(out Death victimDeath) || victimDeath.isDead.Value;
+        if (!RpcValidation.IsKillCreditEligible(victimId, killerId, victimDead, RpcValidation.AreTeammates(_teams, victimId, killerId)))
+        {
+            return false;
+        }
+
+        PruneShotRecords();
+        float now = Time.time;
+        for (int i = _recentShots.Count - 1; i >= 0; i--)
+        {
+            ShotRecord shot = _recentShots[i];
+            if (shot.ShooterId != killerId || shot.Consumed ||
+                !RpcValidation.IsPointNearShotPath(hitReferencePoint, shot.Origin, shot.Direction, BulletBehavior.Speed,
+                    now - shot.Time, lateralTolerance, ShotTravelSlackSeconds))
+            {
+                continue;
+            }
+
+            shot.Consumed = true;
+            _recentShots[i] = shot;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Server only. Applies a kill already validated by TryValidateShotKill: marks the
+    /// victim inactive, broadcasts death/ragdoll, and credits the killer server-side.</summary>
+    public void ApplyShotKill(ulong victimId, ulong killerId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        _playersKills[killerId] = (_playersKills.TryGetValue(killerId, out int kills) ? kills : 0) + 1;
+        MarkPlayerInactive(victimId, reassignGun: false);
+        SetPlayerDeadClientRpc(victimId, killerId);
+    }
+
+    private void PruneShotRecords()
+    {
+        float now = Time.time;
+        _recentShots.RemoveAll(shot => now - shot.Time > ShotRecordLifetime);
+    }
+
+    private void SetGunHolder(ulong clientId)
+    {
+        playerWithGun.Value = clientId;
+        _turnSerial++;
+    }
+
+    private bool TryGetPlayerObject(ulong clientId, out NetworkObject playerObject)
+    {
+        playerObject = null;
+        if (NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) &&
+            client.PlayerObject != null)
+        {
+            playerObject = client.PlayerObject;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsPlayerObjectDead(NetworkObject playerObject)
+    {
+        return playerObject.TryGetComponent(out Death death) && death.isDead.Value;
     }
 
     // Server-authoritative death/ragdoll broadcast. Death used to expose owner-gated ServerRpcs so
@@ -304,7 +457,8 @@ public class GameManager : NetworkBehaviour
         if (SFXManager.Instance != null)
         {
             Vector3 deathPosition = playerObject.transform.position;
-            SFXManager.Instance.PlayAt(SFXManager.Instance.deathClip, deathPosition);
+            // Elimination is a signature moment like the gunshot - keep it audible arena-wide.
+            SFXManager.Instance.PlayAt(SFXManager.Instance.deathClip, deathPosition, minDistance: 10f, maxDistance: 80f, priority: 10);
             SFXManager.Instance.PlayAt(SFXManager.Instance.RandomBodyImpact(), deathPosition);
         }
 
@@ -328,10 +482,54 @@ public class GameManager : NetworkBehaviour
     // by the server) whenever ANY player slaps someone into a stun, not just the host - the
     // default RequireOwnership would only ever let the server/host's own client succeed here,
     // silently rejecting every non-host client's stun ("client cannot knockout host"). clientId is
-    // just the already-validated target of an existing slap interaction, not a trust boundary.
+    // just the target of a slap interaction - validated below against the sender (alive, in slap
+    // range, and the server itself counted enough validated slaps on this victim).
     [ServerRpc(RequireOwnership = false)]
-    public void StunPlayerServerRpc(ulong clientId)
+    public void StunPlayerServerRpc(ulong clientId, ServerRpcParams serverRpcParams = default)
     {
+        ulong attackerId = serverRpcParams.Receive.SenderClientId;
+        if (attackerId == clientId ||
+            !TryGetPlayerObject(attackerId, out NetworkObject attackerObject) ||
+            !TryGetPlayerObject(clientId, out NetworkObject victimObject) ||
+            IsPlayerObjectDead(attackerObject) || IsPlayerObjectDead(victimObject) ||
+            !RpcValidation.IsWithinDistance(attackerObject.transform.position, victimObject.transform.position, SlapMaxDistance))
+        {
+            return;
+        }
+
+        var key = (attackerId, clientId);
+        if (!_slapCounts.TryGetValue(key, out var slaps) || !RpcValidation.HasEnoughSlapsForStun(slaps.count))
+        {
+            return;
+        }
+
+        _slapCounts.Remove(key);
+        StunPlayer(clientId);
+    }
+
+    /// <summary>Server only. Records one validated slap (from Slap.SlapImpactServerRpc) toward a
+    /// later stun request.</summary>
+    public void RegisterSlap(ulong attackerId, ulong victimId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        var key = (attackerId, victimId);
+        float now = Time.time;
+        int count = _slapCounts.TryGetValue(key, out var slaps) && now - slaps.lastTime <= SlapCountResetSeconds ? slaps.count : 0;
+        _slapCounts[key] = (count + 1, now);
+    }
+
+    /// <summary>Server only. Unvalidated knockout for server-originated sources (e.g. Rocks).</summary>
+    public void StunPlayer(ulong clientId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
         // Rolled once here and broadcast, not rolled per peer inside Ragdoll: the ragdoll recovery
         // state machine now runs on every copy of the player (it has to - it is what re-enables
         // their Animators), so a per-peer roll would have the same knockout last a different
@@ -408,7 +606,8 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void UpdateStatsClientRpc()
     {
-        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<Stats>(out var stats))
+        NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayerObject != null && localPlayerObject.TryGetComponent<Stats>(out var stats))
         {
             stats.timeSurvived.Value = StatTracker.Instance.timeSurvived;
             stats.shotCounter.Value = stats.GetComponent<Shooting>().shotCounter;
@@ -426,7 +625,8 @@ public class GameManager : NetworkBehaviour
         PlayerSpawner.Instance.isStarted = false;
 
         Debug.Log($"Game Over! {GetPlayerNickname(winnerId)} Won.");
-        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<PauseMenu>(out var pauseMenu))
+        NetworkObject localPlayerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayerObject != null && localPlayerObject.TryGetComponent<PauseMenu>(out var pauseMenu))
         {
             pauseMenu.End();
             int localCoinReward = 0;
@@ -557,6 +757,15 @@ public class GameManager : NetworkBehaviour
         Debug.Log($"{GetPlayerNickname(clientId)} has left the game.");
         MarkPlayerInactive(clientId, reassignGun: true);
 
+        _lastTeamUpRequestTime.Remove(clientId);
+        foreach (var slapKey in new List<(ulong, ulong)>(_slapCounts.Keys))
+        {
+            if (slapKey.Item1 == clientId || slapKey.Item2 == clientId)
+            {
+                _slapCounts.Remove(slapKey);
+            }
+        }
+
         _pendingTeamUpRequests.Remove(clientId);
         foreach (ulong responderId in new List<ulong>(_pendingTeamUpRequests.Keys))
         {
@@ -671,22 +880,13 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    // Intentionally a no-op, kept only so older call sites/builds still bind. Kill credit used to
+    // be whatever shooterId any client named here (anyone could inflate anyone's kills and the
+    // coin reward derived from them); it is now awarded server-side in ApplyShotKill, only for a
+    // kill TryValidateShotKill accepted.
     [ServerRpc(RequireOwnership = false)]
     public void UpdateKillsServerRpc(ulong shooterId, int killAmount)
     {
-        // Only ever legitimately reported as 1 (one kill) per call; reject anything else
-        // so a modified client can't grant itself arbitrary kills/coins via this RPC.
-        if (killAmount != 1)
-        {
-            return;
-        }
-
-        if (!_playersKills.ContainsKey(shooterId))
-        {
-            _playersKills[shooterId] = 0;
-        }
-
-        _playersKills[shooterId] += killAmount;
     }
 
     #region TeamUp
@@ -695,6 +895,23 @@ public class GameManager : NetworkBehaviour
     public void TeamUpRequestServerRpc(ulong teamMateId, ServerRpcParams serverRpcParams = default)
     {
         ulong requesterId = serverRpcParams.Receive.SenderClientId;
+        float now = Time.time;
+
+        // The target must be a different, connected, in-range player, neither side already
+        // teamed, and requests are rate-limited (client cooldown is 5s) - otherwise any client
+        // could spam/hijack pending requests for any player from anywhere on the map.
+        if (teamMateId == requesterId ||
+            !TryGetPlayerObject(requesterId, out NetworkObject requesterObject) ||
+            !TryGetPlayerObject(teamMateId, out NetworkObject teamMateObject) ||
+            RpcValidation.IsInAnyTeam(_teams, requesterId) || RpcValidation.IsInAnyTeam(_teams, teamMateId) ||
+            !RpcValidation.IsWithinDistance(requesterObject.transform.position, teamMateObject.transform.position, TeamUpMaxDistance) ||
+            (_lastTeamUpRequestTime.TryGetValue(requesterId, out float lastRequest) &&
+             !RpcValidation.IsCooldownElapsed(lastRequest, now, TeamUpRequestCooldown)))
+        {
+            return;
+        }
+
+        _lastTeamUpRequestTime[requesterId] = now;
         _pendingTeamUpRequests[teamMateId] = requesterId;
 
         var clientRpcParams = new ClientRpcParams
@@ -734,6 +951,22 @@ public class GameManager : NetworkBehaviour
             return;
         }
         _pendingTeamUpRequests.Remove(responderId);
+
+        // A stale request can't create a second team for someone already teamed, or join two
+        // players who have since walked apart.
+        if (RpcValidation.IsInAnyTeam(_teams, requesterId) || RpcValidation.IsInAnyTeam(_teams, responderId) ||
+            !TryGetPlayerObject(requesterId, out NetworkObject requesterObject) ||
+            !TryGetPlayerObject(responderId, out NetworkObject responderObject) ||
+            !RpcValidation.IsWithinDistance(requesterObject.transform.position, responderObject.transform.position, TeamUpMaxDistance))
+        {
+            return;
+        }
+
+        // Cosmetic, but broadcast to everyone - don't let it be placed anywhere on the map.
+        if (!RpcValidation.IsWithinDistance(soundPosition, responderObject.transform.position, TeamUpMaxDistance))
+        {
+            soundPosition = responderObject.transform.position;
+        }
 
         var clientRpcParams = new ClientRpcParams
         {
@@ -789,6 +1022,13 @@ public class GameManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void EndTeamUpServerRpc(ulong teamMateId, ServerRpcParams serverRpcParams = default)
     {
+        // Only a team the sender is actually part of can be ended - teamMateId used to be trusted
+        // outright, letting any client break up (and un-outline) any other player's team.
+        if (!RpcValidation.AreTeammates(_teams, serverRpcParams.Receive.SenderClientId, teamMateId))
+        {
+            return;
+        }
+
         var clientRpcParams = new ClientRpcParams
         {
             Send = new ClientRpcSendParams
@@ -1019,7 +1259,7 @@ public class GameManager : NetworkBehaviour
         if (reassignGun && playerWithGun.Value == clientId)
         {
             RoundManager.Instance?.EndRound();
-            playerWithGun.Value = GetRandomClientId(clientId);
+            SetGunHolder(GetRandomClientId(clientId));
             UpdatePlayerShootingScripts();
 
             // Don't start a new round for the sole survivor - the game is about to end below.

@@ -189,10 +189,33 @@ public class Slap : NetworkBehaviour
         Debug.Log($"{player.name} is no longer stunned.");
     }
 
+    // Owner-only already, but the victim id and attacker position were trusted: a modified client
+    // could shake/knock any player's camera from anywhere, as fast as it liked. The victim must be
+    // another connected player in slap range of the server's own view of this attacker, at no more
+    // than twice the local cooldown rate. Each accepted impact is also counted server-side, which
+    // is what GameManager.StunPlayerServerRpc checks before honouring a stun.
+    private const float MaxSlapDistance = 5f;
+    private double _lastSlapImpactServerTime = double.NegativeInfinity;
+
     [ServerRpc]
     private void SlapImpactServerRpc(ulong clientId, Vector3 attackerPosition)
     {
-        SlapImpactClientRpc(clientId, attackerPosition);
+        if (clientId == OwnerClientId ||
+            (TryGetComponent(out Death attackerDeath) && attackerDeath.isDead.Value) ||
+            !NetworkManager.ConnectedClients.TryGetValue(clientId, out var victimClient) || victimClient.PlayerObject == null ||
+            !RpcValidation.IsWithinDistance(transform.position, victimClient.PlayerObject.transform.position, MaxSlapDistance) ||
+            !RpcValidation.IsCooldownElapsed(_lastSlapImpactServerTime, Time.timeAsDouble, slapCoolDown * 0.5f))
+        {
+            return;
+        }
+
+        _lastSlapImpactServerTime = Time.timeAsDouble;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterSlap(OwnerClientId, clientId);
+        }
+
+        SlapImpactClientRpc(clientId, transform.position);
     }
 
     private void PlaySlapSound(Vector3 position)
@@ -207,8 +230,15 @@ public class Slap : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void PlaySlapVfxServerRpc(Vector3 position)
+    private void PlaySlapVfxServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        // Only this player's own client, near this player - not any client, anywhere.
+        if (serverRpcParams.Receive.SenderClientId != OwnerClientId ||
+            !RpcValidation.IsWithinDistance(position, transform.position, MaxSlapDistance))
+        {
+            return;
+        }
+
         PlaySlapSoundClientRpc(position);
         SpawnImpactVfxClientRpc(position);
     }

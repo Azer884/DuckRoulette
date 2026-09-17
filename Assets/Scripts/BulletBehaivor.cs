@@ -6,7 +6,9 @@ using UnityEngine;
 public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
-    private float speed = 15f;
+    // Public so GameManager's server-side hit validation projects the same straight-line path.
+    public const float Speed = 15f;
+    private float speed = Speed;
     private Coroutine destroyRoutine;
     public NetworkVariable<Vector3> initialVelocity = new();
     

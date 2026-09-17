@@ -54,8 +54,9 @@ public class VoiceChatRaycast : NetworkBehaviour
 
             if (distanceToOtherPlayer <= maxDistance)
             {
-                float proximityVolume = 1f - (distanceToOtherPlayer / maxDistance);  // Closer = louder
-                voiceAudio.volume = Mathf.Clamp(proximityVolume, 0f, 1f);
+                // Distance falloff is now the AudioSource's own 3D rolloff (H2 fix); this script
+                // only applies the wall-occlusion multiplier on top of it.
+                voiceAudio.volume = 1f;
 
                 Vector3 rayStartHead = transform.position + Vector3.up * headHeight;
                 Vector3 rayEndHead = otherPlayer.position + Vector3.up * headHeight;

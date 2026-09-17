@@ -109,9 +109,23 @@ public class FootStepScript : NetworkBehaviour {
         SpawnFootstepVfxServerRpc(hit.collider.tag, hit.collider.sharedMaterial != null ? hit.collider.sharedMaterial.name : string.Empty, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
     }
 
+    // Each accepted call spawns a NetworkObject replicated to everyone - rate-limit it (real steps
+    // are >= 0.35s apart) and keep it at this player's feet, so an owner can't flood the session.
+    private const float MinFootstepVfxInterval = 0.2f;
+    private const float MaxFootstepVfxDistance = 4f;
+    private double _lastFootstepVfxServerTime = double.NegativeInfinity;
+
     [ServerRpc]
     private void SpawnFootstepVfxServerRpc(string surfaceTag, string physicMaterialName, Vector3 position, Quaternion rotation)
     {
+        if (!RpcValidation.IsWithinDistance(position, transform.position, MaxFootstepVfxDistance) ||
+            !RpcValidation.IsCooldownElapsed(_lastFootstepVfxServerTime, Time.timeAsDouble, MinFootstepVfxInterval))
+        {
+            return;
+        }
+
+        _lastFootstepVfxServerTime = Time.timeAsDouble;
+
         GameObject prefab = ResolveFootstepVfxPrefab(surfaceTag, physicMaterialName);
         if (prefab == null)
         {

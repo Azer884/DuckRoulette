@@ -77,8 +77,19 @@ public class HidingSpot : NetworkBehaviour, IInteractable
             return;
         }
 
+        // Server-side state, not the caller's: the spot must be free, and the hider alive and
+        // actually standing next to it (Interact's raycast reach plus movement lag).
+        if (IsHeld ||
+            (client.PlayerObject.TryGetComponent(out Death death) && death.isDead.Value) ||
+            !RpcValidation.IsWithinDistance(client.PlayerObject.transform.position, transform.position, MaxHideDistance))
+        {
+            return;
+        }
+
         HideClientRpc(clientId, client.PlayerObject.NetworkObjectId);
     }
+
+    private const float MaxHideDistance = 8f;
 
     [ClientRpc]
     private void HideClientRpc(ulong clientId, ulong playerNetworkObjectId)
@@ -108,7 +119,10 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     [ServerRpc(RequireOwnership = false)]
     private void ExitServerRpc(ulong clientId, ServerRpcParams serverRpcParams = default)
     {
-        if (clientId != serverRpcParams.Receive.SenderClientId)
+        // Only the player actually hiding here may leave - anyone else calling this used to clear
+        // the spot on every peer while the real hider stayed invisible, uncontrollable and
+        // unkillable (the spot no longer counted as held).
+        if (clientId != serverRpcParams.Receive.SenderClientId || !IsHeld || holderId != (int)clientId)
         {
             return;
         }
@@ -122,14 +136,15 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     }
 
     // Unlike ExitServerRpc, the caller here is never the victim - it's whichever peer's bullet
-    // collision detected the hit (see OnCollisionEnter), same as GameManager.UpdatePlayerStateServerRpc
-    // already trusts a caller-supplied victim id from DeathTrigger. Still validated against this
-    // spot's own server-side state (IsHeld/holderId), so a hit can't force-exit someone who isn't
-    // actually hiding here.
+    // collision detected the hit (see OnTriggerEnter). The report itself is not trusted: besides
+    // this spot's own server-side state (IsHeld/holderId), GameManager must confirm a real,
+    // unconsumed shot by killerId whose path passes through this spot. On success this spot does
+    // the kill itself (exit first, then death), so the follow-up UpdatePlayerStateServerRpc from
+    // the same reporter is a harmless no-op.
     [ServerRpc(RequireOwnership = false)]
-    private void KillHolderServerRpc(ulong victimId)
+    private void KillHolderServerRpc(ulong victimId, ulong killerId)
     {
-        if (!IsHeld || holderId != (int)victimId)
+        if (!IsHeld || holderId != (int)victimId || GameManager.Instance == null)
         {
             return;
         }
@@ -139,7 +154,16 @@ public class HidingSpot : NetworkBehaviour, IInteractable
             return;
         }
 
+        Collider spotCollider = GetComponentInChildren<Collider>();
+        Vector3 spotCenter = spotCollider != null ? spotCollider.bounds.center : transform.position;
+        float tolerance = GameManager.ShotHitLateralTolerance + (spotCollider != null ? spotCollider.bounds.extents.magnitude : 0f);
+        if (!GameManager.Instance.TryValidateShotKill(victimId, killerId, spotCenter, tolerance))
+        {
+            return;
+        }
+
         ExitClientRpc(victimId, client.PlayerObject.NetworkObjectId);
+        GameManager.Instance.ApplyShotKill(victimId, killerId);
     }
 
     [ClientRpc]
@@ -374,17 +398,17 @@ public class HidingSpot : NetworkBehaviour, IInteractable
 
         hitReported = true;
 
+        // Kill credit is awarded server-side once the hit is validated (GameManager.ApplyShotKill).
         if (bullet.IsOwner)
         {
             bullet.DestroyServerRpc(0);
-            GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
             bullet.SpawnImpactVfxServerRpc(bullet.transform.position);
         }
 
         // Leave hiding first so the model/camera/hitbox/position all reset before ragdoll takes
         // over - same exit visuals as pressing E or the hide-duration timeout, just server-
         // triggered instead of victim-triggered since the victim's own client didn't request this.
-        KillHolderServerRpc(victimId);
+        KillHolderServerRpc(victimId, bullet.OwnerClientId);
 
         GameManager.Instance.UpdatePlayerStateServerRpc(victimId, bullet.OwnerClientId);
     }

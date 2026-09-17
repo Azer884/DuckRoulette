@@ -776,15 +776,27 @@ public class CardDeck : NetworkBehaviour
     private static string NameOf(ulong clientId) =>
         GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(clientId) : clientId.ToString();
 
+    // Only the server's own table logic may post table messages. Being client-callable let any
+    // player broadcast fake dealer text ("X got a Blackjack!") to everyone or to a chosen player.
     [ServerRpc(RequireOwnership = false)]
-    public void SendMsgServerRpc(string msgToSend)
+    public void SendMsgServerRpc(string msgToSend, ServerRpcParams serverRpcParams = default)
     {
+        if (serverRpcParams.Receive.SenderClientId != NetworkManager.ServerClientId)
+        {
+            return;
+        }
+
         SendMsgClientRpc(msgToSend);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void SendMsgServerRpc(string msgToSend, ulong clientId)
+    public void SendMsgServerRpc(string msgToSend, ulong clientId, ServerRpcParams serverRpcParams = default)
     {
+        if (serverRpcParams.Receive.SenderClientId != NetworkManager.ServerClientId)
+        {
+            return;
+        }
+
         SendMsgClientRpc(msgToSend, ToClient(clientId));
     }
 

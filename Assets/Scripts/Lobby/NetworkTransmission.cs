@@ -51,10 +51,35 @@ public class NetworkTransmission : NetworkBehaviour
         }
     }
 
+    private const int MaxChatLength = 200;
+    private const int MaxSteamNameLength = 64;
+    private const double ChatCooldownSeconds = 0.3;
+    private readonly Dictionary<ulong, double> _lastChatTime = new();
+    // clientId -> the lobby character the server spawned for them, so a repeated/forged
+    // AddMeToDictionaryServerRPC can't spawn extra characters.
+    private readonly Dictionary<ulong, NetworkObject> _lobbyCharacters = new();
+
+    // _fromWho/isServer used to be trusted: any client could post as any other player, or as red
+    // "Server" system text, with unbounded length and TMP rich-text tags. The author is the sender,
+    // only the host may post system messages, and non-host chat is rate-limited.
     [ServerRpc(RequireOwnership = false)]
-    public void IWishToSendAChatServerRPC(string _message, ulong _fromWho, bool isServer)
+    public void IWishToSendAChatServerRPC(string _message, ulong _fromWho, bool isServer, ServerRpcParams serverRpcParams = default)
     {
-        ChatFromServerClientRPC(_message, _fromWho, isServer);
+        ulong sender = serverRpcParams.Receive.SenderClientId;
+        bool fromHost = sender == NetworkManager.ServerClientId;
+        string message = RpcValidation.SanitizeChatMessage(_message, MaxChatLength);
+        if (message.Length == 0)
+            return;
+
+        if (!fromHost)
+        {
+            if (_lastChatTime.TryGetValue(sender, out double lastChat) &&
+                !RpcValidation.IsCooldownElapsed(lastChat, Time.timeAsDouble, ChatCooldownSeconds))
+                return;
+            _lastChatTime[sender] = Time.timeAsDouble;
+        }
+
+        ChatFromServerClientRPC(message, sender, isServer && fromHost);
     }
 
     [ClientRpc]
@@ -64,8 +89,20 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void AddMeToDictionaryServerRPC(ulong _steamId, string _steamName, ulong _clientId)
+    public void AddMeToDictionaryServerRPC(ulong _steamId, string _steamName, ulong _clientId, ServerRpcParams serverRpcParams = default)
     {
+        // "Me" is always the sender: _clientId used to be trusted, letting any client spawn lobby
+        // characters/list entries for (or on top of) other players, repeatedly. The name is
+        // display text shown to everyone, so it is sanitized too. _steamId is still
+        // caller-provided - see Docs/SecurityAudit.md residual risks.
+        _clientId = serverRpcParams.Receive.SenderClientId;
+        _steamName = RpcValidation.SanitizeChatMessage(_steamName, MaxSteamNameLength);
+        if (_lobbyCharacters.TryGetValue(_clientId, out NetworkObject existingCharacter) &&
+            existingCharacter != null && existingCharacter.IsSpawned)
+        {
+            return;
+        }
+
         // Check for null instances
         if (LobbyManager.instance == null)
         {
@@ -89,7 +126,8 @@ public class NetworkTransmission : NetworkBehaviour
         if (playerObj.TryGetComponent(out NetworkObject networkObject))
         {
             networkObject.SpawnAsPlayerObject(_clientId, true);
-            
+            _lobbyCharacters[_clientId] = networkObject;
+
             if (GridManager.Instance != null)
             {
                 GridManager.Instance.AddCharacter(networkObject);
@@ -129,8 +167,9 @@ public class NetworkTransmission : NetworkBehaviour
     public void SendPrivateChatServerRpc(string _message, ulong _toWho, ServerRpcParams serverRpcParams = default)
     {
         ulong _fromWho = serverRpcParams.Receive.SenderClientId;
+        _message = RpcValidation.SanitizeChatMessage(_message, MaxChatLength);
 
-        if (!LobbyManager.instance.playerInfo.ContainsKey(_toWho))
+        if (_message.Length == 0 || !LobbyManager.instance.playerInfo.ContainsKey(_toWho))
             return;
 
         ClientRpcParams clientRpcParams = new ClientRpcParams
@@ -151,8 +190,13 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void RemoveMeFromDictionaryServerRPC(ulong _steamId)
+    public void RemoveMeFromDictionaryServerRPC(ulong _steamId, ServerRpcParams serverRpcParams = default)
     {
+        // Driven by Steam's lobby-member-left callback, which the host receives too - honour only
+        // the host's report, so a client can't delete arbitrary players from everyone's list.
+        if (serverRpcParams.Receive.SenderClientId != NetworkManager.ServerClientId)
+            return;
+
         RemovePlayerFromDictionaryClientRPC(_steamId);
     }
 
@@ -170,9 +214,11 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void IsTheClientReadyServerRPC(bool _ready, bool haveEoughCoins, ulong _clientId)
+    public void IsTheClientReadyServerRPC(bool _ready, bool haveEoughCoins, ulong _clientId, ServerRpcParams serverRpcParams = default)
     {
-        AClientMightBeReadyClientRPC(_ready, haveEoughCoins, _clientId);
+        // A client may only set its own ready state (_clientId used to be trusted). haveEoughCoins
+        // is still self-reported - coins are client-side Steam Cloud data.
+        AClientMightBeReadyClientRPC(_ready, haveEoughCoins, serverRpcParams.Receive.SenderClientId);
     }
 
     [ClientRpc]

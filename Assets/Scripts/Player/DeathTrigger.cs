@@ -104,9 +104,9 @@ public class DeathTrigger : MonoBehaviour
             return;
         }
 
+        // Kill credit is awarded server-side once GameManager validates the hit below.
         if (bullet.IsOwner)
         {
-            GameManager.Instance.UpdateKillsServerRpc(bullet.OwnerClientId, 1);
             bullet.SpawnImpactVfxServerRpc(bullet.transform.position);
         }
 

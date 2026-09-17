@@ -18,7 +18,7 @@ public class Rocks : NetworkBehaviour
         if (!IsServer) return;
 
         if (other.transform.CompareTag("Hittable"))
-            GameManager.Instance.StunPlayerServerRpc(other.transform.GetComponentInParent<NetworkObject>().OwnerClientId);
+            GameManager.Instance.StunPlayer(other.transform.GetComponentInParent<NetworkObject>().OwnerClientId);
         DestroyServerRpc(0);
     }
 

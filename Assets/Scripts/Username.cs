@@ -24,7 +24,9 @@ public class Username : NetworkBehaviour
     [ServerRpc]
     private void SetPlayerNameServerRpc(string name)
     {
-        playerName.Value = new FixedString32Bytes(name);
+        // FixedString32Bytes' string constructor throws past 29 UTF-8 bytes (a long or non-Latin
+        // Steam name), and the name is rendered for every player - truncate and sanitize.
+        playerName.Value = new FixedString32Bytes(RpcValidation.TruncateUtf8(RpcValidation.SanitizeChatMessage(name, 64), 29));
     }
 
     public void SetOverlay()

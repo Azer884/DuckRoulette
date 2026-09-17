@@ -88,9 +88,9 @@ public class BumBox : NetworkBehaviour, IInteractable
     // The server owns the track so every client lands on the same one. No parameter to validate:
     // the next track is derived here, not named by the caller.
     [ServerRpc(RequireOwnership = false)]
-    private void ChangeMusicServerRpc()
+    private void ChangeMusicServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        if (playlist == null || playlist.Length == 0)
+        if (!IsSenderNear(serverRpcParams.Receive.SenderClientId) || playlist == null || playlist.Length == 0)
         {
             return;
         }
@@ -158,12 +158,24 @@ public class BumBox : NetworkBehaviour, IInteractable
     {
         // clientId is otherwise a client-supplied value with no other check - without this, any
         // connected client could assign the box to an arbitrary holderId, not just themselves.
-        if (clientId != serverRpcParams.Receive.SenderClientId)
+        // Also server-side state: the box must be free (no stealing it out of someone's hands)
+        // and within reach of the picker.
+        if (clientId != serverRpcParams.Receive.SenderClientId || IsHeld || !IsSenderNear(clientId))
         {
             return;
         }
 
         PickUpClientRpc(clientId);
+    }
+
+    // Interact's raycast reach (5) plus movement lag. The box travels with its holder, so the
+    // holder always passes this too.
+    private const float MaxInteractDistance = 8f;
+
+    private bool IsSenderNear(ulong senderId)
+    {
+        return NetworkManager.ConnectedClients.TryGetValue(senderId, out var client) && client.PlayerObject != null &&
+               RpcValidation.IsWithinDistance(client.PlayerObject.transform.position, transform.position, MaxInteractDistance);
     }
 
     [ClientRpc]
@@ -215,8 +227,13 @@ public class BumBox : NetworkBehaviour, IInteractable
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void MuteServerRpc()
+    private void MuteServerRpc(ServerRpcParams serverRpcParams = default)
     {
+        if (!IsSenderNear(serverRpcParams.Receive.SenderClientId))
+        {
+            return;
+        }
+
         MuteClientRpc();
     }
 

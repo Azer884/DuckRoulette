@@ -1,0 +1,51 @@
+DuckRoulette - Steam announcement draft
+Paste the block below into Steam's announcement editor (it uses Steam BBCode).
+Replace [VERSION] and check the "Known issues" list before posting.
+Note: these changes are in the working tree and have not been committed or shipped yet.
+
+========================================================================
+
+[h1]Update [VERSION] - Fair Play[/h1]
+
+This update is mostly about trust. The gun, the kills and the knockouts are now decided by the host instead of being taken on each player's word, so a modified client can't hand itself wins any more. We also fixed a bug that could wipe your cosmetics on load.
+
+[h2]Fair play[/h2]
+[list]
+[*][b]The host decides who shoots.[/b] A shot only counts if it comes from the player whose turn it is, with a loaded gun and the live chamber up, and only once per turn.
+[*][b]Kills are verified.[/b] An elimination is only accepted if it matches a shot the host actually saw, along the path that shot took. Kill credit and coins are now counted by the host.
+[*][b]Knockouts need real slaps.[/b] A stun requires slaps the host counted, from close range, so nobody can ragdoll you from across the map.
+[*][b]No more puppeteering.[/b] Players can no longer move objects they aren't holding, ragdoll other players, or trigger effects on someone else's behalf.
+[*][b]Lobby integrity.[/b] Only the host can kick. Ready state, names and Steam profiles are taken from the player they belong to, and nobody can post chat messages that look like they came from the server.
+[*][b]Chat cleanup.[/b] Messages are length-limited and rate-limited, and formatting tags in chat no longer render as styled text.
+[/list]
+
+[h2]Fixes[/h2]
+[list]
+[*]Fixed cosmetics failing to load when your saved outfit referenced an item that no longer exists. Your hat, accessory and shirt now fall back to "none" instead of breaking the whole load.
+[*]Fixed the end-of-match screen erroring for players whose character had already been removed.
+[*]Fixed players sometimes getting the wrong character, or more than one, after returning to the lobby.
+[*]Fixed the ground-parry effect appearing for other players when they spawned.
+[*]Voice chat now rejects malformed packets instead of passing them to the audio system.
+[/list]
+
+[h2]Balance[/h2]
+[list]
+[*]A knockout now needs at least 3 slaps from the same attacker. It used to be possible to trigger one with fewer.
+[/list]
+
+[h2]Known issues[/h2]
+[list]
+[*]On a bad connection, a hit reported very late may not register as a kill. Tell us if you see shots that clearly connected and didn't count.
+[*]Several sounds are still missing, including eliminations, knockouts, the shot-clock countdown and the end-of-match sting.
+[*]Footsteps and voice chat aren't positional yet, so they don't tell you where a player is.
+[*]The gun can still pass to a player who is about to be eliminated, and then sits with them until the timer runs out.
+[*]Weather doesn't trigger in the match map.
+[/list]
+
+Thanks for the reports, and keep them coming.
+
+========================================================================
+
+Deliberately left out of the public notes:
+- Specific exploit recipes, RPC names and file paths (they'd be a how-to for anyone who wants to try the old attacks on an un-updated client).
+- Trust gaps that are still open: chamber values are still readable by clients, coins are still stored and calculated client-side, and end-of-match stats can still be spoofed. Don't advertise these until they're fixed. See Docs/SecurityAudit.md.

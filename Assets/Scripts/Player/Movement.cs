@@ -651,8 +651,16 @@ public class Movement : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void RequestGroundParryVfxServerRpc(Vector3 position)
+    private void RequestGroundParryVfxServerRpc(Vector3 position, ServerRpcParams serverRpcParams = default)
     {
+        // Only this player's own client, at this player's feet. (Remote copies disabling their own
+        // Movement at spawn used to broadcast this too - that duplicate is now dropped as well.)
+        if (serverRpcParams.Receive.SenderClientId != OwnerClientId ||
+            !RpcValidation.IsWithinDistance(position, transform.position, 5f))
+        {
+            return;
+        }
+
         SpawnGroundParryVfxClientRpc(position);
     }
 
@@ -899,8 +907,14 @@ public class Movement : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void RequestRunVfxServerRpc(bool isRunning, string surfaceTag, string physicMaterialName, Color groundTint)
+    private void RequestRunVfxServerRpc(bool isRunning, string surfaceTag, string physicMaterialName, Color groundTint, ServerRpcParams serverRpcParams = default)
     {
+        // Spawns/despawns a NetworkObject on this player: only this player's own client may drive it.
+        if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+        {
+            return;
+        }
+
         if (!isRunning)
         {
             StopRunVfxServer();

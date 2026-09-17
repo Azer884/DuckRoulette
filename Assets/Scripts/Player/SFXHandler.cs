@@ -4,8 +4,6 @@ public class SFXHandler : MonoBehaviour
 {
     private Slap slapComponent;
 
-    [SerializeField]private AudioSource source;
-
     void Awake()
     {
         slapComponent = GetComponent<Slap>();
@@ -21,7 +19,9 @@ public class SFXHandler : MonoBehaviour
         AudioClip clip = SFXManager.Instance.RandomSlapPain();
         if (clip == null) return;
 
-        source.PlayOneShot(clip);
+        // Spawn its own 3D one-shot on the SFX group instead of the shared 2D voice source
+        // (H2): pain sounds no longer follow the Voice slider or get ducked by talking.
+        SFXManager.Instance.PlayAt(clip, transform.position);
     }
     void OnDisable()
     {

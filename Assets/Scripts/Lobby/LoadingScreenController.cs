@@ -212,6 +212,8 @@ public class LoadingScreenController : NetworkBehaviour
     private void ReportNameServerRpc(string name, ulong steamId, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
+        // FixedString64Bytes' implicit string conversion throws past 61 UTF-8 bytes.
+        name = RpcValidation.TruncateUtf8(RpcValidation.SanitizeChatMessage(name, 64), 61);
         for (int i = 0; i < playerNames.Count; i++)
         {
             if (playerNames[i].ClientId == clientId)

@@ -118,6 +118,7 @@ public class SettingsManager : MonoBehaviour
         SetSetting("Audio", "EffectsVolume", "0.8");
         SetSetting("Audio", "VoiceChatVolume", "1.0");
         SetSetting("Audio", "VoiceChatMode", "0");
+        SetSetting("Audio", "MicDevice", "");
 
         SetSetting("Mouse", "SensitivityX", "1.0");
         SetSetting("Mouse", "SensitivityY", "1.0");

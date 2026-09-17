@@ -102,6 +102,32 @@ public class SFXManager : MonoBehaviour
 
         SceneManager.sceneLoaded += OnSceneLoaded;
         HookAllButtons();
+        WarnAboutMissingClips();
+    }
+
+    // H1: unassigned clips used to fail silently (PlayAt/PlayUI just return early on
+    // clip == null), so a missing death/turn-start/UI sound never showed up anywhere.
+    // This logs every gap once at startup instead.
+    private void WarnAboutMissingClips()
+    {
+        var missing = new List<string>();
+        foreach (var field in GetType().GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            if (field.FieldType == typeof(AudioClip))
+            {
+                if ((AudioClip)field.GetValue(this) == null) missing.Add(field.Name);
+            }
+            else if (field.FieldType == typeof(AudioClip[]))
+            {
+                var arr = (AudioClip[])field.GetValue(this);
+                if (arr == null || arr.Length == 0) missing.Add(field.Name);
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            Debug.LogWarning($"SFXManager: {missing.Count} clip field(s) unassigned, those sounds are silent: {string.Join(", ", missing)}");
+        }
     }
 
     private void OnDestroy()
@@ -152,7 +178,8 @@ public class SFXManager : MonoBehaviour
 
     // Spawns a temporary positional AudioSource for a 3D one-shot, matching the old
     // per-script PlayLocalOneShot implementations this manager replaces.
-    public void PlayAt(AudioClip clip, Vector3 position, float pitch = 1f, AudioMixerGroup group = null)
+    public void PlayAt(AudioClip clip, Vector3 position, float pitch = 1f, AudioMixerGroup group = null,
+        float minDistance = 1f, float maxDistance = 40f, int priority = 128)
     {
         if (clip == null) return;
 
@@ -163,12 +190,15 @@ public class SFXManager : MonoBehaviour
         source.clip = clip;
         source.spatialBlend = 1f;
         source.rolloffMode = AudioRolloffMode.Logarithmic;
+        source.minDistance = minDistance;
+        source.maxDistance = maxDistance;
+        source.priority = priority;
         source.playOnAwake = false;
         source.pitch = pitch;
         source.outputAudioMixerGroup = group != null ? group : sfxMixerGroup;
         source.Play();
 
-        Destroy(audioObject, clip.length);
+        Destroy(audioObject, clip.length / Mathf.Max(Mathf.Abs(pitch), 0.01f));
     }
 
     public AudioClip RandomSlapPain()

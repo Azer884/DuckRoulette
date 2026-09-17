@@ -84,6 +84,9 @@ public class Cosmetics : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        // Saved indices come from Steam Cloud and can be stale (item removed) or hand-edited, so an
+        // out-of-range value falls back to "nothing equipped" instead of throwing mid-load.
+        index = RpcValidation.SanitizeCosmeticIndex(index, list.Count);
         if (index != 0)
         {
             Instantiate(list[index - 1], holder);

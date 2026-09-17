@@ -432,9 +432,16 @@ public class Ragdoll : NetworkBehaviour
     /* ===================== RPCs ===================== */
 
     [ServerRpc(RequireOwnership = false)]
-    private void EnableServerRpc(ulong clientId, bool state)
+    private void EnableServerRpc(ulong clientId, bool state, ServerRpcParams serverRpcParams = default)
     {
-        EnableClientRpc(clientId, state);
+        // Only this player's own client may toggle its own CharacterController. clientId used to
+        // be trusted, so any client could disable any player's controller and freeze them.
+        if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+        {
+            return;
+        }
+
+        EnableClientRpc(OwnerClientId, state);
     }
 
     [ClientRpc]

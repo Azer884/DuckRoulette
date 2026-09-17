@@ -127,9 +127,11 @@ public class NetworkCosmetics : NetworkBehaviour
     [ServerRpc]
     private void ChangeNetVarsServerRpc(int index1, int index2, int index3)
     {
-        hatIndex.Value = index1;
-        accessorieIndex.Value = index2;
-        shirtIndex.Value = index3;
+        // Indices index straight into the item arrays on every peer - out-of-range values threw on
+        // every client. Unlock ownership itself is still client-side (Steam Cloud save).
+        hatIndex.Value = RpcValidation.SanitizeCosmeticIndex(index1, hats != null ? hats.Length : 0);
+        accessorieIndex.Value = RpcValidation.SanitizeCosmeticIndex(index2, accessories != null ? accessories.Length : 0);
+        shirtIndex.Value = RpcValidation.SanitizeCosmeticIndex(index3, shirts != null ? shirts.Length : 0);
     }
 
     private void ApplyShadowOnlyMode(GameObject item)
