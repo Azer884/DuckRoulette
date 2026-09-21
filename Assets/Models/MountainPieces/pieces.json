@@ -1,0 +1,329 @@
+{
+ "pieces": [
+  {
+   "name": "Mtn_Wall_N0",
+   "kind": "wall",
+   "length": 202.796,
+   "depth": 67.981,
+   "height": 181.741,
+   "faces": 7206
+  },
+  {
+   "name": "Mtn_Wall_N0_M",
+   "kind": "wall",
+   "length": 202.796,
+   "depth": 67.981,
+   "height": 181.741,
+   "faces": 7206
+  },
+  {
+   "name": "Mtn_Wall_N1",
+   "kind": "wall",
+   "length": 242.122,
+   "depth": 59.889,
+   "height": 181.741,
+   "faces": 5002
+  },
+  {
+   "name": "Mtn_Wall_N1_M",
+   "kind": "wall",
+   "length": 242.122,
+   "depth": 59.889,
+   "height": 181.741,
+   "faces": 5002
+  },
+  {
+   "name": "Mtn_Wall_N2",
+   "kind": "wall",
+   "length": 237.728,
+   "depth": 61.101,
+   "height": 184.664,
+   "faces": 6795
+  },
+  {
+   "name": "Mtn_Wall_N2_M",
+   "kind": "wall",
+   "length": 237.728,
+   "depth": 61.101,
+   "height": 184.664,
+   "faces": 6795
+  },
+  {
+   "name": "Mtn_Wall_N3",
+   "kind": "wall",
+   "length": 203.437,
+   "depth": 82.029,
+   "height": 228.937,
+   "faces": 7531
+  },
+  {
+   "name": "Mtn_Wall_N3_M",
+   "kind": "wall",
+   "length": 203.437,
+   "depth": 82.029,
+   "height": 228.937,
+   "faces": 7531
+  },
+  {
+   "name": "Mtn_Wall_S0",
+   "kind": "wall",
+   "length": 184.591,
+   "depth": 101.415,
+   "height": 273.603,
+   "faces": 9804
+  },
+  {
+   "name": "Mtn_Wall_S0_M",
+   "kind": "wall",
+   "length": 184.591,
+   "depth": 101.415,
+   "height": 273.603,
+   "faces": 9804
+  },
+  {
+   "name": "Mtn_Wall_S1",
+   "kind": "wall",
+   "length": 217.734,
+   "depth": 94.234,
+   "height": 258.98,
+   "faces": 12029
+  },
+  {
+   "name": "Mtn_Wall_S1_M",
+   "kind": "wall",
+   "length": 217.734,
+   "depth": 94.234,
+   "height": 258.98,
+   "faces": 12029
+  },
+  {
+   "name": "Mtn_Wall_S2",
+   "kind": "wall",
+   "length": 167.535,
+   "depth": 95.469,
+   "height": 258.98,
+   "faces": 7093
+  },
+  {
+   "name": "Mtn_Wall_S2_M",
+   "kind": "wall",
+   "length": 167.535,
+   "depth": 95.469,
+   "height": 258.98,
+   "faces": 7093
+  },
+  {
+   "name": "Mtn_Wall_S3",
+   "kind": "wall",
+   "length": 184.672,
+   "depth": 43.968,
+   "height": 144.847,
+   "faces": 1384
+  },
+  {
+   "name": "Mtn_Wall_S3_M",
+   "kind": "wall",
+   "length": 184.672,
+   "depth": 43.968,
+   "height": 144.847,
+   "faces": 1384
+  },
+  {
+   "name": "Mtn_Wall_E0",
+   "kind": "wall",
+   "length": 188.194,
+   "depth": 109.092,
+   "height": 361.797,
+   "faces": 10759
+  },
+  {
+   "name": "Mtn_Wall_E0_M",
+   "kind": "wall",
+   "length": 188.194,
+   "depth": 109.092,
+   "height": 361.797,
+   "faces": 10759
+  },
+  {
+   "name": "Mtn_Wall_E1",
+   "kind": "wall",
+   "length": 225.229,
+   "depth": 96.88,
+   "height": 365.848,
+   "faces": 14278
+  },
+  {
+   "name": "Mtn_Wall_E1_M",
+   "kind": "wall",
+   "length": 225.229,
+   "depth": 96.88,
+   "height": 365.848,
+   "faces": 14278
+  },
+  {
+   "name": "Mtn_Wall_E2",
+   "kind": "wall",
+   "length": 222.974,
+   "depth": 92.626,
+   "height": 279.5,
+   "faces": 11686
+  },
+  {
+   "name": "Mtn_Wall_E2_M",
+   "kind": "wall",
+   "length": 222.974,
+   "depth": 92.626,
+   "height": 279.5,
+   "faces": 11686
+  },
+  {
+   "name": "Mtn_Wall_E3",
+   "kind": "wall",
+   "length": 189.23,
+   "depth": 96.182,
+   "height": 279.5,
+   "faces": 7465
+  },
+  {
+   "name": "Mtn_Wall_E3_M",
+   "kind": "wall",
+   "length": 189.23,
+   "depth": 96.182,
+   "height": 279.5,
+   "faces": 7465
+  },
+  {
+   "name": "Mtn_Wall_W0",
+   "kind": "wall",
+   "length": 200.919,
+   "depth": 119.338,
+   "height": 258.613,
+   "faces": 8852
+  },
+  {
+   "name": "Mtn_Wall_W0_M",
+   "kind": "wall",
+   "length": 200.919,
+   "depth": 119.338,
+   "height": 258.613,
+   "faces": 8852
+  },
+  {
+   "name": "Mtn_Wall_W1",
+   "kind": "wall",
+   "length": 239.344,
+   "depth": 102.373,
+   "height": 273.687,
+   "faces": 12706
+  },
+  {
+   "name": "Mtn_Wall_W1_M",
+   "kind": "wall",
+   "length": 239.344,
+   "depth": 102.373,
+   "height": 273.687,
+   "faces": 12706
+  },
+  {
+   "name": "Mtn_Wall_W2",
+   "kind": "wall",
+   "length": 236.58,
+   "depth": 95.747,
+   "height": 273.687,
+   "faces": 10604
+  },
+  {
+   "name": "Mtn_Wall_W2_M",
+   "kind": "wall",
+   "length": 236.58,
+   "depth": 95.747,
+   "height": 273.687,
+   "faces": 10604
+  },
+  {
+   "name": "Mtn_Wall_W3",
+   "kind": "wall",
+   "length": 198.913,
+   "depth": 68.292,
+   "height": 180.378,
+   "faces": 6599
+  },
+  {
+   "name": "Mtn_Wall_W3_M",
+   "kind": "wall",
+   "length": 198.913,
+   "depth": 68.292,
+   "height": 180.378,
+   "faces": 6599
+  },
+  {
+   "name": "Mtn_Corner_NE",
+   "kind": "corner",
+   "length": 162.875,
+   "depth": 133.144,
+   "height": 216.732,
+   "faces": 6962
+  },
+  {
+   "name": "Mtn_Corner_NE_M",
+   "kind": "corner",
+   "length": 162.875,
+   "depth": 133.144,
+   "height": 216.732,
+   "faces": 6962
+  },
+  {
+   "name": "Mtn_Corner_SE",
+   "kind": "corner",
+   "length": 128.648,
+   "depth": 86.626,
+   "height": 218.621,
+   "faces": 3927
+  },
+  {
+   "name": "Mtn_Corner_SE_M",
+   "kind": "corner",
+   "length": 128.648,
+   "depth": 86.626,
+   "height": 218.621,
+   "faces": 3927
+  },
+  {
+   "name": "Mtn_Corner_SW",
+   "kind": "corner",
+   "length": 162.505,
+   "depth": 130.255,
+   "height": 273.603,
+   "faces": 8692
+  },
+  {
+   "name": "Mtn_Corner_SW_M",
+   "kind": "corner",
+   "length": 162.505,
+   "depth": 130.255,
+   "height": 273.603,
+   "faces": 8692
+  },
+  {
+   "name": "Mtn_Corner_NW",
+   "kind": "corner",
+   "length": 159.793,
+   "depth": 139.239,
+   "height": 180.378,
+   "faces": 7664
+  },
+  {
+   "name": "Mtn_Corner_NW_M",
+   "kind": "corner",
+   "length": 159.793,
+   "depth": 139.239,
+   "height": 180.378,
+   "faces": 7664
+  }
+ ],
+ "rocks": [
+  "Rock_Small",
+  "Rock_Large",
+  "Rock_Photoscan"
+ ]
+}
