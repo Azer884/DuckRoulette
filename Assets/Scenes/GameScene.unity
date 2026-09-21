@@ -9049,7 +9049,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8365429345097860108, guid: 68f1b8e524aab834ba6fe4d0627be8e7, type: 3}
       propertyPath: forcePhaseOnStart
-      value: 2
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8365429345097860113, guid: 68f1b8e524aab834ba6fe4d0627be8e7, type: 3}
+      propertyPath: groundMask.m_Bits
+      value: 15539
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -9398,6 +9402,7 @@ MonoBehaviour:
   shadowFullElevation: 0.35
   lightningAmbient: {r: 0.75, g: 0.8, b: 1, a: 1}
   lightningSkyboxBoost: 1.6
+  lightningLightIntensity: 1.8
   moonGlowIntensity: 2.4
   moonCoronaIntensity: 1.1
   dayAmbient: {r: 0.55, g: 0.58, b: 0.62, a: 1}

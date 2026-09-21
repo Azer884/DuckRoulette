@@ -2276,6 +2276,7 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  strongRainChance: 18
 --- !u!1 &1740546963033050780
 GameObject:
   m_ObjectHideFlags: 0
@@ -4144,7 +4145,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b68e3796203426c4aa4fbc8fd6421560, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXHandler
-  source: {fileID: 199935326035327325}
 --- !u!114 &7994633359111961727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9977,21 +9977,27 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3007406930311217395}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02ad3b1c0a783b846bb13860acd5e6f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   LeftFoot: {fileID: 5386726210779822361}
   RightFoot: {fileID: 3151234553775585247}
-  footOffset: 0.12
   layerMask:
     serializedVersion: 2
     m_Bits: 129
-  deltaAmplifier: 1
-  leftFootWeight: 0
-  rightFootWeight: 0
-  isLegs: 0
+  rayAbove: 0.5
+  rayBelow: 0.45
+  maxPelvisDrop: 0.35
+  idleWeight: 1
+  movingWeight: 0.6
+  fullMovingSpeed: 4
+  rotationWeight: 0.8
+  groundedDistance: 0.25
+  footSpeed: 18
+  pelvisSpeed: 10
+  weightSpeed: 6
 --- !u!114 &451543968744067514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13682,21 +13688,27 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5890130780239775117}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02ad3b1c0a783b846bb13860acd5e6f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   LeftFoot: {fileID: 2578297485054635165}
   RightFoot: {fileID: 4055887066492889291}
-  footOffset: 0.12
   layerMask:
     serializedVersion: 2
     m_Bits: 129
-  deltaAmplifier: 1
-  leftFootWeight: 0
-  rightFootWeight: 0
-  isLegs: 1
+  rayAbove: 0.5
+  rayBelow: 0.45
+  maxPelvisDrop: 0.35
+  idleWeight: 1
+  movingWeight: 0.6
+  fullMovingSpeed: 4
+  rotationWeight: 0.8
+  groundedDistance: 0.25
+  footSpeed: 18
+  pelvisSpeed: 10
+  weightSpeed: 6
 --- !u!1 &5951208701348889044
 GameObject:
   m_ObjectHideFlags: 0
@@ -15075,21 +15087,27 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6314640165891774443}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02ad3b1c0a783b846bb13860acd5e6f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   LeftFoot: {fileID: 4419428135272226489}
   RightFoot: {fileID: 8283271960470399302}
-  footOffset: 0.12
   layerMask:
     serializedVersion: 2
     m_Bits: 129
-  deltaAmplifier: 1
-  leftFootWeight: 0
-  rightFootWeight: 0
-  isLegs: 0
+  rayAbove: 0.5
+  rayBelow: 0.45
+  maxPelvisDrop: 0.35
+  idleWeight: 1
+  movingWeight: 0.6
+  fullMovingSpeed: 4
+  rotationWeight: 0.8
+  groundedDistance: 0.25
+  footSpeed: 18
+  pelvisSpeed: 10
+  weightSpeed: 6
 --- !u!114 &7024815785589404657
 MonoBehaviour:
   m_ObjectHideFlags: 0
