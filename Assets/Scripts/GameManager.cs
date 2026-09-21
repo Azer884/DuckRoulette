@@ -6,6 +6,7 @@ using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Weather;
 
 public class GameManager : NetworkBehaviour
 {
@@ -61,8 +62,14 @@ public class GameManager : NetworkBehaviour
     private const float TeamUpMaxDistance = 8f;
     private const float TeamUpRequestCooldown = 4f;
 
+    [SerializeField, Tooltip("Percent chance that a shower that has already been rolled comes in " +
+        "as a full storm instead - hail, a gale, and the campfire put out.")]
+    private float strongRainChance = 18f;
+
     #region Events
-    public delegate void OnWheaterChange();
+    // Carries what was actually rolled, so WeatherSystem does not have to roll a second time and
+    // the two can never disagree about whether this is a shower or a storm.
+    public delegate void OnWheaterChange(WeatherPhase phase);
     public static event OnWheaterChange OnWeatherChange;
     public delegate void OnHostDisconnect();
     public static event OnHostDisconnect OnHostDisconnected;
@@ -1109,24 +1116,38 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    private static void OnWeatherChanged()
+    private static void OnWeatherChanged(WeatherPhase phase)
     {
-        OnWeatherChange?.Invoke();
+        OnWeatherChange?.Invoke(phase);
     }
 
     private void StartRain()
     {
-        if (!_hasRained)
+        // The roll is a match decision, so it stays on the server like every other one here.
+        if (!IsServer || _hasRained)
         {
-            float percentageChance = Mathf.Pow(1.0155f, Time.timeSinceLevelLoad);
-            bool shouldRain = Percentage(percentageChance);
-
-            if (shouldRain)
-            {
-                _hasRained = true;
-                OnWeatherChanged();
-            }
+            return;
         }
+
+        float percentageChance = Mathf.Pow(1.0155f, Time.timeSinceLevelLoad);
+
+        // Nights are wetter: the same climbing roll is simply worth more after dusk.
+        if (WeatherSystem.Instance != null)
+        {
+            percentageChance *= WeatherSystem.Instance.RainChanceMultiplier;
+        }
+
+        if (!Percentage(percentageChance))
+        {
+            return;
+        }
+
+        _hasRained = true;
+
+        // The small second roll: most showers stay showers, a few become the storm that brings
+        // hail, the gale and the doused campfire.
+        WeatherPhase phase = Percentage(strongRainChance) ? WeatherPhase.Storm : WeatherPhase.Rain;
+        OnWeatherChanged(phase);
     }
 
     #region Tasks

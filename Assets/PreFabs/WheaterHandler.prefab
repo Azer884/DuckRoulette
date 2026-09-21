@@ -64,6 +64,11 @@ GameObject:
   - component: {fileID: 7973350602242300807}
   - component: {fileID: 2076557956658693062}
   - component: {fileID: 8365429345097860108}
+  - component: {fileID: 8365429345097860109}
+  - component: {fileID: 8365429345097860110}
+  - component: {fileID: 8365429345097860111}
+  - component: {fileID: 8365429345097860112}
+  - component: {fileID: 8365429345097860113}
   m_Layer: 0
   m_Name: WheaterHandler
   m_TagString: Untagged
@@ -100,12 +105,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3317360978
+  GlobalObjectIdHash: 3031342313
   InScenePlacedSourceGlobalObjectIdHash: 3031342313
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  <InScenePlaced>k__BackingField: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
@@ -122,13 +128,149 @@ MonoBehaviour:
   m_GameObject: {fileID: 5396251192598231563}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0896818aa0c054a4e957aaadbe2ea929, type: 3}
+  m_Script: {fileID: 11500000, guid: 51b6ad48a154444bacfe70e6627c7eda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  duration: 20
-  rockPrefab: {fileID: 6665965990563420335, guid: a4c3e3b1fc156fa489e0e7a38f462a68, type: 3}
+  dayLengthSeconds: 420
+  startTimeOfDay: 0.34
+  duskTime: 0.78
+  dawnTime: 0.24
+  nightRainChanceMultiplier: 2.5
+  rainDuration: 60
+  stormDuration: 45
+  windTurnSpeed: 0.035
+  windGustSpeed: 0.14
+  clearWindStrength: 0.18
+  rainWindStrength: 0.5
+  stormWindStrength: 1
+  windSpeedAtFullStrength: 14
+  windBlendSeconds: 6
+  forcePhaseOnStart: 0
+  forcePhaseDelay: 6
+--- !u!114 &8365429345097860109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5396251192598231563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9183c47c60041a5bdd031356144ce6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  hailPrefab: {fileID: 6665965990563420335, guid: a4c3e3b1fc156fa489e0e7a38f462a68, type: 3}
   spawnArea: {fileID: 2471695982989523627}
+  dropAroundPlayers: 1
+  dropRadius: 14
+  dropHeight: 22
+  stonesPerSecond: 14
+  maxConcurrentStones: 40
+  stoneLifetime: 6
+  initialFallSpeed: 12
+  windInfluence: 0.6
+  prewarmCount: 40
+--- !u!114 &8365429345097860110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5396251192598231563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0ab7450bfbe4c038e7989fa2040d32b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fallbackDirection: {x: 0.7, y: 0, z: 0.7}
+  fallbackStrength: 0.2
+  fallbackSpeedAtFullStrength: 14
+--- !u!114 &8365429345097860111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5396251192598231563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a943eeb006f34d7e8f2dcc7e8ba8588a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rainEmitters: []
+  splashEmitters: []
+  rig: {fileID: 0}
+  followCamera: 1
+  heightOffset: 14
+  followSeconds: 0.25
+  rainAreaSize: 40
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 15539
+  fadeSeconds: 4
+  maxSlantDegrees: 35
+  windInfluence: 1
+  fallReach: 26
+  fallbackRainRate: 1800
+--- !u!114 &8365429345097860112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5396251192598231563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a5580dc34bd4f599f6ee8fbf884bc29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  windMaxVolume: 0.55
+  windFloor: 0.08
+  windPitchRange: {x: 0.85, y: 1.25}
+  rainMaxVolume: 0.7
+  rainWindBoost: 0.25
+  hailMaxVolume: 0.5
+  blendSeconds: 3
+  rainClipOverride: {fileID: 0}
+  windClipOverride: {fileID: 0}
+  hailClipOverride: {fileID: 0}
+--- !u!114 &8365429345097860113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5396251192598231563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad87da32fd9c4a349affa3a689d1601c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slotSeconds: 12
+  strikeChance: 0.75
+  soundDelayRange: {x: 0.2, y: 3}
+  flashStrength: 1
+  flashSeconds: 0.6
+  maxVolume: 1
+  minVolume: 0.45
+  strikeArea: {fileID: 0}
+  strikeRadius: 70
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294966451
+  boltHeight: 90
+  boltWidth: 1.1
+  boltColor: {r: 3.2, g: 3.6, b: 5, a: 1}
+  boltMaterial: {fileID: 0}
+  flashLightColor: {r: 0.8, g: 0.87, b: 1, a: 1}
+  flashLightIntensity: 60
+  flashLightRange: 160
+  impactEffect: {fileID: 1141330259687333427, guid: 6718dc24203da53468af9ada8fef7d6d, type: 3}
+  impactScale: 5
+  farDistance: 150
+  thunderClipOverrides: []
 --- !u!1001 &1912048095271935333
 PrefabInstance:
   m_ObjectHideFlags: 0

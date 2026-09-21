@@ -302,6 +302,39 @@ public class TaskManager : NetworkBehaviour
         }
     }
 
+    /// <summary>Convenience for a caller that may run before the singleton exists (a scene prop).
+    /// Does nothing off the server.</summary>
+    public static void CancelTaskEverywhere(Challenge task)
+    {
+        if (Instance != null)
+        {
+            Instance.CancelTask(task);
+        }
+    }
+
+    /// <summary>Server only. Withdraws a task from every player who still has it open this round.
+    ///
+    /// Needed when the thing that completes a task stops existing mid-round - the campfire the
+    /// rain has just put out. Without this its holder would be left with a task nothing in the
+    /// level could tick off, and HasCompletedAllTasks would keep them off the gun for the rest of
+    /// the match. Already-completed copies are left alone: those were earned.</summary>
+    public void CancelTask(Challenge task)
+    {
+        if (!IsServer || task == null || !taskIndices.TryGetValue(task, out int taskIndex))
+        {
+            return;
+        }
+
+        for (int i = assignedTasks.Count - 1; i >= 0; i--)
+        {
+            TaskEntry entry = assignedTasks[i];
+            if (entry.TaskIndex == taskIndex && !entry.Completed)
+            {
+                assignedTasks.RemoveAt(i);
+            }
+        }
+    }
+
     // Only the player who finished it gets the cue - a task is a private objective, so
     // broadcasting it would tell the whole lobby something they aren't meant to know.
     private void NotifyTaskCompleted(ulong clientId)

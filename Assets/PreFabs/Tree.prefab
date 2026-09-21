@@ -12,12 +12,13 @@ GameObject:
   - component: {fileID: 6366275947400712545}
   - component: {fileID: 8168531518459472093}
   - component: {fileID: 3668105301228654770}
+  - component: {fileID: 5506406766690811684}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 2147483643
   m_IsActive: 1
 --- !u!4 &7107292004119505543
 Transform:
@@ -116,3 +117,20 @@ CapsuleCollider:
   m_Height: 0.17972313
   m_Direction: 1
   m_Center: {x: 0.000013425946, y: 0.08667067, z: -0.001530325}
+--- !u!114 &5506406766690811684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5236731590719459693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89468d283042483fa3c1c8baf77f0516, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Weather.TreeWindSway
+  maxLeanDegrees: 9
+  maxWobbleDegrees: 4
+  wobbleFrequency: 1.1
+  idleThreshold: 0.02
+  responseSeconds: 1.2

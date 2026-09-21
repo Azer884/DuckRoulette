@@ -73,6 +73,17 @@ public class SFXManager : MonoBehaviour
     public AudioClip coinRewardClip;
     public AudioClip taskCompleteClip;
 
+    // 2D looping beds played by WeatherAudio, not one-shots: their volume rides the wind strength
+    // and the weather phase rather than being triggered.
+    [Header("Weather")]
+    public AudioClip rainLoopClip;
+    public AudioClip windLoopClip;
+    public AudioClip hailLoopClip;
+
+    // One-shots picked at random by Weather.Thunder during a storm. Left empty, Thunder falls back
+    // to a synthesised rumble.
+    public AudioClip[] thunderClips;
+
     [SerializeField] private AudioSource uiSource;
 
     private void Awake()

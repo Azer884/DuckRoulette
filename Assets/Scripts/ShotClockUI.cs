@@ -11,6 +11,10 @@ using UnityEngine.UI;
 // scene once and edit colors/layout/fonts there like any other UI. This script only drives it.
 public class ShotClockUI : MonoBehaviour
 {
+    /// <summary>The live shot clock, so a HUD element that sits alongside it (the weather bar)
+    /// can find it without searching the scene every frame.</summary>
+    public static ShotClockUI Instance { get; private set; }
+
     [SerializeField] private GameObject root;
     [SerializeField] private Image fillImage;
     [SerializeField] private TextMeshProUGUI timerText;
@@ -24,8 +28,17 @@ public class ShotClockUI : MonoBehaviour
 
     private int _lastTickSecond = -1;
 
+    /// <summary>The clock widget's rect. Non-null even while hidden, so check
+    /// <see cref="IsShowing"/> too before positioning against it.</summary>
+    public RectTransform Widget => root != null ? root.transform as RectTransform : null;
+
+    /// <summary>True while the clock is actually on screen.</summary>
+    public bool IsShowing => root != null && root.activeInHierarchy;
+
     private void Awake()
     {
+        Instance = this;
+
         if (root != null)
         {
             root.SetActive(false);
@@ -35,6 +48,14 @@ public class ShotClockUI : MonoBehaviour
         if (turnLabel != null)
         {
             turnLabel.gameObject.SetActive(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 

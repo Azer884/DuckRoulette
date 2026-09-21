@@ -1092,6 +1092,9 @@ MonoBehaviour:
   defeatClip: {fileID: 0}
   coinRewardClip: {fileID: 0}
   taskCompleteClip: {fileID: 0}
+  rainLoopClip: {fileID: 8300000, guid: f5df38976dca08a40a6a761bc2e04db5, type: 3}
+  windLoopClip: {fileID: 0}
+  hailLoopClip: {fileID: 0}
   uiSource: {fileID: 0}
 --- !u!1 &8113528663145672095
 GameObject:

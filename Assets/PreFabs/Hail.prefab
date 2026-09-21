@@ -119,7 +119,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!135 &3034813696554882832
@@ -177,7 +177,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6665965990563420335}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb1a6d059a235894fb42b9749888dd89, type: 3}
+  m_Script: {fileID: 11500000, guid: 0947613bd7284388b683fa7f944d7be5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &4769373451719267457
@@ -196,7 +196,7 @@ MonoBehaviour:
   NetworkTransformExpanded: 0
   AuthorityMode: 0
   TickSyncChildren: 0
-  UseUnreliableDeltas: 0
+  UseUnreliableDeltas: 1
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -211,7 +211,7 @@ MonoBehaviour:
   ScaleThreshold: 0.01
   UseQuaternionSynchronization: 0
   UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
+  UseHalfFloatPrecision: 1
   InLocalSpace: 0
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1

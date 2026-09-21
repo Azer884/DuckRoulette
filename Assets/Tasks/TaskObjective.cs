@@ -26,6 +26,10 @@ public class TaskObjective : MonoBehaviour, IInteractable
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = false;
 
+    /// <summary>The task this objective completes - so something that disables the objective
+    /// (CampfireWeatherSnuffer, when the rain puts the fire out) can also withdraw the task.</summary>
+    public Challenge Task => task;
+
     public string InteractionPrompt => task != null ? task.InteractionPrompt : "Use";
 
     // The prompt only appears, and the press only counts, while this is one of the LOCAL player's
