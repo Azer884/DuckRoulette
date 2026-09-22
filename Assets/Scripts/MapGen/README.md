@@ -266,10 +266,36 @@ end crashes Blender on a file this size.
 
 ## Known placeholders
 
-* Igloo, tent, campfire, truck, truck engine, blackjack table, beer crate, pipe outfall, snow
-  pile, hiding log, small log, pine tree, reeds and wall section are all primitive stand-ins
-  from **Tools > Duck Roulette > Create Placeholder Prefabs**.
-* The cabin uses `Assets/House.prefab`, the bridge `Assets/Birdge.prefab`, and the river outfall
-  `Assets/Tube 1.prefab`.
-* The mountain pieces import with the FBX's own materials. Assign the project's terrain/rock
-  materials to them once and every generated ring picks them up.
+* Snow pile, reeds, cabin, truck engine and beer crate have no art yet. **Tools > Duck Roulette >
+  Map > Create Placeholder Prefabs** builds primitive stand-ins for them in
+  `Assets/Prefabs/MapGen/Placeholders`, using the toon materials, with colliders and the pivot at
+  the base. It never overwrites a prefab that already exists, so replace a placeholder's contents
+  with the real model and the scatter rules keep pointing at it.
+* The cabin placeholder has its doorway on +Z, like the igloo, and the Cabin rule faces it into
+  the camp.
+* The bridge is `Assets/Prefabs/MapGen/Birdge.prefab` and the river outfall
+  `Assets/Prefabs/MapGen/Tube 1.prefab`, both cut from `MapAlpha1.fbx` with toon materials set on
+  the prefab.
+* The mountain pieces, loose rocks and `Igloo.fbx` have their FBX materials remapped to the
+  project's toon materials in the model importer.
+
+## Water, ice and physics
+
+* **Nothing spawns in the river.** A candidate is rejected if the centre or any point on the edge
+  of its footprint is a river cell or at or below the water surface. Door clearances get the
+  same check.
+* **The river is walkable ice.** `Water/RiverIce` is a mesh collider covering the water cells
+  (grown by one cell so it tucks under the banks) at the water surface, tagged `Ice` so
+  `Movement` slides players on it. The visual `WaterSurface` plane is also tagged `Ice` but has
+  no collider, because it spans the whole map.
+* **Igloos** (`Igloo.fbx` has its pivot at the centre of the dome) use `sitOnBase` so the bottom
+  of the mesh rests on the ground, `addMeshCollider` for a non-convex collider that keeps the
+  doorway and the inside walkable, `faceRegionCentre` to point the door (+Z) at the plateau
+  instead of the cliff, and `frontClearance` to keep the patch in front of the door dry and free.
+* **Pipes** use `snapToWall`: after placement the pipe slides back towards the nearest map edge
+  until its rear face meets ground as high as its middle, then `wallBury` of its depth further,
+  so it comes out of the border wall. It stays level with the ground it was placed on. The rear
+  face is measured from the bounds, because the pipe's pivot is at one end.
+* **Loose rocks** use `physicsBody`: convex colliders, a Rigidbody weighted by size, not static.
+  Only the mountain ring is static rock. Physics is local to each client - nothing replicates a
+  pushed rock over the network, so two players can see it in different places.

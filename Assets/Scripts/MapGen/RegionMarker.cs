@@ -25,28 +25,6 @@ namespace DuckRoulette.MapGen
                  "effects and anything else that reacts to ground type.")]
         public string snowType;
 
-        /// <summary>
-        /// Snow colours, indexed by <see cref="RegionType"/>.
-        ///
-        /// Every one of them is white. The map is a snowfield, so hue would be a lie - what changes
-        /// between regions is the shade: how much light the snow is giving back, and the faintest
-        /// shift towards warm or cold. Deep untouched powder is the brightest thing on the map, the
-        /// outflow yard is the dullest, and everything else sits between them. That ordering is what
-        /// the player reads, not the colour.
-        /// </summary>
-        static readonly Color[] SnowColours =
-        {
-            new Color(0.80f, 0.80f, 0.81f),   // None
-            new Color(0.82f, 0.87f, 0.92f),   // River - wet ice, the coolest white
-            new Color(0.86f, 0.86f, 0.85f),   // FrozenMarsh - dull crust, faintly warm
-            new Color(0.70f, 0.69f, 0.67f),   // PipeYard - dirty snow, the dullest white
-            new Color(0.89f, 0.88f, 0.87f),   // Camp - trodden, slightly warm
-            new Color(0.94f, 0.95f, 0.96f),   // Clearing - swept hardpack, bright and neutral
-            new Color(1.00f, 1.00f, 1.00f),   // Highground - dry powder, the brightest white
-            new Color(0.82f, 0.84f, 0.86f),   // Woodland - shaded snow, faintly cool
-            new Color(0.55f, 0.55f, 0.56f),   // Mountains - bare rock
-        };
-
         static readonly string[] SnowTypes =
         {
             "None",
@@ -62,8 +40,8 @@ namespace DuckRoulette.MapGen
 
         public static Color ColourFor(RegionType region)
         {
-            int index = (int)region;
-            return index >= 0 && index < SnowColours.Length ? SnowColours[index] : Color.white;
+            // The colours live in TerrainPalette so they can be edited on the MapGenerator.
+            return TerrainPalette.Default.ColourFor(region);
         }
 
         public static string SnowTypeFor(RegionType region)

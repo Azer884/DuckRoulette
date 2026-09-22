@@ -319,13 +319,22 @@ namespace DuckRoulette.MapGen
                 AddMeshColliders(instance, false);
             }
 
+            bool networked = MapSpawner.IsNetworked(instance);
             if (rule.physicsBody)
             {
                 MakePhysical(instance, rule.physicsDensity);
             }
-            else
+            else if (!networked)
             {
+                // A networked prop moves, so it must never be static batched.
                 instance.isStatic = true;
+            }
+
+            if (networked)
+            {
+                // Everything above ran on every peer so the random stream and the footprint stay
+                // identical; only the server keeps and spawns the instance.
+                MapSpawner.HandOffToNetwork(instance);
             }
 
             return instance;

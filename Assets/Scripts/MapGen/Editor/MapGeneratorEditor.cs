@@ -48,9 +48,22 @@ namespace DuckRoulette.MapGen
                 return;
             }
 
-            if (GUILayout.Button("Refresh region preview"))
+            using (new EditorGUILayout.HorizontalScope())
             {
-                preview = BuildPreview(generator);
+                if (GUILayout.Button("Repaint terrain"))
+                {
+                    if (!generator.RepaintTerrain())
+                    {
+                        Debug.LogWarning("MapGenerator: no generated terrain to repaint. Press Generate first.");
+                    }
+
+                    preview = BuildPreview(generator);
+                }
+
+                if (GUILayout.Button("Refresh region preview"))
+                {
+                    preview = BuildPreview(generator);
+                }
             }
 
             if (preview == null)
@@ -60,7 +73,7 @@ namespace DuckRoulette.MapGen
 
             Rect rect = GUILayoutUtility.GetAspectRect(1f);
             EditorGUI.DrawPreviewTexture(rect, preview, null, ScaleMode.ScaleToFit);
-            DrawLegend();
+            DrawLegend(generator.terrainPalette);
         }
 
         static void Generate(MapGenerator generator)
@@ -90,7 +103,7 @@ namespace DuckRoulette.MapGen
             {
                 for (int y = 0; y < height; y++)
                 {
-                    Color colour = RegionMarker.ColourFor(generator.RegionMap[x, y]);
+                    Color colour = generator.terrainPalette.ColourFor(generator.RegionMap[x, y]);
 
                     // Shade the region colour by height, so the plateau and the river valley are
                     // both visible in the same preview.
@@ -104,7 +117,7 @@ namespace DuckRoulette.MapGen
             return texture;
         }
 
-        static void DrawLegend()
+        static void DrawLegend(TerrainPalette palette)
         {
             EditorGUILayout.LabelField("Regions", EditorStyles.boldLabel);
             foreach (RegionType region in System.Enum.GetValues(typeof(RegionType)))
@@ -117,7 +130,7 @@ namespace DuckRoulette.MapGen
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     Rect swatch = GUILayoutUtility.GetRect(14f, 14f, GUILayout.Width(14f));
-                    EditorGUI.DrawRect(swatch, RegionMarker.ColourFor(region));
+                    EditorGUI.DrawRect(swatch, palette.ColourFor(region));
                     EditorGUILayout.LabelField(region.ToString());
                 }
             }

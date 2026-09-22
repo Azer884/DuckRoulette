@@ -18,20 +18,29 @@ namespace Weather
     ///     each stone was a fresh Instantiate/Destroy of a NetworkObject.
     ///
     /// Now: the lifetime is owned by <see cref="HailSpawner"/> (one timer loop for all stones,
-    /// no coroutines), the stones come from a pool, and only a downward hit landing on the head
-    /// knocks a player down.
+    /// no coroutines), the stones come from a pool, and a stone that is still falling hard when it
+    /// hits any part of a player knocks that player down.
+    ///
+    /// The earlier "head strikes only" rule never fired: the player prefab's pivot sits at head
+    /// height (the feet are about 2m below it), so a contact 1.45m above the pivot was impossible.
+    /// It also keyed off the "Hittable" tag, which only the ragdoll bones carry - a stone landing on
+    /// the CharacterController or the Player-layer body colliders was treated as scenery.
     /// </summary>
     [DisallowMultipleComponent]
     public class Hail : NetworkBehaviour
     {
-        [SerializeField, Tooltip("Metres above the player's root the strike has to land to count " +
-            "as a hit on the head. The duck is about 2m tall.")]
-        private float headHeight = 1.45f;
-
-        [SerializeField, Tooltip("How fast the stone has to still be falling for a head strike to " +
+        [SerializeField, Tooltip("How fast the stone has to still be falling for a strike to " +
             "knock the player down, in metres per second. Stops a stone that has already bounced " +
             "and is trickling off a shoulder from counting.")]
         private float minKnockdownSpeed = 6f;
+
+        [SerializeField, Tooltip("Seconds after a hail knockdown before hail can knock the same " +
+            "player down again. Longer than the longest knockout plus stand-up, so a storm cannot " +
+            "keep a player pinned by resetting their wake-up timer with every stone.")]
+        private float knockdownCooldown = 9f;
+
+        // Server only. Shared by every stone: clientId -> Time.time the next hail knockdown is allowed.
+        private static readonly System.Collections.Generic.Dictionary<ulong, float> nextKnockdownAt = new();
 
         [SerializeField, Tooltip("Impact VFX, spawned locally on each client. Optional.")]
         private GameObject impactVfxPrefab;
@@ -74,7 +83,8 @@ namespace Weather
             ContactPoint contact = collision.GetContact(0);
             PlayImpactClientRpc(contact.point);
 
-            if (!collision.transform.CompareTag("Hittable"))
+            NetworkObject victim = FindPlayer(collision.collider);
+            if (victim == null)
             {
                 // Ground, props, another stone: let it bounce and let the spawner time it out.
                 return;
@@ -82,13 +92,12 @@ namespace Weather
 
             hasStruck = true;
 
-            if (IsHeadStrike(collision, contact))
+            // relativeVelocity points from the other body to this one, so a stone still coming
+            // down hard reads as a large negative y. Stops one that has already bounced and is
+            // trickling off a shoulder from counting.
+            if (collision.relativeVelocity.y <= -minKnockdownSpeed)
             {
-                NetworkObject victim = collision.transform.GetComponentInParent<NetworkObject>();
-                if (victim != null && GameManager.Instance != null)
-                {
-                    GameManager.Instance.StunPlayer(victim.OwnerClientId);
-                }
+                TryKnockDown(victim.OwnerClientId);
             }
 
             if (owner != null)
@@ -97,19 +106,29 @@ namespace Weather
             }
         }
 
-        private bool IsHeadStrike(Collision collision, ContactPoint contact)
+        // Any collider on a spawned player counts: the CharacterController, the Player-layer body
+        // colliders and the ragdoll bones all sit under the player's NetworkObject.
+        private static NetworkObject FindPlayer(Collider hit)
         {
-            Transform victimRoot = collision.transform.root;
-            float heightAboveRoot = contact.point.y - victimRoot.position.y;
+            NetworkObject netObj = hit != null ? hit.GetComponentInParent<NetworkObject>() : null;
+            return netObj != null && netObj.IsSpawned && netObj.IsPlayerObject ? netObj : null;
+        }
 
-            if (heightAboveRoot < headHeight)
+        private void TryKnockDown(ulong clientId)
+        {
+            if (GameManager.Instance == null)
             {
-                return false;
+                return;
             }
 
-            // Still coming down hard. relativeVelocity points from the other body to this one, so
-            // a falling stone reads as a negative y.
-            return collision.relativeVelocity.y <= -minKnockdownSpeed;
+            float now = Time.time;
+            if (nextKnockdownAt.TryGetValue(clientId, out float allowedAt) && now < allowedAt)
+            {
+                return;
+            }
+
+            nextKnockdownAt[clientId] = now + knockdownCooldown;
+            GameManager.Instance.StunPlayer(clientId);
         }
 
         [ClientRpc(Delivery = RpcDelivery.Unreliable)]

@@ -529,10 +529,12 @@ public class GameManager : NetworkBehaviour
         _slapCounts[key] = (count + 1, now);
     }
 
-    /// <summary>Server only. Unvalidated knockout for server-originated sources (e.g. Rocks).</summary>
+    /// <summary>Server only. Knockout for server-originated sources (e.g. Hail). Ignores dead players.</summary>
     public void StunPlayer(ulong clientId)
     {
-        if (!IsServer)
+        // A dead player's ragdoll is still a spawned player object - stunning it would run the
+        // wake-up timer and stand the corpse back up.
+        if (!IsServer || !TryGetPlayerObject(clientId, out NetworkObject playerObject) || IsPlayerObjectDead(playerObject))
         {
             return;
         }

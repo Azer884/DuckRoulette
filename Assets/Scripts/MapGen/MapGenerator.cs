@@ -56,6 +56,10 @@ namespace DuckRoulette.MapGen
                  "and a material beside it.")]
         public bool paintRegionTexture = true;
 
+        [Tooltip("Colours and shading of the painted ground. Press Repaint terrain to apply a " +
+                 "change without regenerating the map.")]
+        public TerrainPalette terrainPalette = new TerrainPalette();
+
         [Tooltip("Optional. Kept so the original preview renderer still works.")]
         public MapDisplay display;
 
@@ -118,6 +122,11 @@ namespace DuckRoulette.MapGen
         /// <summary>Region each cell belongs to when it is not water. Kept so the waterline can be
         /// re-derived after the terrain is shaped without losing the region layout.</summary>
         RegionType[,] regionPartition;
+
+        // The play mode bake, owned here so a regenerate does not leak the previous one.
+        Material runtimeTerrainMaterial;
+        Texture2D runtimeTerrainTexture;
+        MeshRenderer terrainRenderer;
 
         const string GeneratedRootName = "Generated";
 
@@ -411,24 +420,82 @@ namespace DuckRoulette.MapGen
             filter.sharedMesh = mesh;
             collider.sharedMesh = mesh;
 
-            Material material = terrainMaterial;
-    #if UNITY_EDITOR
-            if (paintRegionTexture && !Application.isPlaying)
-            {
-                material = RegionTextureBaker.Bake(RegionMap, HeightMap, Pollution, heightMultiplier);
-            }
-    #endif
-
-            if (material != null)
-            {
-                renderer.sharedMaterial = material;
-            }
+            terrainRenderer = renderer;
+            PaintTerrain();
 
             terrain.gameObject.isStatic = true;
 
             if (display != null)
             {
                 display.DrawMesh(meshData);
+            }
+        }
+
+        /// <summary>
+        /// Re-bakes the ground texture from <see cref="terrainPalette"/> onto the terrain built by
+        /// the last <see cref="Generate"/>, without regenerating anything. Returns false when there
+        /// is no generated map in memory to paint.
+        /// </summary>
+        public bool RepaintTerrain()
+        {
+            if (RegionMap == null || HeightMap == null || terrainRenderer == null)
+            {
+                return false;
+            }
+
+            PaintTerrain();
+            return true;
+        }
+
+        void PaintTerrain()
+        {
+            Material material = terrainMaterial;
+
+            if (paintRegionTexture)
+            {
+                if (Application.isPlaying)
+                {
+                    // Play mode builds its own map, so the texture baked in the editor belongs to a
+                    // different layout; paint one for this map instead.
+                    ReleaseRuntimeTerrain();
+                    runtimeTerrainMaterial = RegionTextureBaker.BakeRuntime(RegionMap, HeightMap, Pollution,
+                        terrainPalette, terrainMaterial, out runtimeTerrainTexture);
+                    material = runtimeTerrainMaterial;
+                }
+    #if UNITY_EDITOR
+                else
+                {
+                    material = RegionTextureBaker.BakeAsset(RegionMap, HeightMap, Pollution, terrainPalette);
+                }
+    #endif
+            }
+
+            if (material != null)
+            {
+                terrainRenderer.sharedMaterial = material;
+            }
+        }
+
+        void ReleaseRuntimeTerrain()
+        {
+            if (runtimeTerrainMaterial != null)
+            {
+                Destroy(runtimeTerrainMaterial);
+                runtimeTerrainMaterial = null;
+            }
+
+            if (runtimeTerrainTexture != null)
+            {
+                Destroy(runtimeTerrainTexture);
+                runtimeTerrainTexture = null;
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (Application.isPlaying)
+            {
+                ReleaseRuntimeTerrain();
             }
         }
 
@@ -584,6 +651,8 @@ namespace DuckRoulette.MapGen
 
         Transform PrepareRoot()
         {
+            MapSpawner.DespawnNetworkProps();
+
             Transform existing = transform.Find(GeneratedRootName);
             if (existing != null)
             {

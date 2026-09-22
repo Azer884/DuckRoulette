@@ -16,7 +16,8 @@ public class PlayerPushObject : NetworkBehaviour
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        if (hit.collider.attachedRigidbody != null)
+        // Standing on top of a body is not pushing it.
+        if (hit.collider.attachedRigidbody != null && hit.normal.y < 0.7f)
         {
             Vector3 hitPosition = hit.point;
             Vector3 hitColliderPosition = hit.collider.transform.position;
@@ -38,14 +39,30 @@ public class PlayerPushObject : NetworkBehaviour
 
         playerPosition = transform.position;
 
-        Collider[] overlaps = Physics.OverlapSphere(hitPoint, 0.1f);
-        Collider hitCollider = overlaps.Length > 0 ? overlaps[0] : null; // Get the first collider in the overlap sphere (should be the one hit)
+        // First collider at the contact that belongs to a rigidbody. Taking overlaps[0] blindly
+        // often picked the ground under the player's feet instead of the thing being pushed.
+        Collider hitCollider = null;
+        foreach (Collider overlap in Physics.OverlapSphere(hitPoint, 0.1f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (overlap.attachedRigidbody != null && !overlap.transform.IsChildOf(transform))
+            {
+                hitCollider = overlap;
+                break;
+            }
+        }
 
         if (hitCollider != null)
         {
             var rigidBody = hitCollider.attachedRigidbody;
 
-            if (rigidBody != null && rigidBody.GetComponentInParent<BulletBehavior>() == null)
+            // Heavy bodies like the truck model their own response to being pushed.
+            if (rigidBody.TryGetComponent(out IPushable pushable))
+            {
+                pushable.OnPushed(OwnerClientId, playerPosition, hitPoint);
+                return;
+            }
+
+            if (rigidBody.GetComponentInParent<BulletBehavior>() == null)
             {
                 var forceDirection = hitCollider.transform.position - playerPosition;
                 forceDirection.y = 0;

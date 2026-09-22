@@ -1,8 +1,10 @@
-#if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
+#if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace DuckRoulette.MapGen
 {
@@ -20,16 +22,27 @@ namespace DuckRoulette.MapGen
     ///   * <b>Height bands.</b> Height is cut into a few terraced bands, like contour lines, instead
     ///     of a smooth ramp.
     ///   * <b>Hollows and slopes.</b> Hollows get one flat cool tint and steep ground one flat
-    ///     scoured grey, each switched on by a threshold rather than blended in.
+    ///     scoured tint, each switched on by a threshold rather than blended in.
     ///   * <b>Drifts.</b> A few large patches of brighter snow, so big flat regions are not a
     ///     single block of colour. No fine grain.
-    ///   * <b>Pollution.</b> Two flat soot tones around the pipe outfalls.
+    ///   * <b>Pollution.</b> Two flat stain tones around the pipe outfalls.
     ///
-    /// Lighting comes from the mesh normals through the toon shader, so no normal map is baked.
-    /// The material copies its shading setup from the toon template so it matches the props.
+    /// Every colour and amount comes from the <see cref="TerrainPalette"/> on the MapGenerator.
+    ///
+    /// It runs in two places. In the editor, <see cref="BakeAsset"/> writes a PNG and a material
+    /// into Assets/Generated so a generated map survives a scene reload. In play mode the map is
+    /// regenerated on start (often from a fresh seed), so <see cref="BakeRuntime"/> paints an
+    /// in-memory texture for that map - the asset baked in the editor belongs to a different
+    /// layout.
+    ///
+    /// Region borders are only as sharp as the texture is dense, so the texture is sized from
+    /// <see cref="TerrainPalette.textureSize"/>, stored uncompressed (block compression smears
+    /// shades this close together into visible 4x4 blocks) and filtered trilinear + anisotropic so
+    /// the edges stay clean at a grazing angle. The per-texel loop reads only precomputed fields,
+    /// so it runs in parallel across rows.
     ///
     /// The terrain mesh carries 0..1 UVs across the grid, so the map lines up cell for cell with no
-    /// extra work, and it is written as a real asset so a generated map survives a scene reload.
+    /// extra work.
     /// </summary>
     public static class RegionTextureBaker
     {
@@ -40,22 +53,88 @@ namespace DuckRoulette.MapGen
         /// <summary>Toon material the terrain copies its shading setup from.</summary>
         const string ToonTemplatePath = "Assets/Materials/Terrain/Terrain.mat";
 
-        /// <summary>Texels per map cell. Eight over a 100 cell map is an 800 pixel square.</summary>
-        public const int DefaultSupersample = 8;
+        const int MinTextureSize = 256;
+        const int MaxTextureSize = 8192;
 
         /// <summary>Number of terraced height bands.</summary>
         const int HeightBands = 3;
 
-        /// <summary>Bakes the ground texture and returns the material using it.</summary>
-        public static Material Bake(RegionType[,] regionMap, float[,] heightMap, float[,] pollution,
-            float heightMultiplier = 5f, int supersample = DefaultSupersample)
+        /// <summary>
+        /// Paints the ground into a new in-memory texture and returns a copy of
+        /// <paramref name="template"/> using it. The caller owns both and destroys them when the
+        /// map is rebuilt.
+        /// </summary>
+        public static Material BakeRuntime(RegionType[,] regionMap, float[,] heightMap, float[,] pollution,
+            TerrainPalette palette, Material template, out Texture2D texture)
         {
+            Color32[] pixels = BakePixels(regionMap, heightMap, pollution, palette, out int textureWidth, out int textureHeight);
+
+            texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, true)
+            {
+                name = "RegionMap (runtime)",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Trilinear,
+                anisoLevel = 8,
+            };
+            texture.SetPixels32(pixels);
+            // Mips are generated, then the CPU copy is dropped: nothing reads it back.
+            texture.Apply(true, true);
+
+            Material material = template != null
+                ? new Material(template)
+                : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material.name = "TerrainRegions (runtime)";
+            ApplyTexture(material, texture);
+            return material;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>Bakes the ground texture as an asset and returns the material using it.</summary>
+        public static Material BakeAsset(RegionType[,] regionMap, float[,] heightMap, float[,] pollution,
+            TerrainPalette palette)
+        {
+            Color32[] pixels = BakePixels(regionMap, heightMap, pollution, palette, out int textureWidth, out int textureHeight);
+            WritePng(BasePath, textureWidth, textureHeight, pixels);
+            var baseMap = AssetDatabase.LoadAssetAtPath<Texture2D>(BasePath);
+
+            Material material = BuildToonMaterial();
+            ApplyTexture(material, baseMap);
+
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+#endif
+
+        static void ApplyTexture(Material material, Texture texture)
+        {
+            SetTextureIfPresent(material, "_MainTex", texture);
+            SetTextureIfPresent(material, "_BaseMap", texture);
+            // The template tiles its own texture across each prop. This one covers the whole
+            // terrain exactly once, so any tiling copied from the template has to go.
+            ResetTiling(material, "_MainTex");
+            ResetTiling(material, "_BaseMap");
+            SetTextureIfPresent(material, "_NormalMap", null);
+            SetTextureIfPresent(material, "_BumpMap", null);
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", Color.white);
+            }
+        }
+
+        static Color32[] BakePixels(RegionType[,] regionMap, float[,] heightMap, float[,] pollution,
+            TerrainPalette palette, out int textureWidth, out int textureHeight)
+        {
+            palette ??= TerrainPalette.Default;
+
             int width = regionMap.GetLength(0);
             int height = regionMap.GetLength(1);
-            int textureWidth = width * supersample;
-            int textureHeight = height * supersample;
-
-            var basePixels = new Color32[textureWidth * textureHeight];
+            int size = Mathf.Clamp(palette.textureSize, MinTextureSize, MaxTextureSize);
+            float texelsPerCell = (float)size / Mathf.Max(width, height);
+            int texWidth = Mathf.Max(1, Mathf.RoundToInt(width * texelsPerCell));
+            int texHeight = Mathf.Max(1, Mathf.RoundToInt(height * texelsPerCell));
+            textureWidth = texWidth;
+            textureHeight = texHeight;
 
             float lowest = float.MaxValue;
             float highest = float.MinValue;
@@ -86,31 +165,47 @@ namespace DuckRoulette.MapGen
             for (int i = 0; i < regions.Length; i++)
             {
                 weights[i] = Blur(Blur(RegionMask(regionMap, regions[i]), 2), 2);
-                colours[i] = RegionMarker.ColourFor(regions[i]);
+                colours[i] = palette.ColourFor(regions[i]);
             }
 
-            float[,] smoothPollution = pollution != null ? Blur(pollution, 1) : null;
+            float[,] smoothPollution = pollution != null && palette.paintPollution ? Blur(pollution, 1) : null;
 
-            var soot = new Color(0.36f, 0.34f, 0.31f);
-            var heavySoot = new Color(0.24f, 0.23f, 0.21f);
-            // Both stay close to white: scoured snow going grey, and shadowed snow going cool.
-            var scoured = new Color(0.72f, 0.73f, 0.75f);
-            var hollowShade = new Color(0.80f, 0.86f, 0.94f);
+            // The noise is all low frequency (tens of cells per wave), so it is evaluated once per
+            // cell and sampled bilinearly per texel. That keeps the per-texel loop to plain array
+            // reads, which is what lets it run on worker threads.
+            float[,] warpXField = NoiseField(width, height, 0.05f, 41f, new Vector2(3.1f, 7.9f));
+            float[,] warpYField = NoiseField(width, height, 0.05f, 41f, new Vector2(71f, 23f));
+            float[,] driftField = NoiseField(width, height, 0.07f, 61f, new Vector2(11.3f, 5.7f));
 
-            for (int px = 0; px < textureWidth; px++)
+            // Copied out of the palette so the worker threads never touch the serialized object.
+            float lowGroundBrightness = palette.lowGroundBrightness;
+            Color hollowTint = palette.hollowTint;
+            float hollowStrength = palette.hollowStrength;
+            Color slopeTint = palette.slopeTint;
+            float slopeStrength = palette.slopeStrength;
+            float driftBrightness = palette.driftBrightness;
+            Color pollutionLight = palette.pollutionLight;
+            Color pollutionHeavy = palette.pollutionHeavy;
+            float lightThreshold = palette.pollutionLightThreshold;
+            float heavyThreshold = palette.pollutionHeavyThreshold;
+            float exposure = palette.exposure;
+
+            var pixels = new Color32[texWidth * texHeight];
+
+            Parallel.For(0, texHeight, py =>
             {
-                for (int py = 0; py < textureHeight; py++)
+                for (int px = 0; px < texWidth; px++)
                 {
                     // Texel centre in cells. The mesh maps cell x to u = x / width, so texel px
-                    // covers cells px / supersample to (px + 1) / supersample.
-                    float u = (px + 0.5f) / supersample;
-                    float v = (py + 0.5f) / supersample;
+                    // covers cells px / texelsPerCell to (px + 1) / texelsPerCell.
+                    float u = (px + 0.5f) / texelsPerCell;
+                    float v = (py + 0.5f) / texelsPerCell;
 
                     // ---- region: flat colour of the strongest region ----------------------
                     // A broad warp bends the Voronoi's straight borders into curves. It is kept
                     // low frequency so the edge wobbles gently instead of fraying.
-                    float warpX = (RotatedFbm(u, v, 0.05f, 2, 41f, new Vector2(3.1f, 7.9f)) - 0.5f) * 8f;
-                    float warpY = (RotatedFbm(u, v, 0.05f, 2, 41f, new Vector2(71f, 23f)) - 0.5f) * 8f;
+                    float warpX = (TerrainShaper.SampleHeight(warpXField, u, v) - 0.5f) * 8f;
+                    float warpY = (TerrainShaper.SampleHeight(warpYField, u, v) - 0.5f) * 8f;
                     Color colour = StrongestRegionColour(weights, colours, u + warpX, v + warpY);
 
                     float groundHeight = TerrainShaper.SampleHeight(heightMap, u, v);
@@ -118,70 +213,66 @@ namespace DuckRoulette.MapGen
                     // ---- height: terraced bands -------------------------------------------
                     float shade = Mathf.InverseLerp(lowest, highest, groundHeight);
                     float band = Mathf.Min(Mathf.Floor(shade * HeightBands), HeightBands - 1) / (HeightBands - 1f);
-                    colour *= Mathf.Lerp(0.9f, 1.03f, band);
+                    colour *= Mathf.Lerp(lowGroundBrightness, 1f, band);
 
                     // ---- hollows: one flat cool tint ---------------------------------------
                     if (TerrainShaper.SampleHeight(curvatureField, u, v) < -0.09f)
                     {
-                        colour = Color.Lerp(colour, hollowShade * colour.grayscale * 1.08f, 0.55f);
+                        colour = Color.Lerp(colour, colour * hollowTint, hollowStrength);
                     }
 
-                    // ---- slope: steep ground is scoured to grey ----------------------------
+                    // ---- slope: steep ground is scoured ------------------------------------
                     if (TerrainShaper.SampleHeight(slopeField, u, v) > 0.32f)
                     {
-                        colour = Color.Lerp(colour, scoured, 0.6f);
+                        colour = Color.Lerp(colour, slopeTint, slopeStrength);
                     }
 
                     // ---- drifts: a few big flat patches of brighter snow --------------------
-                    if (RotatedFbm(u, v, 0.07f, 2, 61f, new Vector2(11.3f, 5.7f)) > 0.6f)
+                    if (TerrainShaper.SampleHeight(driftField, u, v) > 0.6f)
                     {
-                        colour *= 1.05f;
+                        colour *= driftBrightness;
                     }
 
-                    // ---- pollution: two flat soot tones ------------------------------------
+                    // ---- pollution: two flat stain tones -----------------------------------
                     if (smoothPollution != null)
                     {
                         float dirt = TerrainShaper.SampleHeight(smoothPollution, u + warpX * 0.5f, v + warpY * 0.5f);
-                        if (dirt > 0.6f)
+                        if (dirt > heavyThreshold)
                         {
-                            colour = heavySoot;
+                            colour = pollutionHeavy;
                         }
-                        else if (dirt > 0.25f)
+                        else if (dirt > lightThreshold)
                         {
-                            colour = soot;
+                            colour = pollutionLight;
                         }
                     }
 
-                    // Headroom, so the brightest snow is not blown out under the directional light.
-                    colour *= 0.95f;
+                    colour *= exposure;
                     colour.a = 1f;
 
-                    basePixels[py * textureWidth + px] = colour;
+                    pixels[py * texWidth + px] = colour;
+                }
+            });
+
+            return pixels;
+        }
+
+        /// <summary>One low frequency noise value per cell, for bilinear sampling per texel.</summary>
+        static float[,] NoiseField(int width, int height, float frequency, float angleDegrees, Vector2 offset)
+        {
+            var field = new float[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    field[x, y] = RotatedFbm(x, y, frequency, 2, angleDegrees, offset);
                 }
             }
 
-            WritePng(BasePath, textureWidth, textureHeight, basePixels);
-            var baseMap = AssetDatabase.LoadAssetAtPath<Texture2D>(BasePath);
-
-            Material material = BuildToonMaterial();
-            SetTextureIfPresent(material, "_MainTex", baseMap);
-            SetTextureIfPresent(material, "_BaseMap", baseMap);
-            // The template tiles its own texture across each prop. This one covers the whole
-            // terrain exactly once, so any tiling copied from the template has to go.
-            ResetTiling(material, "_MainTex");
-            ResetTiling(material, "_BaseMap");
-            SetTextureIfPresent(material, "_NormalMap", null);
-            SetTextureIfPresent(material, "_BumpMap", null);
-            if (material.HasProperty("_BaseColor"))
-            {
-                material.SetColor("_BaseColor", Color.white);
-            }
-
-            EditorUtility.SetDirty(material);
-            AssetDatabase.SaveAssets();
-            return material;
+            return field;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// The terrain material, reset from the toon template on every bake so it always shades
         /// like the rest of the map.
@@ -218,6 +309,37 @@ namespace DuckRoulette.MapGen
 
             return material;
         }
+
+        static void WritePng(string path, int width, int height, Color32[] pixels)
+        {
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.SetPixels32(pixels);
+            texture.Apply();
+
+            Directory.CreateDirectory(OutputFolder);
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (importer == null)
+            {
+                return;
+            }
+
+            importer.textureType = TextureImporterType.Default;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.mipmapEnabled = true;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.anisoLevel = 8;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.maxTextureSize = Mathf.Clamp(Mathf.NextPowerOfTwo(Mathf.Max(width, height)), MinTextureSize, MaxTextureSize);
+            // Uncompressed: the region shades are a few percent apart, and block compression
+            // turns the borders between them into a 4x4 staircase.
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
+#endif
 
         static void ResetTiling(Material material, string property)
         {
@@ -394,30 +516,5 @@ namespace DuckRoulette.MapGen
 
             return result;
         }
-
-        static void WritePng(string path, int width, int height, Color32[] pixels)
-        {
-            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            texture.SetPixels32(pixels);
-            texture.Apply();
-
-            Directory.CreateDirectory(OutputFolder);
-            File.WriteAllBytes(path, texture.EncodeToPNG());
-            Object.DestroyImmediate(texture);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            if (importer == null)
-            {
-                return;
-            }
-
-            importer.textureType = TextureImporterType.Default;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.mipmapEnabled = true;
-            importer.maxTextureSize = 2048;
-            importer.SaveAndReimport();
-        }
     }
 }
-#endif
