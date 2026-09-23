@@ -103,7 +103,7 @@ namespace DuckRoulette.Tests.Functional
         [Test]
         public void BlackjackCardPrefab_SpawnedByServer_IsRegisteredNetworkPrefab()
         {
-            CardDeck deck = Load("Assets/Prefabs/BlackjackTable.prefab").GetComponentInChildren<CardDeck>(true);
+            CardDeck deck = Load("Assets/Prefabs/Map/BlackjackTable.prefab").GetComponentInChildren<CardDeck>(true);
             Assert.That(deck, Is.Not.Null);
             Assert.That(deck.cardPrefab, Is.Not.Null, "CardDeck.cardPrefab is unassigned; SpawnCard silently deals no card objects");
             AssertRegistered(deck.cardPrefab);

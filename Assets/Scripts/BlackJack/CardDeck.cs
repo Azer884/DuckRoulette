@@ -93,6 +93,14 @@ public class CardDeck : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         playerTurn.OnValueChanged -= OnPlayerTurnChanged;
+
+        // The table is part of the generated map and a regenerate spawns the next one in the same
+        // frame, before this one is actually destroyed. Let go now so the new deck's Awake can
+        // take over instead of destroying itself as a duplicate.
+        if (instance == this)
+        {
+            instance = null;
+        }
     }
 
     // The turn text used to only be refreshed inside GetNextPlayer on the server, so remote
@@ -289,6 +297,11 @@ public class CardDeck : NetworkBehaviour
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+
+        if (instance == this)
+        {
+            instance = null;
         }
 
         base.OnDestroy();

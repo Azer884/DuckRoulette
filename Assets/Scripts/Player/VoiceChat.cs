@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Linq;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class VoiceChat : NetworkBehaviour
 {
@@ -30,6 +31,51 @@ public class VoiceChat : NetworkBehaviour
 
     [SerializeField] private GameObject micUI;
     [SerializeField] private GameObject spit;
+
+    [Header("Loudness")]
+    [SerializeField, Tooltip("Speech level the automatic gain aims for, as linear RMS. Raw mic " +
+        "input usually sits around 0.02-0.08 RMS, which is what made voices so quiet on the other end.")]
+    private float targetLevel = 0.2f;
+
+    [SerializeField, Tooltip("Most the automatic gain may boost a quiet mic by.")]
+    private float maxGain = 12f;
+
+    [SerializeField, Tooltip("Chunks quieter than this (linear RMS, before gain) are treated as " +
+        "background noise: the gain does not rise to chase them.")]
+    private float noiseFloor = 0.004f;
+
+    [SerializeField, Tooltip("Extra gain applied to received voice before playback. Soft-limited, " +
+        "so it cannot clip harshly.")]
+    private float playbackGain = 1.5f;
+
+    [Header("Local speaking indicator")]
+    [SerializeField, Tooltip("HUD object shown to the owner while their mic is sending voice.")]
+    private GameObject localSpeakingIndicator;
+
+    [SerializeField, Tooltip("Optional HUD image filled with the owner's live mic level.")]
+    private Image localMicFill;
+
+    // Levels shown by the mic UI, 0..1 on a dB scale (see LevelToFill).
+    private const float MeterFloorDb = -50f;
+    private const float MeterCeilingDb = -6f;
+
+    private float currentGain = 1f;
+
+    /// <summary>Owner only: the live level of the local mic after gain, 0..1 for a UI fill.
+    /// Updated while capturing whether or not voice is being sent.</summary>
+    public float LocalMicLevel { get; private set; }
+
+    /// <summary>Owner only: true while this player's voice is actually going out.</summary>
+    public bool IsTransmitting { get; private set; }
+
+    /// <summary>Maps a linear RMS level to a 0..1 meter fill on a dB scale. A linear fill
+    /// barely moves for speech, which is far below full scale.</summary>
+    public static float LevelToFill(float rms)
+    {
+        if (rms <= 0f) return 0f;
+        float db = 20f * Mathf.Log10(rms);
+        return Mathf.Clamp01((db - MeterFloorDb) / (MeterCeilingDb - MeterFloorDb));
+    }
 
     #region Capture
     private AudioClip micClip;
@@ -62,6 +108,8 @@ public class VoiceChat : NetworkBehaviour
             MicDeviceSettings.OnDeviceChanged += HandleDeviceChanged;
             StartCapture(MicDeviceSettings.SelectedDevice);
         }
+
+        UpdateLocalIndicator();
 
         base.OnNetworkSpawn();
     }
@@ -162,11 +210,35 @@ public class VoiceChat : NetworkBehaviour
         isTalking.Value = wantsToTalk;
 
         CaptureVoice(wantsToTalk);
+
+        IsTransmitting = wantsToTalk && micClip != null;
+        UpdateLocalIndicator();
+    }
+
+    // The mic icon over the head (micUI) is on the player's own model, which the owner never
+    // sees in first person, so the owner gets a HUD copy fed straight from the capture.
+    private void UpdateLocalIndicator()
+    {
+        bool show = IsOwner && IsTransmitting;
+
+        if (localSpeakingIndicator != null && localSpeakingIndicator.activeSelf != show)
+        {
+            localSpeakingIndicator.SetActive(show);
+        }
+
+        if (localMicFill != null && show)
+        {
+            localMicFill.fillAmount = LocalMicLevel;
+        }
     }
 
     private void CaptureVoice(bool wantsToTalk)
     {
-        if (micClip == null) return;
+        if (micClip == null)
+        {
+            LocalMicLevel = 0f;
+            return;
+        }
 
         int writePosition = Microphone.GetPosition(micDevice);
         if (writePosition < 0) return;
@@ -200,6 +272,8 @@ public class VoiceChat : NetworkBehaviour
             micReadPosition = (micReadPosition + captureChunkSamples) % micClip.samples;
             available -= captureChunkSamples;
 
+            ApplyGain();
+
             // Samples are read and discarded while silent too, so releasing push-to-talk never
             // leaves a backlog of stale audio to send on the next press.
             if (!wantsToTalk) continue;
@@ -207,6 +281,48 @@ public class VoiceChat : NetworkBehaviour
             EncodeChunk();
             SendVoiceDataToClientsServerRpc(sendBuffer, sendBuffer.Length);
         }
+    }
+
+    // Automatic gain: raw mic input is far below full scale, so it arrived at the other end (and
+    // through 3D rolloff) much too quiet. Each chunk is scaled toward targetLevel. The gain drops
+    // quickly when speech gets loud and rises slowly, and does not rise at all on background
+    // noise, so it cannot pump the room hiss up between words. A soft limiter keeps peaks from
+    // clipping. Also feeds the owner's mic meter.
+    private void ApplyGain()
+    {
+        float sum = 0f;
+        for (int i = 0; i < captureChunkSamples; i++)
+        {
+            sum += captureBuffer[i] * captureBuffer[i];
+        }
+
+        float rms = Mathf.Sqrt(sum / captureChunkSamples);
+
+        if (rms > noiseFloor)
+        {
+            float wanted = Mathf.Clamp(targetLevel / rms, 1f, Mathf.Max(1f, maxGain));
+            float rate = wanted < currentGain ? 0.5f : 0.03f;
+            currentGain = Mathf.Lerp(currentGain, wanted, rate);
+        }
+
+        for (int i = 0; i < captureChunkSamples; i++)
+        {
+            captureBuffer[i] = SoftLimit(captureBuffer[i] * currentGain);
+        }
+
+        LocalMicLevel = LevelToFill(rms * currentGain);
+    }
+
+    // Linear below 0.8 of full scale, then eases into 1 instead of clipping.
+    private static float SoftLimit(float sample)
+    {
+        const float knee = 0.8f;
+        float magnitude = Mathf.Abs(sample);
+        if (magnitude <= knee) return sample;
+
+        float over = (magnitude - knee) / (1f - knee);
+        float limited = knee + (1f - knee) * (over / (1f + over));
+        return Mathf.Sign(sample) * limited;
     }
 
     // Linear resample of one capture chunk down to the wire rate, then mu-law encode in place.
@@ -297,7 +413,7 @@ public class VoiceChat : NetworkBehaviour
 
         for (int i = 0; i < voiceDataLength; i++)
         {
-            clipBuffer[dataReceived] = MuLawToLinear(voiceData[i]);
+            clipBuffer[dataReceived] = SoftLimit(MuLawToLinear(voiceData[i]) * playbackGain);
 
             // buffer loop
             dataReceived = (dataReceived + 1) % clipBufferSize;

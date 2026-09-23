@@ -68,7 +68,10 @@ namespace DuckRoulette.MapGen
 
             if (!manager.IsServer)
             {
-                Object.Destroy(instance);
+                // Immediately, not at the end of the frame: the server's copy can arrive in this
+                // same frame, and props with singletons (the blackjack deck) would otherwise see
+                // this doomed copy as the live one and discard the real one.
+                Object.DestroyImmediate(instance);
                 return;
             }
 

@@ -104,9 +104,20 @@ namespace DuckRoulette.MapGen
 
     	public string seed;
     	public Vector2 offset;
+        /// <summary>
+        /// Stable hash of the seed string (FNV-1a). string.GetHashCode is not guaranteed to match
+        /// between runtimes - an editor host (Mono) and a built client (IL2CPP) could turn the same
+        /// seed into two different maps - so multiplayer map sync needs a hash of its own.
+        /// </summary>
         public int SeedHashCode {
             get {
-                return seed.GetHashCode();
+                unchecked {
+                    uint hash = 2166136261;
+                    foreach (char c in seed ?? string.Empty) {
+                        hash = (hash ^ c) * 16777619;
+                    }
+                    return (int)hash;
+                }
             }
         }
 

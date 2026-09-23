@@ -12,7 +12,7 @@ namespace DuckRoulette.Tests.Unit
     [TestFixture, Category("Unit")]
     public class CardDeckTests
     {
-        private const string TablePrefabPath = "Assets/Prefabs/BlackjackTable.prefab";
+        private const string TablePrefabPath = "Assets/Prefabs/Map/BlackjackTable.prefab";
 
         private GameObject _go;
         private CardDeck _deck;

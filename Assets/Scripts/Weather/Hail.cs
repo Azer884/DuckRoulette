@@ -19,12 +19,12 @@ namespace Weather
     ///
     /// Now: the lifetime is owned by <see cref="HailSpawner"/> (one timer loop for all stones,
     /// no coroutines), the stones come from a pool, and a stone that is still falling hard when it
-    /// hits any part of a player knocks that player down.
+    /// hits any part of a player knocks that player down (server-side, through GameManager.StunPlayer).
     ///
-    /// The earlier "head strikes only" rule never fired: the player prefab's pivot sits at head
-    /// height (the feet are about 2m below it), so a contact 1.45m above the pivot was impossible.
-    /// It also keyed off the "Hittable" tag, which only the ragdoll bones carry - a stone landing on
-    /// the CharacterController or the Player-layer body colliders was treated as scenery.
+    /// The earlier knockdown check never fired: it required collision.relativeVelocity.y to be
+    /// strongly negative, but for a stone falling onto a still player Unity reports that velocity
+    /// with a positive y. The strike speed now comes from the stone's own velocity in the physics
+    /// step before the contact, which does not depend on that sign convention.
     /// </summary>
     [DisallowMultipleComponent]
     public class Hail : NetworkBehaviour
@@ -51,9 +51,21 @@ namespace Weather
         private HailSpawner owner;
         private bool hasStruck;
 
+        // Server only. The stone's velocity at the end of the last physics step, i.e. before the
+        // solver resolved the contact that OnCollisionEnter is reporting.
+        private Vector3 lastVelocity;
+
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+        }
+
+        private void FixedUpdate()
+        {
+            if (IsServer && body != null && !body.isKinematic)
+            {
+                lastVelocity = body.linearVelocity;
+            }
         }
 
         /// <summary>Called by <see cref="HailSpawner"/> right after it takes this stone out of the
@@ -69,12 +81,13 @@ namespace Weather
                 body.linearVelocity = initialVelocity;
                 body.angularVelocity = Random.insideUnitSphere * 4f;
             }
+
+            lastVelocity = initialVelocity;
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            // Clients run the same physics for the visuals, but only the server decides whether
-            // anyone actually got hit.
+            // Clients run the same physics for the visuals; the server owns the stone's lifetime.
             if (!IsServer || hasStruck)
             {
                 return;
@@ -92,10 +105,9 @@ namespace Weather
 
             hasStruck = true;
 
-            // relativeVelocity points from the other body to this one, so a stone still coming
-            // down hard reads as a large negative y. Stops one that has already bounced and is
+            // Downward speed going into the hit. Stops a stone that has already bounced and is
             // trickling off a shoulder from counting.
-            if (collision.relativeVelocity.y <= -minKnockdownSpeed)
+            if (-lastVelocity.y >= minKnockdownSpeed)
             {
                 TryKnockDown(victim.OwnerClientId);
             }
@@ -145,11 +157,18 @@ namespace Weather
         {
             hasStruck = false;
             owner = null;
+            lastVelocity = Vector3.zero;
 
             if (body != null)
             {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                // Clients hold the stone kinematic (NetworkRigidbody), and setting a kinematic
+                // body's velocity only logs a warning.
+                if (!body.isKinematic)
+                {
+                    body.linearVelocity = Vector3.zero;
+                    body.angularVelocity = Vector3.zero;
+                }
+
                 body.isKinematic = true;
             }
         }

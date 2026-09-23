@@ -258,6 +258,14 @@ namespace DuckRoulette.MapGen
                     continue;
                 }
 
+                // Placed on every peer so the random stream and the footprints stay identical;
+                // only the server keeps and spawns a networked prop. Done after the null check,
+                // because a client destroys its copy here and it must still count as placed.
+                if (MapSpawner.IsNetworked(instance))
+                {
+                    MapSpawner.HandOffToNetwork(instance);
+                }
+
                 if (frontRadius > 0f)
                 {
                     placed.Add(new Placement { position = front, radius = frontRadius, role = PropRole.Decor });
@@ -328,13 +336,6 @@ namespace DuckRoulette.MapGen
             {
                 // A networked prop moves, so it must never be static batched.
                 instance.isStatic = true;
-            }
-
-            if (networked)
-            {
-                // Everything above ran on every peer so the random stream and the footprint stay
-                // identical; only the server keeps and spawns the instance.
-                MapSpawner.HandOffToNetwork(instance);
             }
 
             return instance;

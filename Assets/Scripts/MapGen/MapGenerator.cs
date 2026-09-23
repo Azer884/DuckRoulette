@@ -137,6 +137,13 @@ namespace DuckRoulette.MapGen
                 return;
             }
 
+            // In a network session every peer has to build the same map, so the server picks the
+            // seed and MapSeedSync generates on every peer once it arrives.
+            if (MapSeedSync.DrivesGeneration(this))
+            {
+                return;
+            }
+
             if (randomiseSeedOnStart)
             {
                 RerollSeed();
