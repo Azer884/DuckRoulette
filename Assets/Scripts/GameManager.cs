@@ -861,7 +861,16 @@ public class GameManager : NetworkBehaviour
         {
             OnHostDisconnected?.Invoke();
 
-            if (!_isLeavingGame)
+            // A server-driven networked scene load (the host's own LeaveGame() sending everyone
+            // back to Lobby together) despawns this scene object on every client too, same as any
+            // other scene transition - the connection itself is still up. Only chase clients into
+            // their own full teardown when the connection is actually gone (host crashed/quit
+            // without a clean scene hand-off); otherwise a still-connected client would tear its
+            // own session down right as the host is trying to keep it alive.
+            bool stillConnected = NetworkManager.Singleton != null &&
+                (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsConnectedClient);
+
+            if (!_isLeavingGame && !stillConnected)
             {
                 LeaveGame();
             }
@@ -882,11 +891,36 @@ public class GameManager : NetworkBehaviour
         }
 
         _isLeavingGame = true;
-        LeaveSteamLobby();
 
-        // InteractionPromptHUD is DontDestroyOnLoad, so a prompt visible the instant the player
-        // leaves would otherwise survive the scene load and stay stuck on screen in the Lobby.
+        // InteractionPromptHUD and SpectateHUD are DontDestroyOnLoad, so anything left visible
+        // the instant the player leaves would otherwise survive the scene load and stay stuck on
+        // screen in the Lobby.
         InteractionPromptHUD.Hide();
+        SpectateHUD.HideSpectating();
+
+        // Host exit: everyone goes back to Lobby together, still in the same Steam lobby and the
+        // same Netcode session, so LobbyUI shows them all grouped and ready to restart - instead
+        // of every client independently tearing its own session down and scattering back to the
+        // main menu alone. PlayerSpawner.GoBackToLobby is what turns this networked scene load
+        // into LobbyManager.HostCreated()/ConnectedAsClient() on arrival; a plain
+        // SceneManager.LoadScene here would bypass it entirely.
+        if (IsServer && NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+        {
+            PlayerSpawner.Instance.isStarted = false;
+            Cursor.lockState = CursorLockMode.Confined;
+            NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
+            return;
+        }
+
+        // Non-host leaving on their own: they actually leave the party, same as before. Only a
+        // still-live session counts as leaving on purpose - when this runs because the connection
+        // already dropped (OnDisable below), DisconnectNotice has already queued the error popup.
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            DisconnectNotice.MarkLeavingOnPurpose();
+        }
+
+        LeaveSteamLobby();
 
         PlayerSpawner.Instance.isStarted = false;
         Cursor.lockState = CursorLockMode.Confined;

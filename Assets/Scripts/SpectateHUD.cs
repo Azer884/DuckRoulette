@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Presentation layer for spectate mode, driven by DeathTrigger. Previously spectating gave a
 // player zero on-screen information: no idea who killed them, who they're currently watching,
@@ -49,6 +50,46 @@ public class SpectateHUD : MonoBehaviour
         {
             spectateInfoRoot.SetActive(false);
         }
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            Instance = null;
+        }
+    }
+
+    // This HUD is DontDestroyOnLoad, so whatever was on screen when the match ended (spectating
+    // someone, a death banner mid-fade) used to follow the player into the Lobby. The explicit
+    // Hide calls on the way out only ran for some exit paths (not for clients the host brings back,
+    // nor for a dropped connection), so clear it on every scene change instead - a new match
+    // always starts with nobody spectating.
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => HideAll();
+
+    public static void HideAll()
+    {
+        if (Instance == null)
+        {
+            return;
+        }
+
+        if (Instance._deathBannerRoutine != null)
+        {
+            Instance.StopCoroutine(Instance._deathBannerRoutine);
+            Instance._deathBannerRoutine = null;
+        }
+
+        if (Instance.deathBannerGroup != null)
+        {
+            Instance.deathBannerGroup.alpha = 0f;
+            Instance.deathBannerGroup.gameObject.SetActive(false);
+        }
+
+        HideSpectating();
     }
 
     public static void ShowDeathBanner(string killerName)

@@ -67,6 +67,20 @@ public class TaskManager : NetworkBehaviour
     [SerializeField, Tooltip("How often the server re-checks everyone, in seconds.")]
     private float evaluateInterval = 0.5f;
 
+    [Header("Out of sight")]
+    [SerializeField, Tooltip("A player only earns a task while standing still AND out of every " +
+        "other alive player's line of sight. Anything on these layers between two players blocks " +
+        "the view (players' own colliders and triggers are always ignored).")]
+    private LayerMask visionBlockingLayers = Physics.DefaultRaycastLayers;
+
+    [SerializeField, Tooltip("Beyond this distance a player counts as out of sight even with a " +
+        "clear line between them. 0 = no limit.")]
+    private float maxSightDistance = 60f;
+
+    [SerializeField, Tooltip("Fallback eye height (metres above the transform) for a player " +
+        "without a CharacterController.")]
+    private float eyeHeight = 1f;
+
     [Header("Groups and carry-over")]
     [SerializeField, Tooltip("Idle players needed at the same time for a shared ThreePlus task.")]
     private int minGroupSize = 3;
@@ -109,6 +123,8 @@ public class TaskManager : NetworkBehaviour
         public Vector3 Anchor;
         public float Seconds;
         public bool HasAnchor;
+        // Nobody else alive could see them on the last check.
+        public bool OutOfSight;
     }
 
     private readonly Dictionary<ulong, IdleState> idle = new();
@@ -220,6 +236,19 @@ public class TaskManager : NetworkBehaviour
             return;
         }
 
+        // Down to the last two: no tasks at all. The last one standing wins, so a camping penalty
+        // means nothing in a straight duel - drop anything still open (which also clears the task
+        // HUD, since it only lists assigned tasks) and stop tracking.
+        if (game.AlivePlayersCount() <= 2)
+        {
+            idle.Clear();
+            if (assignedTasks.Count > 0)
+            {
+                assignedTasks.Clear();
+            }
+            return;
+        }
+
         float dt = Time.deltaTime;
         TrackIdlePlayers(game, dt);
 
@@ -253,20 +282,96 @@ public class TaskManager : NetworkBehaviour
             bool hidden = HidingSpot.IsClientHiding(clientId);
             Vector3 flat = position - state.Anchor;
             flat.y = 0f;
+            bool stationary = hidden || (state.HasAnchor && flat.sqrMagnitude <= stationaryRadius * stationaryRadius);
 
-            if (hidden || (state.HasAnchor && flat.sqrMagnitude <= stationaryRadius * stationaryRadius))
+            if (!stationary)
             {
-                state.Seconds += dt;
-            }
-            else
-            {
+                // Moved: the camping clock starts over from the new spot.
                 state.Anchor = position;
                 state.HasAnchor = true;
                 state.Seconds = 0f;
+                state.OutOfSight = false;
+            }
+            else
+            {
+                // Standing still in plain view of someone else isn't camping. The clock only runs
+                // while nobody alive can see them (a hiding spot always counts as out of sight),
+                // and pauses - rather than resets - while someone is looking.
+                state.OutOfSight = hidden || IsOutOfSightOfOthers(clientId, player);
+                if (state.OutOfSight)
+                {
+                    state.Seconds += dt;
+                }
             }
 
             idle[clientId] = state;
         }
+    }
+
+    private readonly RaycastHit[] sightHits = new RaycastHit[16];
+
+    // True when no other alive player can see this one: every onlooker is either further than
+    // maxSightDistance or has something solid between their eyes and the target's.
+    private bool IsOutOfSightOfOthers(ulong clientId, NetworkObject target)
+    {
+        GameManager game = GameManager.Instance;
+        Vector3 targetEye = EyePosition(target);
+
+        foreach (KeyValuePair<ulong, NetworkClient> pair in NetworkManager.Singleton.ConnectedClients)
+        {
+            ulong otherId = pair.Key;
+            NetworkObject onlooker = pair.Value.PlayerObject;
+            if (otherId == clientId || onlooker == null || game == null || !game.IsPlayerAlive(otherId))
+            {
+                continue;
+            }
+
+            Vector3 from = EyePosition(onlooker);
+            Vector3 toTarget = targetEye - from;
+            float distance = toTarget.magnitude;
+            if (maxSightDistance > 0f && distance > maxSightDistance)
+            {
+                continue;
+            }
+
+            if (distance <= 0.01f || !IsViewBlocked(from, toTarget / distance, distance))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Players' own hitboxes/controllers never block the view - only the world does.
+    private bool IsViewBlocked(Vector3 from, Vector3 direction, float distance)
+    {
+        int count = Physics.RaycastNonAlloc(from, direction, sightHits, distance, visionBlockingLayers,
+            QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < count; i++)
+        {
+            NetworkObject hitObject = sightHits[i].collider.GetComponentInParent<NetworkObject>();
+            if (hitObject != null && hitObject.IsPlayerObject)
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private Vector3 EyePosition(NetworkObject player)
+    {
+        if (player.TryGetComponent(out CharacterController controller) && controller.enabled)
+        {
+            Bounds bounds = controller.bounds;
+            return bounds.center + Vector3.up * (bounds.extents.y * 0.7f);
+        }
+
+        return player.transform.position + Vector3.up * eyeHeight;
     }
 
     private float IdleThreshold =>
@@ -281,7 +386,8 @@ public class TaskManager : NetworkBehaviour
         scratchCandidates.Clear();
         foreach (KeyValuePair<ulong, IdleState> pair in idle)
         {
-            if (pair.Value.Seconds >= threshold && !HasOpenGroupTask(pair.Key))
+            // Handed out only while they're still out of sight right now, not just earlier.
+            if (pair.Value.Seconds >= threshold && pair.Value.OutOfSight && !HasOpenGroupTask(pair.Key))
             {
                 scratchCandidates.Add(pair.Key);
             }
@@ -454,6 +560,15 @@ public class TaskManager : NetworkBehaviour
         idle.Remove(clientId);
         RemoveEntriesFor(clientId);
         DissolveUndersizedGroups();
+
+        // Down to the last two: tasks stop applying entirely, so drop whatever is still open
+        // rather than leave a stale task nobody can act on for the rest of the match.
+        GameManager game = GameManager.Instance;
+        if (game != null && game.AlivePlayersCount() <= 2)
+        {
+            assignedTasks.Clear();
+            idle.Clear();
+        }
     }
 
     private void DissolveUndersizedGroups()

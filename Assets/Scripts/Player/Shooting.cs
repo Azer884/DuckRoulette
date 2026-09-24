@@ -380,7 +380,7 @@ public class Shooting : NetworkBehaviour
         Vector3 direction = (aimPoint - spawnPosition).normalized;
         if (bullet.TryGetComponent(out Rigidbody rb))
         {
-            rb.linearVelocity = direction * 15f;
+            rb.linearVelocity = direction * BulletBehavior.Speed;
         }
 
         Destroy(bullet, 5f);

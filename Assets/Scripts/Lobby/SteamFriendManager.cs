@@ -37,6 +37,52 @@ public class SteamFriendsManager : MonoBehaviour
         pp.texture = GetTextureFromImage(img.Value);
 
         SteamFriends.OnPersonaStateChange += OnFriendStateChange;
+        SteamMatchmaking.OnLobbyMemberJoined += OnLobbyMembershipChanged;
+        SteamMatchmaking.OnLobbyMemberLeave += OnLobbyMembershipChanged;
+        SteamMatchmaking.OnLobbyEntered += OnLobbyEntered;
+    }
+
+    // A friend already sitting in our current Steam lobby can't be invited again - the button is
+    // greyed out and its name replaced with "In party" (FriendObject.SetInParty) instead of
+    // silently doing nothing or letting a duplicate invite go out.
+    private void OnLobbyMembershipChanged(Steamworks.Data.Lobby lobby, Friend member) => RefreshPartyMembership();
+
+    private void OnLobbyEntered(Steamworks.Data.Lobby lobby) => RefreshPartyMembership();
+
+    private readonly HashSet<ulong> partyMemberIds = new();
+    private float partyRefreshTimer;
+
+    // Steam's lobby callbacks can arrive before GameNetworkManager has stored the lobby in
+    // LobbySaver (both listen to the same events), so a cheap once-a-second recheck backs them up.
+    private void Update()
+    {
+        partyRefreshTimer += Time.unscaledDeltaTime;
+        if (partyRefreshTimer >= 1f)
+        {
+            partyRefreshTimer = 0f;
+            RefreshPartyMembership();
+        }
+    }
+
+    public void RefreshPartyMembership()
+    {
+        partyMemberIds.Clear();
+        var lobby = LobbySaver.instance != null ? LobbySaver.instance.currentLobby : null;
+        if (lobby.HasValue)
+        {
+            foreach (Friend member in lobby.Value.Members)
+            {
+                partyMemberIds.Add(member.Id.Value);
+            }
+        }
+
+        foreach (var kvp in allFriends)
+        {
+            if (kvp.Value != null && kvp.Value.TryGetComponent(out FriendObject friendObject))
+            {
+                friendObject.SetInParty(partyMemberIds.Contains(kvp.Key.Id.Value));
+            }
+        }
     }
 
 
@@ -99,6 +145,7 @@ public class SteamFriendsManager : MonoBehaviour
 
         alphaOrder = true;
         UpdateFriendUI();
+        RefreshPartyMembership();
     }
 
     public void UpdateFriendUI()
@@ -231,5 +278,8 @@ public class SteamFriendsManager : MonoBehaviour
     
     private void OnDestroy() {
         SteamFriends.OnPersonaStateChange -= OnFriendStateChange;
+        SteamMatchmaking.OnLobbyMemberJoined -= OnLobbyMembershipChanged;
+        SteamMatchmaking.OnLobbyMemberLeave -= OnLobbyMembershipChanged;
+        SteamMatchmaking.OnLobbyEntered -= OnLobbyEntered;
     }
 }

@@ -154,13 +154,14 @@ public class NetworkTransmission : NetworkBehaviour
 
         YouWereKickedClientRPC(clientRpcParams);
 
-        NetworkManager.Singleton.DisconnectClient(targetClientId);
+        NetworkManager.Singleton.DisconnectClient(targetClientId, DisconnectNotice.KickedMessage);
     }
 
     [ClientRpc]
     private void YouWereKickedClientRPC(ClientRpcParams clientRpcParams = default)
     {
-        GameNetworkManager.Instance.Disconnected();
+        // Not the player's choice: KickedByHost shows the error popup explaining it.
+        GameNetworkManager.Instance.KickedByHost();
     }
 
     [ServerRpc(RequireOwnership = false)]

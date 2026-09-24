@@ -19,17 +19,32 @@ public class FriendObject : MonoBehaviour
     [SerializeField] private Color sentColor = new(0.45f, 0.9f, 0.4f, 1f);
     [SerializeField] private Color failedColor = new(0.95f, 0.35f, 0.3f, 1f);
 
+    [Header("Already in party")]
+    [SerializeField, Tooltip("\"In party\" label shown beside the name while this friend is in our " +
+        "lobby. Hidden otherwise.")]
+    private TextMeshProUGUI inPartyText;
+    [SerializeField, Tooltip("Multiplies the name color while in the party, so the row reads as greyed out.")]
+    private Color inPartyNameTint = new(1f, 1f, 1f, 0.5f);
+
     private Button button;
     // What SteamFriendManager wants (online or not); the invite cooldown only ever overrides it
     // temporarily and hands control back when it ends.
     private bool available = true;
     private bool coolingDown;
+    // Already a member of our current Steam lobby: the invite button is greyed out and the
+    // "In party" label shows, for as long as they stay in the party.
+    private bool inParty;
+    private Color nameColorBeforeParty;
     private string originalName;
     private Color originalColor;
 
     private void Awake()
     {
         button = GetComponent<Button>();
+        if (inPartyText != null)
+        {
+            inPartyText.gameObject.SetActive(false);
+        }
     }
 
     /// <summary>Called by SteamFriendManager when the friend goes online/offline. Respected once any
@@ -37,15 +52,58 @@ public class FriendObject : MonoBehaviour
     public void SetAvailable(bool isAvailable)
     {
         available = isAvailable;
-        if (!coolingDown && button != null)
+        if (!coolingDown && !inParty && button != null)
         {
             button.interactable = available;
         }
     }
 
+    /// <summary>Called by SteamFriendsManager whenever our current Steam lobby's membership
+    /// changes. Sticky: unlike the invite cooldown, this stays greyed out for as long as the
+    /// friend is actually in the party, and overrides everything else once true.</summary>
+    public void SetInParty(bool isInParty)
+    {
+        if (inParty == isInParty)
+        {
+            return;
+        }
+
+        if (isInParty && coolingDown)
+        {
+            // They accepted while "Invite sent!" was still counting down - put the name back first.
+            StopAllCoroutines();
+            EndFeedback();
+        }
+
+        inParty = isInParty;
+
+        if (inPartyText != null)
+        {
+            inPartyText.gameObject.SetActive(inParty);
+        }
+
+        if (playerName != null)
+        {
+            if (inParty)
+            {
+                nameColorBeforeParty = playerName.color;
+                playerName.color = nameColorBeforeParty * inPartyNameTint;
+            }
+            else
+            {
+                playerName.color = nameColorBeforeParty;
+            }
+        }
+
+        if (button != null)
+        {
+            button.interactable = !inParty && available;
+        }
+    }
+
     public void Invite()
     {
-        if (coolingDown)
+        if (coolingDown || inParty)
         {
             return;
         }
@@ -141,6 +199,14 @@ public class FriendObject : MonoBehaviour
     private void EndFeedback()
     {
         coolingDown = false;
+
+        // They joined the party while the invite-sent cooldown was still counting down - leave
+        // the sticky "In party" state alone instead of overwriting it with the stale name/color.
+        if (inParty)
+        {
+            return;
+        }
+
         if (playerName != null && originalName != null)
         {
             playerName.text = originalName;

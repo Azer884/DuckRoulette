@@ -7,7 +7,7 @@ public class BulletBehavior : NetworkBehaviour
 {
     private Rigidbody rb;
     // Public so GameManager's server-side hit validation projects the same straight-line path.
-    public const float Speed = 15f;
+    public const float Speed = 22.5f;
     private float speed = Speed;
     private Coroutine destroyRoutine;
     public NetworkVariable<Vector3> initialVelocity = new();

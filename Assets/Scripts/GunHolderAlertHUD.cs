@@ -56,6 +56,7 @@ public class GunHolderAlertHUD : MonoBehaviour
     [SerializeField] private string dockedTitleText = "YOU HAVE THE GUN";
 
     private bool holding;
+    private bool announcing;
     private float stateTime;
     private float alpha;
     private float morph;          // 0 = shouting in the middle, 1 = docked badge
@@ -106,17 +107,23 @@ public class GunHolderAlertHUD : MonoBehaviour
             stateTime = 0f;
             morph = 0f;
             alpha = 0f;
+            announcing = true;
             panel.gameObject.SetActive(true);
         }
 
         holding = nowHolding;
         stateTime += Time.unscaledDeltaTime;
 
-        if (holding)
+        // One-shot announce: shout in the middle of the screen, hold briefly, fade out - it does
+        // not stick around as a persistent docked badge for as long as the gun is held.
+        if (announcing && stateTime >= fadeIn + announceHold)
+        {
+            announcing = false;
+        }
+
+        if (announcing)
         {
             alpha = Mathf.MoveTowards(alpha, 1f, Time.unscaledDeltaTime / Mathf.Max(0.01f, fadeIn));
-            float dockStart = fadeIn + announceHold;
-            morph = Mathf.Clamp01((stateTime - dockStart) / Mathf.Max(0.01f, dockDuration));
         }
         else
         {

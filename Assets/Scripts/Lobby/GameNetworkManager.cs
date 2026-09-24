@@ -49,6 +49,17 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyGameCreated += SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += SteamFriends_OnGameLobbyJoinRequested;
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // This object lives in the Lobby scene, so it is rebuilt every time the host brings the
+        // party back from a match (a networked Lobby load that keeps the session alive). The
+        // previous instance unhooked the client disconnect callback in OnDestroy; re-hook it here or
+        // a client would never notice the host leaving from the lobby afterwards.
+        NetworkManager manager = NetworkManager.Singleton;
+        if (manager != null && manager.IsClient && !manager.IsServer)
+        {
+            manager.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
+            manager.OnClientDisconnectCallback += Singleton_OnClientDisconnectCallback;
+        }
     }
 
     private void OnDestroy()
@@ -327,16 +338,37 @@ public class GameNetworkManager : MonoBehaviour
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsConnectedClient)
         {
             Debug.LogError("Failed to connect to host: timed out waiting for the Steam P2P connection (likely NAT/relay/firewall on one of the peers).");
-            Disconnected();
+            DisconnectNotice.SetReason("Couldn't connect to the host. The connection timed out.");
+            DisconnectInternal(false);
         }
     }
 
-    public void Disconnected()
+    // The Lobby's Leave button (and quitting the app): the player chose to leave, so no error popup.
+    public void Disconnected() => DisconnectInternal(true);
+
+    public void KickedByHost()
+    {
+        DisconnectNotice.SetReason(DisconnectNotice.KickedMessage);
+        DisconnectInternal(false);
+    }
+
+    private void DisconnectInternal(bool onPurpose)
     {
         PerformActionWithLock(() =>
         {
             if (NetworkManager.Singleton != null)
             {
+                if (onPurpose)
+                {
+                    DisconnectNotice.MarkLeavingOnPurpose();
+                }
+
+                // A host leaving drops everyone; say so, rather than a bare connection error.
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    DisconnectNotice.DisconnectAllClients(DisconnectNotice.HostLeftMessage);
+                }
+
                 NetworkManager.Singleton.Shutdown(true);
                 if (NetworkManager.Singleton.IsHost)
                 {
@@ -414,7 +446,12 @@ public class GameNetworkManager : MonoBehaviour
         }
 
         NetworkManager.Singleton.OnClientDisconnectCallback -= Singleton_OnClientDisconnectCallback;
-        Disconnected();
+
+        // Involuntary drop: DisconnectNotice turns it into an ErrorPopup with the reason.
+        InteractionPromptHUD.Hide();
+        SpectateHUD.HideSpectating();
+
+        DisconnectInternal(false);
 
         if (SceneManager.GetActiveScene().name != "Lobby")
         {
