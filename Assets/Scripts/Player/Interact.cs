@@ -124,14 +124,22 @@ public class Interact : NetworkBehaviour
             }
         }
 
-        if (pickedUpObject != null && interactAction.triggered)
+        // Answering a team-up request: Interact is the accept key, so it does nothing else until
+        // the request is accepted, rejected or runs out. A held object still follows the player.
+        bool blockedByTeamUp = TeamUp.BlocksInteract;
+
+        if (pickedUpObject != null && interactAction.triggered && !blockedByTeamUp)
         {
             DropObject();
             return;
         }
 
         // Raycast for interactions
-        if (Physics.Raycast(mainCameraTransform.position, mainCameraTransform.forward,
+        if (blockedByTeamUp)
+        {
+            InteractionPromptHUD.Hide();
+        }
+        else if (Physics.Raycast(mainCameraTransform.position, mainCameraTransform.forward,
                 out RaycastHit hit, maxDistance, pickUpLayerMask))
         {
             if (pickedUpObject == null)

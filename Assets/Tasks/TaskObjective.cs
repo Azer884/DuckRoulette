@@ -14,9 +14,9 @@ public class TaskObjective : MonoBehaviour, IInteractable
         "array (TaskManager sits on Assets/Prefabs/Player.prefab), or it can never be handed out.")]
     private Challenge task;
 
-    [SerializeField, Tooltip("Optional: switched on locally once the interacting player completes " +
-        "this task - the lit campfire, an open mailbox flap. Local only, and deliberately so: " +
-        "everyone gets their own copy of the task, so everyone lights their own campfire.")]
+    [SerializeField, Tooltip("Optional: switched on for EVERYONE once this task is completed - the " +
+        "lit campfire, an open mailbox flap. Replicated through TaskManager, and switched back off " +
+        "when the task is next handed out to someone.")]
     private GameObject completedVisual;
 
     [SerializeField, Tooltip("Optional extra reaction on completion - a sound, an animator trigger, " +
@@ -97,9 +97,8 @@ public class TaskObjective : MonoBehaviour, IInteractable
         }
     }
 
-    // Drive the visual straight off the replicated state rather than only clearing it: a campfire
-    // this player lit last round has to go back to being unlit whether the new round handed them
-    // the campfire again (open -> unlit) or not (unassigned -> unlit).
+    // Drive the visual straight off the replicated world state: lit once anyone finishes the task,
+    // unlit again the moment the task is handed to the next camper.
     private void OnTasksChanged()
     {
         if (completedVisual == null)
@@ -108,7 +107,7 @@ public class TaskObjective : MonoBehaviour, IInteractable
         }
 
         bool shouldShow = task != null && subscribedManager != null &&
-            subscribedManager.IsTaskCompletedByLocalPlayer(task);
+            subscribedManager.IsTaskDoneInWorld(task);
 
         if (completedVisual.activeSelf != shouldShow)
         {

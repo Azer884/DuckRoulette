@@ -1174,6 +1174,7 @@ GameObject:
   - component: {fileID: 6841599282337517509}
   - component: {fileID: 6372926194749731963}
   - component: {fileID: 3357915466750702050}
+  - component: {fileID: 4757105950862025830}
   m_Layer: 0
   m_Name: Truck
   m_TagString: Untagged
@@ -1348,6 +1349,28 @@ MonoBehaviour:
   pushHoldTime: 0.15
   rollingResistance: 0.55
   sidewaysGrip: 6
+--- !u!114 &4757105950862025830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7758335709640026110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 080e06dd5b47a8d4694d3aa2a88233dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TruckPushObjective
+  ShowTopMostFoldoutHeaderGroup: 1
+  pushTask: {fileID: 11400000, guid: 54b67f89d10b7a740bb64b2d534a7232, type: 2}
+  goalRadius: 6
+  shoreSetback: 4
+  arrowMaterial: {fileID: 2100000, guid: 5bccd878ea7df1a41a39cff0b2efc4d5, type: 2}
+  arrowWidth: 1.6
+  arrowSpacing: 2
+  scrollSpeed: 3
+  groundOffset: 0.25
+  samplesPerMetre: 0.5
 --- !u!1 &8118616571924380904
 GameObject:
   m_ObjectHideFlags: 0

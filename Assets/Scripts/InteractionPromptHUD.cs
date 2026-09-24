@@ -15,6 +15,19 @@ public class InteractionPromptHUD : MonoBehaviour
     [SerializeField] private Image promptIcon;
     [SerializeField] private ControllerIconSet gamepadIcons;
 
+    [Header("Cooldown")]
+    [SerializeField, Tooltip("The prompt's backing image. Greyed out while the prompt is on cooldown.")]
+    private Image background;
+    [SerializeField, Tooltip("Filled image over the background, in the background's own colour. Its " +
+        "fill grows back to full as the cooldown runs out. Optional: without it the background " +
+        "itself fades from grey back to its colour.")]
+    private Image cooldownFill;
+    [SerializeField] private Color cooldownGrey = new(0.32f, 0.32f, 0.32f, 0.85f);
+    [SerializeField] private Color cooldownTextGrey = new(0.7f, 0.7f, 0.7f, 1f);
+
+    private Color backgroundColor = Color.white;
+    private Color textColor = Color.white;
+
     // Multiple sources (Interact's raycast, TeamUp's proximity check) call Show/Hide every
     // frame on this same singleton. Whichever claims Show() first in a frame wins the frame:
     // a later Hide() from a source that found nothing of its own is a no-op instead of
@@ -38,6 +51,58 @@ public class InteractionPromptHUD : MonoBehaviour
         {
             promptRoot.SetActive(false);
         }
+
+        if (background != null)
+        {
+            backgroundColor = background.color;
+        }
+
+        if (promptText != null)
+        {
+            textColor = promptText.color;
+        }
+
+        if (cooldownFill != null)
+        {
+            cooldownFill.type = Image.Type.Filled;
+            cooldownFill.fillMethod = Image.FillMethod.Horizontal;
+            cooldownFill.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>Shows the prompt greyed out, with its colour filling back in from left to right as
+    /// <paramref name="progress"/> goes 0 to 1 - an action the player can see but not use yet
+    /// (asking a player who just turned you down to team up again).</summary>
+    public static void ShowCooldown(string actionLabel, InputAction action, float progress)
+    {
+        Show(actionLabel, action);
+        Instance?.ApplyCooldown(true, Mathf.Clamp01(progress));
+    }
+
+    private void ApplyCooldown(bool onCooldown, float progress)
+    {
+        if (background != null)
+        {
+            background.color = !onCooldown
+                ? backgroundColor
+                : cooldownFill != null ? cooldownGrey : Color.Lerp(cooldownGrey, backgroundColor, progress);
+        }
+
+        if (cooldownFill != null)
+        {
+            if (cooldownFill.gameObject.activeSelf != onCooldown)
+            {
+                cooldownFill.gameObject.SetActive(onCooldown);
+            }
+
+            cooldownFill.color = backgroundColor;
+            cooldownFill.fillAmount = progress;
+        }
+
+        if (promptText != null)
+        {
+            promptText.color = onCooldown ? cooldownTextGrey : textColor;
+        }
     }
 
     /// <summary>Shows the prompt, rendering the action's live binding as a controller button
@@ -51,6 +116,7 @@ public class InteractionPromptHUD : MonoBehaviour
         }
 
         Instance.promptRoot.SetActive(true);
+        Instance.ApplyCooldown(false, 1f);
 
         // Device choice comes from InputDeviceTracker (what the player last actually used), not
         // from action.activeControl. activeControl is only non-null while THIS action is being

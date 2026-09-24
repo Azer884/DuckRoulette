@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-// Server-authoritative owner of every player's per-round tasks.
+// Server-authoritative owner of player tasks.
 //
-// Previously this only had GenerateTasks(): GameManager kept the results in a private dictionary
-// that was never replicated, no UI ever read it, nothing could set PlayerTask.completed, and the
-// result had no effect on the match. The whole feature was inert. It now:
-//   - hands every alive player a fresh set of tasks at each gun hand-off,
-//   - replicates them so each client can draw its own list (TaskListHUD),
-//   - lets a world object mark one complete through a sender-validated ServerRpc (TaskObjective),
-//   - and answers HasCompletedAllTasks, which GameManager uses to decide who is allowed the gun.
+// Tasks are a punishment for camping, not a chore list for everyone:
+//   - The server watches every alive player who is not holding the gun. A player who stays
+//     inside a small radius (small shuffles still count as standing still), or sits in a hiding
+//     spot, for half the round timer is handed exactly ONE task.
+//   - If three or more players are idle past that mark at the same time, they are handed the
+//     SAME ThreePlus task instead and have to do it together.
+//   - An open task keeps its holder off the gun at every hand-off, and it carries over from
+//     round to round until it is done. It is only swapped for a different one when a group task
+//     loses members (death, disconnect) or when it has stayed open for roundsBeforeSwap rounds.
+//   - Two players never hold the same open Useful/Useless task, because the world objects are
+//     shared now: once someone lights the campfire, everyone sees it lit.
 //
 // Lives on Assets/Prefabs/Player.prefab beside GameManager and uses the same first-instance-wins
 // singleton guard, so exactly one copy is live per session.
@@ -20,76 +24,130 @@ public class TaskManager : NetworkBehaviour
     public static TaskManager Instance { get; private set; }
 
     // One assigned task. Only the index into `tasks` travels - the Challenge asset itself is
-    // authored content every client already has, so sending anything more would be redundant.
+    // authored content every client already has.
     public struct TaskEntry : INetworkSerializable, IEquatable<TaskEntry>
     {
         public ulong ClientId;
         public int TaskIndex;
         public bool Completed;
+        // 0 for a solo task. Every member of a shared ThreePlus task carries the same id.
+        public int GroupId;
+        // Gun hand-offs this task has survived without being finished.
+        public int RoundsOpen;
+
+        public bool IsGroup => GroupId != 0;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref ClientId);
             serializer.SerializeValue(ref TaskIndex);
             serializer.SerializeValue(ref Completed);
+            serializer.SerializeValue(ref GroupId);
+            serializer.SerializeValue(ref RoundsOpen);
         }
 
         public bool Equals(TaskEntry other) =>
-            ClientId == other.ClientId && TaskIndex == other.TaskIndex && Completed == other.Completed;
+            ClientId == other.ClientId && TaskIndex == other.TaskIndex && Completed == other.Completed &&
+            GroupId == other.GroupId && RoundsOpen == other.RoundsOpen;
     }
 
     [Tooltip("Every task that can be handed out. Add a new Challenge asset here to put it in " +
-        "rotation; a task with no TaskObjective in the level can never be completed, so keep the " +
-        "two in step.")]
+        "rotation; a task with no live objective in the level is never dealt, so keep the two in step.")]
     public Challenge[] tasks;
 
-    [SerializeField, Tooltip("How many tasks each alive player gets per round.")]
-    private int tasksPerRound = 3;
+    [Header("Idle detection")]
+    [SerializeField, Tooltip("A player who stays within this many metres of where they settled " +
+        "counts as standing still. Small shuffles, turning around and crouching all stay inside it.")]
+    private float stationaryRadius = 4f;
+
+    [SerializeField, Range(0.1f, 1f), Tooltip("How much of the round timer a player has to spend " +
+        "standing still or hidden before they are handed a task. 0.5 = half the round.")]
+    private float idleFractionOfRound = 0.5f;
+
+    [SerializeField, Tooltip("How often the server re-checks everyone, in seconds.")]
+    private float evaluateInterval = 0.5f;
+
+    [Header("Groups and carry-over")]
+    [SerializeField, Tooltip("Idle players needed at the same time for a shared ThreePlus task.")]
+    private int minGroupSize = 3;
+
+    [SerializeField, Tooltip("A task still open after this many gun hand-offs is swapped for a " +
+        "different one.")]
+    private int roundsBeforeSwap = 2;
+
+    [SerializeField, Tooltip("The \"try to team up\" task. It has no world object - sending any " +
+        "valid team-up request completes it - so it is always in rotation while more than two " +
+        "players are alive.")]
+    private Challenge teamUpTask;
+
+    public Challenge TeamUpTask => teamUpTask;
 
     // Everyone's tasks, not just the local player's. A client filters to its own for the HUD.
-    // Other players' task lists are not secret information in this game - knowing that someone
-    // else has to light the campfire gives no advantage - so this stays one flat list rather
-    // than a per-client channel that would need its own late-join resync.
     private readonly NetworkList<TaskEntry> assignedTasks = new();
 
-    /// <summary>Raised locally whenever the replicated task list changes, so UI doesn't poll.</summary>
+    // Task indices whose world object is in its finished state right now (the lit campfire).
+    // Shared, so everyone sees the same world. A task leaves this list when it is handed out
+    // again, which is what puts the campfire back out for the next person who has to light it.
+    private readonly NetworkList<int> doneInWorld = new();
+
+    /// <summary>Raised locally whenever the replicated task state changes, so UI doesn't poll.</summary>
     public event Action OnTasksChanged;
 
-    // Challenge asset -> its index in `tasks`, so TaskObjective can hand us the asset it was
-    // authored with and we can turn it into the index the network actually carries.
+    /// <summary>Server only. Raised when a task is handed out, so its world object can reset
+    /// itself (the truck engine goes back to where it was found, the push-truck goal is rolled).</summary>
+    public static event Action<Challenge> ServerTaskAssigned;
+
     private readonly Dictionary<Challenge, int> taskIndices = new();
 
-    // Tasks that actually have something in the loaded level to complete them. Static and
-    // registered by the objectives themselves, because a scene prop wakes up long before the
-    // player prefab that carries this singleton exists, so there is nothing to register into yet.
-    //
-    // Without this, a task with no objective in the map (a mailbox task on a map with no mailbox)
-    // would still be dealt, could never be ticked off, and would keep its holder off the gun
-    // forever. Adding a TaskObjective to a prop is therefore the whole opt-in: no objective, no
-    // rotation.
-    private static readonly HashSet<Challenge> registeredObjectives = new();
+    // Tasks that have something in the loaded level to complete them, ref-counted because a map
+    // can hold two boomboxes. Static and registered by the objectives themselves, because a scene
+    // prop wakes up long before the player prefab carrying this singleton exists.
+    private static readonly Dictionary<Challenge, int> registeredObjectives = new();
 
-    private static bool _warnedAboutShortDeal;
-
-    /// <summary>Called by a live objective (TaskObjective, or BumBox for the boombox) to put its
-    /// task into rotation while it exists.</summary>
-    public static void RegisterObjective(Challenge task)
+    private struct IdleState
     {
-        if (task != null)
-        {
-            registeredObjectives.Add(task);
-        }
+        public Vector3 Anchor;
+        public float Seconds;
+        public bool HasAnchor;
     }
 
-    /// <summary>Counterpart to <see cref="RegisterObjective"/> - called when the objective goes
-    /// away (scene unload, object disabled).</summary>
+    private readonly Dictionary<ulong, IdleState> idle = new();
+    private readonly List<ulong> scratchIds = new();
+    private readonly List<ulong> scratchCandidates = new();
+    private readonly List<int> scratchPool = new();
+    private float evaluateTimer;
+    private int nextGroupId = 1;
+
+    public static void RegisterObjective(Challenge task)
+    {
+        if (task == null)
+        {
+            return;
+        }
+
+        registeredObjectives.TryGetValue(task, out int count);
+        registeredObjectives[task] = count + 1;
+    }
+
     public static void UnregisterObjective(Challenge task)
     {
-        if (task != null)
+        if (task == null || !registeredObjectives.TryGetValue(task, out int count))
+        {
+            return;
+        }
+
+        if (count <= 1)
         {
             registeredObjectives.Remove(task);
         }
+        else
+        {
+            registeredObjectives[task] = count - 1;
+        }
     }
+
+    public static bool IsObjectiveRegistered(Challenge task) =>
+        task != null && registeredObjectives.ContainsKey(task);
 
     private void Awake()
     {
@@ -101,6 +159,16 @@ public class TaskManager : NetworkBehaviour
 
         Instance = this;
         RebuildTaskIndices();
+    }
+
+    public override void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+
+        base.OnDestroy();
     }
 
     private void RebuildTaskIndices()
@@ -123,119 +191,441 @@ public class TaskManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         assignedTasks.OnListChanged += OnAssignedTasksChanged;
+        doneInWorld.OnListChanged += OnDoneInWorldChanged;
         OnTasksChanged?.Invoke();
     }
 
     public override void OnNetworkDespawn()
     {
         assignedTasks.OnListChanged -= OnAssignedTasksChanged;
+        doneInWorld.OnListChanged -= OnDoneInWorldChanged;
     }
 
-    private void OnAssignedTasksChanged(NetworkListEvent<TaskEntry> change)
-    {
-        OnTasksChanged?.Invoke();
-    }
+    private void OnAssignedTasksChanged(NetworkListEvent<TaskEntry> change) => OnTasksChanged?.Invoke();
 
-    #region Server: assignment
+    private void OnDoneInWorldChanged(NetworkListEvent<int> change) => OnTasksChanged?.Invoke();
 
-    /// <summary>Server only. Clears every listed player's tasks and deals them a fresh set for the
-    /// round that is starting. Called from GameManager at each gun hand-off.</summary>
-    /// <remarks>The old set is replaced outright rather than keeping unfinished tasks around. Gun
-    /// eligibility is read at the hand-off, which happens before this runs, so a player who
-    /// skipped last round's tasks has already paid for it by the time they get a clean slate -
-    /// and carrying the misses forward would let an unfinished list grow without bound.</remarks>
-    public void DistributeTasks(IReadOnlyList<ulong> aliveClientIds)
+    #region Server: idle detection
+
+    private void Update()
     {
-        if (!IsServer || aliveClientIds == null)
+        if (!IsServer || !IsSpawned)
         {
             return;
         }
 
-        assignedTasks.Clear();
-
-        if (registeredObjectives.Count == 0)
+        GameManager game = GameManager.Instance;
+        if (game == null || game.IsGameEnded || NetworkManager.Singleton == null)
         {
-            Debug.LogWarning("TaskManager: no TaskObjective is live in this scene, so no task can " +
-                "be completed - handing out none rather than tasks nobody could finish.");
             return;
         }
 
-        int dealtPerPlayer = 0;
-        foreach (ulong clientId in aliveClientIds)
-        {
-            List<int> picked = PickTasksForPlayer();
-            dealtPerPlayer = picked.Count;
+        float dt = Time.deltaTime;
+        TrackIdlePlayers(game, dt);
 
-            foreach (int taskIndex in picked)
+        evaluateTimer += dt;
+        if (evaluateTimer < evaluateInterval)
+        {
+            return;
+        }
+
+        evaluateTimer = 0f;
+        AssignIdleTasks(game);
+    }
+
+    private void TrackIdlePlayers(GameManager game, float dt)
+    {
+        foreach (KeyValuePair<ulong, NetworkClient> pair in NetworkManager.Singleton.ConnectedClients)
+        {
+            ulong clientId = pair.Key;
+            NetworkObject player = pair.Value.PlayerObject;
+
+            // The gun holder is busy - standing still with the gun is the whole game, not camping.
+            if (player == null || !game.IsPlayerAlive(clientId) || game.playerWithGun.Value == clientId)
             {
-                assignedTasks.Add(new TaskEntry { ClientId = clientId, TaskIndex = taskIndex, Completed = false });
+                idle.Remove(clientId);
+                continue;
+            }
+
+            Vector3 position = player.transform.position;
+            idle.TryGetValue(clientId, out IdleState state);
+
+            bool hidden = HidingSpot.IsClientHiding(clientId);
+            Vector3 flat = position - state.Anchor;
+            flat.y = 0f;
+
+            if (hidden || (state.HasAnchor && flat.sqrMagnitude <= stationaryRadius * stationaryRadius))
+            {
+                state.Seconds += dt;
+            }
+            else
+            {
+                state.Anchor = position;
+                state.HasAnchor = true;
+                state.Seconds = 0f;
+            }
+
+            idle[clientId] = state;
+        }
+    }
+
+    private float IdleThreshold =>
+        (RoundManager.Instance != null ? RoundManager.Instance.RoundDuration : 30f) * idleFractionOfRound;
+
+    private void AssignIdleTasks(GameManager game)
+    {
+        float threshold = IdleThreshold;
+
+        // Everyone idle past the mark whose current task (if any) is a solo one. A solo task is
+        // upgraded into a shared one when enough players camp at once.
+        scratchCandidates.Clear();
+        foreach (KeyValuePair<ulong, IdleState> pair in idle)
+        {
+            if (pair.Value.Seconds >= threshold && !HasOpenGroupTask(pair.Key))
+            {
+                scratchCandidates.Add(pair.Key);
             }
         }
 
-        // Once per session, not once per round: a short deal is normal (ThreePlus tasks drop out
-        // of the pool below three alive players) and would otherwise spam the console every turn.
-        if (aliveClientIds.Count > 0 && dealtPerPlayer < tasksPerRound && !_warnedAboutShortDeal)
+        if (scratchCandidates.Count == 0)
         {
-            _warnedAboutShortDeal = true;
-            Debug.LogWarning($"TaskManager: only {dealtPerPlayer} of {tasksPerRound} tasks are " +
-                "completable right now - add a TaskObjective for the rest to put them in rotation.");
+            return;
+        }
+
+        // Copied: handing a task out raises ServerTaskAssigned, whose handlers may cancel tasks,
+        // and that reuses the scratch lists.
+        ulong[] candidates = scratchCandidates.ToArray();
+
+        if (candidates.Length >= minGroupSize && game.AlivePlayersCount() >= minGroupSize)
+        {
+            int groupTask = PickGroupTask();
+            if (groupTask >= 0)
+            {
+                int groupId = nextGroupId++;
+                foreach (ulong clientId in candidates)
+                {
+                    RemoveEntriesFor(clientId);
+                    AddEntry(clientId, groupTask, groupId);
+                }
+
+                OnTaskHandedOut(groupTask, candidates, true);
+                return;
+            }
+        }
+
+        foreach (ulong clientId in candidates)
+        {
+            if (HasOpenTask(clientId))
+            {
+                continue;
+            }
+
+            int solo = PickSoloTask(clientId, -1);
+            if (solo < 0)
+            {
+                continue;
+            }
+
+            RemoveEntriesFor(clientId);
+            AddEntry(clientId, solo, 0);
+            OnTaskHandedOut(solo, new[] { clientId }, false);
         }
     }
 
-    // Picks up to tasksPerRound DISTINCT task indices. The old GenerateTasks drew with
-    // replacement, so a player could be handed the same task two or three times over and see a
-    // list with duplicate rows that all completed at once.
-    private List<int> PickTasksForPlayer()
+    #endregion
+
+    #region Server: picking
+
+    // A solo task nobody else is holding open right now. Two players can't share one: the world
+    // object is shared, so the first to finish it would finish it for both.
+    private int PickSoloTask(ulong clientId, int excludedIndex)
     {
-        List<int> picked = new();
-        if (tasks == null || tasks.Length == 0)
+        scratchPool.Clear();
+        if (tasks == null)
         {
-            Debug.LogWarning("TaskManager: no tasks authored, nobody will get any.");
-            return picked;
+            return -1;
         }
 
-        List<int> pool = new();
+        GameManager game = GameManager.Instance;
         for (int i = 0; i < tasks.Length; i++)
         {
-            if (tasks[i] == null)
+            Challenge task = tasks[i];
+            if (task == null || i == excludedIndex || task.taskType == Challenge.TaskType.ThreePlus || IsTaskOpenForAnyone(i))
             {
                 continue;
             }
 
-            // Nothing in this level completes it, so handing it out would only lock its holder
-            // out of the gun for a round they had no way to finish.
-            if (!registeredObjectives.Contains(tasks[i]))
+            if (task == teamUpTask)
+            {
+                // Pointless with two players left (the last one standing wins), and impossible for
+                // someone who is already on a team.
+                if (game == null || game.AlivePlayersCount() <= 2 || game.IsInAnyTeam(clientId))
+                {
+                    continue;
+                }
+            }
+            else if (!registeredObjectives.ContainsKey(task))
             {
                 continue;
             }
 
-            // Tasks that need a crowd stop being handed out once the lobby has thinned out.
-            if (tasks[i].taskType == Challenge.TaskType.ThreePlus &&
-                GameManager.Instance != null && GameManager.Instance.AlivePlayersCount() < 3)
-            {
-                continue;
-            }
-
-            pool.Add(i);
+            scratchPool.Add(i);
         }
 
-        int wanted = Mathf.Min(tasksPerRound, pool.Count);
-        for (int i = 0; i < wanted; i++)
+        return scratchPool.Count == 0 ? -1 : scratchPool[UnityEngine.Random.Range(0, scratchPool.Count)];
+    }
+
+    private int PickGroupTask()
+    {
+        scratchPool.Clear();
+        if (tasks == null)
         {
-            int swapWith = UnityEngine.Random.Range(i, pool.Count);
-            (pool[i], pool[swapWith]) = (pool[swapWith], pool[i]);
-            picked.Add(pool[i]);
+            return -1;
         }
 
-        return picked;
+        for (int i = 0; i < tasks.Length; i++)
+        {
+            Challenge task = tasks[i];
+            if (task != null && task.taskType == Challenge.TaskType.ThreePlus &&
+                registeredObjectives.ContainsKey(task) && !IsTaskOpenForAnyone(i))
+            {
+                scratchPool.Add(i);
+            }
+        }
+
+        return scratchPool.Count == 0 ? -1 : scratchPool[UnityEngine.Random.Range(0, scratchPool.Count)];
+    }
+
+    #endregion
+
+    #region Server: round flow
+
+    /// <summary>Server only. Called by GameManager at every gun hand-off, after the new holder
+    /// was picked (so an open task has already cost its holder this hand-off). Clears finished
+    /// tasks, ages open ones, and swaps the ones that can no longer or will no longer be done.</summary>
+    public void OnGunHandedOff()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        for (int i = assignedTasks.Count - 1; i >= 0; i--)
+        {
+            TaskEntry entry = assignedTasks[i];
+            if (entry.Completed)
+            {
+                assignedTasks.RemoveAt(i);
+                continue;
+            }
+
+            entry.RoundsOpen++;
+            assignedTasks[i] = entry;
+        }
+
+        DissolveUndersizedGroups();
+
+        scratchIds.Clear();
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (!entry.Completed && entry.RoundsOpen >= roundsBeforeSwap && !scratchIds.Contains(entry.ClientId))
+            {
+                scratchIds.Add(entry.ClientId);
+            }
+        }
+
+        // Copy: SwapToSoloTask reuses scratchIds for its own notification.
+        ulong[] stale = scratchIds.ToArray();
+        foreach (ulong clientId in stale)
+        {
+            SwapToSoloTask(clientId);
+        }
+    }
+
+    /// <summary>Server only. A player died or left: their tasks go, and a group they were in is
+    /// broken up if it is now too small to do its task.</summary>
+    public void OnPlayerRemoved(ulong clientId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        idle.Remove(clientId);
+        RemoveEntriesFor(clientId);
+        DissolveUndersizedGroups();
+    }
+
+    private void DissolveUndersizedGroups()
+    {
+        Dictionary<int, int> sizes = new();
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.IsGroup && !entry.Completed)
+            {
+                sizes.TryGetValue(entry.GroupId, out int size);
+                sizes[entry.GroupId] = size + 1;
+            }
+        }
+
+        scratchIds.Clear();
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.IsGroup && !entry.Completed && sizes[entry.GroupId] < minGroupSize)
+            {
+                scratchIds.Add(entry.ClientId);
+            }
+        }
+
+        ulong[] stranded = scratchIds.ToArray();
+        foreach (ulong clientId in stranded)
+        {
+            SwapToSoloTask(clientId);
+        }
+    }
+
+    // Replaces a player's open task with a different solo one. With nothing else available the
+    // task is dropped rather than kept: a task nobody can finish must never lock anyone out.
+    private void SwapToSoloTask(ulong clientId)
+    {
+        int current = -1;
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.ClientId == clientId && !entry.Completed)
+            {
+                current = entry.TaskIndex;
+            }
+        }
+
+        RemoveEntriesFor(clientId);
+
+        int next = PickSoloTask(clientId, current);
+        if (next < 0)
+        {
+            return;
+        }
+
+        AddEntry(clientId, next, 0);
+        OnTaskHandedOut(next, new[] { clientId }, false);
+    }
+
+    #endregion
+
+    #region Server: list helpers
+
+    private void AddEntry(ulong clientId, int taskIndex, int groupId)
+    {
+        assignedTasks.Add(new TaskEntry { ClientId = clientId, TaskIndex = taskIndex, GroupId = groupId });
+    }
+
+    private void RemoveEntriesFor(ulong clientId)
+    {
+        for (int i = assignedTasks.Count - 1; i >= 0; i--)
+        {
+            if (assignedTasks[i].ClientId == clientId)
+            {
+                assignedTasks.RemoveAt(i);
+            }
+        }
+    }
+
+    private bool HasOpenTask(ulong clientId)
+    {
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.ClientId == clientId && !entry.Completed)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool HasOpenGroupTask(ulong clientId)
+    {
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.ClientId == clientId && !entry.Completed && entry.IsGroup)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsTaskOpenForAnyone(int taskIndex)
+    {
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.TaskIndex == taskIndex && !entry.Completed)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>True while any player still has this task open - lets a world object (the
+    /// push-truck goal) know whether it still matters.</summary>
+    public bool IsTaskOpenForAnyone(Challenge task) =>
+        task != null && taskIndices.TryGetValue(task, out int index) && IsTaskOpenForAnyone(index);
+
+    /// <summary>Server only. Whether this specific player has this task open.</summary>
+    public bool IsTaskOpenFor(ulong clientId, Challenge task)
+    {
+        if (task == null || !taskIndices.TryGetValue(task, out int taskIndex))
+        {
+            return false;
+        }
+
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.ClientId == clientId && entry.TaskIndex == taskIndex && !entry.Completed)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // The world object goes back to its unfinished state, and the new holders are told.
+    private void OnTaskHandedOut(int taskIndex, ulong[] recipients, bool isGroup)
+    {
+        doneInWorld.Remove(taskIndex);
+
+        Challenge task = GetTask(taskIndex);
+        if (task != null)
+        {
+            ServerTaskAssigned?.Invoke(task);
+        }
+
+        TaskAssignedClientRpc(taskIndex, isGroup ? recipients.Length : 1, new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = recipients }
+        });
+    }
+
+    [ClientRpc]
+    private void TaskAssignedClientRpc(int taskIndex, int groupSize, ClientRpcParams rpcParams = default)
+    {
+        Challenge task = GetTask(taskIndex);
+        string name = task != null ? task.DisplayName : "a task";
+        string message = groupSize > 1
+            ? $"Group task with {groupSize - 1} other players: {name}. Finish it or you won't get the gun next round!"
+            : $"You've been camping! Task: {name}. Finish it or you won't get the gun next round!";
+        MessageBox.Informate(message, new Color(1f, 0.75f, 0.2f), MessagePriority.High);
     }
 
     #endregion
 
     #region Completion
 
-    /// <summary>Called on the interacting client by TaskObjective. Turns the authored asset into
-    /// the index the server understands and asks the server to mark it done.</summary>
+    /// <summary>Called on the interacting client by a world objective. Turns the authored asset
+    /// into the index the server understands and asks the server to mark it done.</summary>
     public void ReportTaskCompleted(Challenge task)
     {
         if (task == null || !IsSpawned)
@@ -252,34 +642,17 @@ public class TaskManager : NetworkBehaviour
         CompleteTaskServerRpc(taskIndex);
     }
 
-    // RequireOwnership=false: this object is owned by whichever player object happens to host the
-    // surviving singleton, so every other client would be rejected by the default. The caller
-    // cannot name a victim - the client id comes from the transport - so a client can only ever
-    // complete a task that was actually assigned to itself.
+    // RequireOwnership=false: this object is owned by whichever player object hosts the singleton.
+    // The client id comes from the transport, so a client can only complete its own task.
     [ServerRpc(RequireOwnership = false)]
     private void CompleteTaskServerRpc(int taskIndex, ServerRpcParams rpcParams = default)
     {
-        ulong clientId = rpcParams.Receive.SenderClientId;
-
-        for (int i = 0; i < assignedTasks.Count; i++)
-        {
-            TaskEntry entry = assignedTasks[i];
-            if (entry.ClientId != clientId || entry.TaskIndex != taskIndex || entry.Completed)
-            {
-                continue;
-            }
-
-            entry.Completed = true;
-            assignedTasks[i] = entry;
-            NotifyTaskCompleted(clientId);
-            return;
-        }
+        CompleteEntry(rpcParams.Receive.SenderClientId, taskIndex);
     }
 
-    /// <summary>Server only. Marks a task complete for a player without them having pressed
-    /// anything themselves - for a group task like blackjack, where the thing that completes it
-    /// is a shared outcome the server resolves (a round finishing with enough players at the
-    /// table), not a solo interaction.</summary>
+    /// <summary>Server only. Marks a task complete for a player without them pressing anything
+    /// themselves - for a shared outcome the server resolves (blackjack round, truck at the river,
+    /// a team-up request).</summary>
     public void CompleteTaskForPlayer(ulong clientId, Challenge task)
     {
         if (!IsServer || task == null || !taskIndices.TryGetValue(task, out int taskIndex))
@@ -287,6 +660,36 @@ public class TaskManager : NetworkBehaviour
             return;
         }
 
+        CompleteEntry(clientId, taskIndex);
+    }
+
+    /// <summary>Server only. Completes this task for every player who has it open - the push
+    /// truck reaching the river finishes it for the whole group at once.</summary>
+    public void CompleteTaskForAllHolders(Challenge task)
+    {
+        if (!IsServer || task == null || !taskIndices.TryGetValue(task, out int taskIndex))
+        {
+            return;
+        }
+
+        scratchIds.Clear();
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.TaskIndex == taskIndex && !entry.Completed)
+            {
+                scratchIds.Add(entry.ClientId);
+            }
+        }
+
+        ulong[] holders = scratchIds.ToArray();
+        foreach (ulong clientId in holders)
+        {
+            CompleteEntry(clientId, taskIndex);
+        }
+    }
+
+    private void CompleteEntry(ulong clientId, int taskIndex)
+    {
         for (int i = 0; i < assignedTasks.Count; i++)
         {
             TaskEntry entry = assignedTasks[i];
@@ -297,13 +700,19 @@ public class TaskManager : NetworkBehaviour
 
             entry.Completed = true;
             assignedTasks[i] = entry;
+
+            if (!doneInWorld.Contains(taskIndex))
+            {
+                doneInWorld.Add(taskIndex);
+            }
+
+            // They just moved to do it; the camping clock starts over.
+            idle.Remove(clientId);
             NotifyTaskCompleted(clientId);
             return;
         }
     }
 
-    /// <summary>Convenience for a caller that may run before the singleton exists (a scene prop).
-    /// Does nothing off the server.</summary>
     public static void CancelTaskEverywhere(Challenge task)
     {
         if (Instance != null)
@@ -312,12 +721,9 @@ public class TaskManager : NetworkBehaviour
         }
     }
 
-    /// <summary>Server only. Withdraws a task from every player who still has it open this round.
-    ///
-    /// Needed when the thing that completes a task stops existing mid-round - the campfire the
-    /// rain has just put out. Without this its holder would be left with a task nothing in the
-    /// level could tick off, and HasCompletedAllTasks would keep them off the gun for the rest of
-    /// the match. Already-completed copies are left alone: those were earned.</summary>
+    /// <summary>Server only. The thing that completes this task stopped existing (the rain put
+    /// the campfire out). Every open copy is swapped for a different task, so nobody is left
+    /// holding something they cannot finish.</summary>
     public void CancelTask(Challenge task)
     {
         if (!IsServer || task == null || !taskIndices.TryGetValue(task, out int taskIndex))
@@ -325,18 +731,22 @@ public class TaskManager : NetworkBehaviour
             return;
         }
 
-        for (int i = assignedTasks.Count - 1; i >= 0; i--)
+        List<ulong> holders = new();
+        foreach (TaskEntry entry in assignedTasks)
         {
-            TaskEntry entry = assignedTasks[i];
             if (entry.TaskIndex == taskIndex && !entry.Completed)
             {
-                assignedTasks.RemoveAt(i);
+                holders.Add(entry.ClientId);
             }
+        }
+
+        foreach (ulong clientId in holders)
+        {
+            SwapToSoloTask(clientId);
         }
     }
 
-    // Only the player who finished it gets the cue - a task is a private objective, so
-    // broadcasting it would tell the whole lobby something they aren't meant to know.
+    // Only the player who finished it gets the cue.
     private void NotifyTaskCompleted(ulong clientId)
     {
         TaskCompletedFeedbackClientRpc(new ClientRpcParams
@@ -368,9 +778,8 @@ public class TaskManager : NetworkBehaviour
         }
     }
 
-    /// <summary>Server only. True when this player has nothing outstanding - which is also true
-    /// when they were never given anything, so the first round of a match and any player who
-    /// joined mid-match are never locked out.</summary>
+    /// <summary>Server only. True when this player has nothing outstanding - also true when they
+    /// were never given anything.</summary>
     public bool HasCompletedAllTasks(ulong clientId)
     {
         foreach (TaskEntry entry in assignedTasks)
@@ -388,19 +797,22 @@ public class TaskManager : NetworkBehaviour
 
     #region Local queries (UI)
 
-    /// <summary>True when this task is currently assigned to the local player and still open -
-    /// what TaskObjective checks before offering an interaction prompt.</summary>
     public bool IsTaskOpenForLocalPlayer(Challenge task)
     {
-        if (task == null || NetworkManager.Singleton == null || !taskIndices.TryGetValue(task, out int taskIndex))
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening &&
+               IsTaskOpenForClient(NetworkManager.Singleton.LocalClientId, task);
+    }
+
+    private bool IsTaskOpenForClient(ulong clientId, Challenge task)
+    {
+        if (task == null || !taskIndices.TryGetValue(task, out int taskIndex))
         {
             return false;
         }
 
-        ulong localId = NetworkManager.Singleton.LocalClientId;
         foreach (TaskEntry entry in assignedTasks)
         {
-            if (entry.ClientId == localId && entry.TaskIndex == taskIndex && !entry.Completed)
+            if (entry.ClientId == clientId && entry.TaskIndex == taskIndex && !entry.Completed)
             {
                 return true;
             }
@@ -409,9 +821,6 @@ public class TaskManager : NetworkBehaviour
         return false;
     }
 
-    /// <summary>True when this task was assigned to the local player this round and they have
-    /// already finished it - what a TaskObjective uses to decide whether its "done" visual (the
-    /// lit campfire) should be showing right now.</summary>
     public bool IsTaskCompletedByLocalPlayer(Challenge task)
     {
         if (task == null || NetworkManager.Singleton == null || !taskIndices.TryGetValue(task, out int taskIndex))
@@ -431,9 +840,13 @@ public class TaskManager : NetworkBehaviour
         return false;
     }
 
-    /// <summary>Fills <paramref name="results"/> with the local player's tasks for this round, in
-    /// assignment order. Takes the list to fill so the HUD can refresh every change without
-    /// allocating.</summary>
+    /// <summary>True while this task's world object should show its finished state for everyone
+    /// (the lit campfire).</summary>
+    public bool IsTaskDoneInWorld(Challenge task)
+    {
+        return task != null && taskIndices.TryGetValue(task, out int taskIndex) && doneInWorld.Contains(taskIndex);
+    }
+
     public void GetLocalPlayerTasks(List<TaskEntry> results)
     {
         results.Clear();
@@ -452,8 +865,26 @@ public class TaskManager : NetworkBehaviour
         }
     }
 
-    /// <summary>The authored asset behind a TaskEntry, or null if the index is stale (the tasks
-    /// array was edited between the assignment and this read).</summary>
+    /// <summary>How many players share this group task, including the local player.</summary>
+    public int GetGroupSize(int groupId)
+    {
+        if (groupId == 0)
+        {
+            return 1;
+        }
+
+        int size = 0;
+        foreach (TaskEntry entry in assignedTasks)
+        {
+            if (entry.GroupId == groupId)
+            {
+                size++;
+            }
+        }
+
+        return size;
+    }
+
     public Challenge GetTask(int taskIndex)
     {
         if (tasks == null || taskIndex < 0 || taskIndex >= tasks.Length)

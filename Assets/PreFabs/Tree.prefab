@@ -113,7 +113,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.035
+  m_Radius: 0.04
   m_Height: 0.17972313
   m_Direction: 1
   m_Center: {x: 0.000013425946, y: 0.08667067, z: -0.001530325}
@@ -134,3 +134,8 @@ MonoBehaviour:
   wobbleFrequency: 1.1
   idleThreshold: 0.02
   responseSeconds: 1.2
+  variation: 0.4
+  maxLeanYawJitter: 18
+  gustAmount: 0.35
+  gustLength: 25
+  gustSpeed: 9

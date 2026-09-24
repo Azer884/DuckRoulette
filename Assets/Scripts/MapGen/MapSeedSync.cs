@@ -31,6 +31,16 @@ namespace DuckRoulette.MapGen
         private MapGenerator generator;
         private string generatedSeed;
 
+        /// <summary>The synced map in the loaded scene, or null when the scene has none.</summary>
+        public static MapSeedSync Current { get; private set; }
+
+        /// <summary>True once this peer has built the map from the synced seed. The loading
+        /// overlay waits on it, and the server waits on it before placing players on the ground.</summary>
+        public bool IsBuilt => !string.IsNullOrEmpty(generatedSeed);
+
+        /// <summary>The generator this component drives, for anything that needs the built map.</summary>
+        public MapGenerator Generator => generator;
+
         private void Awake()
         {
             generator = GetComponent<MapGenerator>();
@@ -47,6 +57,7 @@ namespace DuckRoulette.MapGen
 
         public override void OnNetworkSpawn()
         {
+            Current = this;
             seed.OnValueChanged += OnSeedChanged;
 
             if (IsServer)
@@ -83,6 +94,11 @@ namespace DuckRoulette.MapGen
         {
             StopAllCoroutines();
             seed.OnValueChanged -= OnSeedChanged;
+
+            if (Current == this)
+            {
+                Current = null;
+            }
         }
 
         /// <summary>Server only. Publishes a seed (a new one when <paramref name="reroll"/>) and

@@ -40,7 +40,12 @@ namespace DuckRoulette.MapGen
             Save(BuildSnowPile(), SnowPilePath);
             Save(BuildReeds(), ReedsPath);
             Save(BuildCabin(), CabinPath);
-            Save(BuildTruckEngine(), TruckEnginePath);
+            // The engine prefab has since been made a networked pick-up (TruckEngine, NetworkObject,
+            // Rigidbody, task reference) by hand; rebuilding it here would wipe all of that.
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(TruckEnginePath) == null)
+            {
+                Save(BuildTruckEngine(), TruckEnginePath);
+            }
             Save(BuildBeerCrate(), BeerCratePath);
             AssetDatabase.SaveAssets();
             Debug.Log($"MapPlaceholders: placeholder prefabs written to {Folder}.");

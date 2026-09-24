@@ -5,7 +5,10 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-// The local player's task list for the current round - the Among Us checklist in the corner.
+// The local player's task - the Among Us checklist in the corner. Only players who were caught
+// camping have one (see TaskManager), so for everyone else the panel never appears. While the task
+// is open a warning line says the gun is off the table; once it is done the row plays its
+// completion pop and the whole panel tucks itself away.
 //
 // All visuals live on Assets/Prefabs/Ui/TaskListHUD.prefab: drop that prefab into the game scene
 // once and edit colors/layout/fonts there like any other UI, the same way ShotClockUI works. This
@@ -23,13 +26,22 @@ public class TaskListHUD : MonoBehaviour
         "an Image named for the icon is optional.")]
     private GameObject rowTemplate;
     [SerializeField] private TextMeshProUGUI headerText;
+    [SerializeField, Tooltip("Line under the task telling the player they are off the gun until " +
+        "it is done. Hidden once the task is finished.")]
+    private TextMeshProUGUI warningText;
 
     [Header("Colors")]
     [SerializeField] private Color openColor = new(0.95f, 0.95f, 0.95f, 0.95f);
     [SerializeField] private Color completedColor = new(0.45f, 0.85f, 0.4f, 0.9f);
 
     [Header("Text")]
-    [SerializeField] private string headerFormat = "TASKS  {0}/{1}";
+    [SerializeField] private string soloHeader = "TASK";
+    [SerializeField, Tooltip("{0} = players sharing the task, including you.")]
+    private string groupHeader = "GROUP TASK  ({0} players)";
+    [SerializeField] private string warningMessage = "Do it or you won't get the gun next round!";
+    [SerializeField, Tooltip("Seconds the finished task stays on screen, so its completion pop is " +
+        "seen, before the panel hides.")]
+    private float hideAfterCompleteDelay = 1.6f;
     // Comic Sans MS SDF is a dynamic atlas over the Comic Sans MS TTF, which covers WGL4 - so the
     // circles resolve, while the old U+2713 checkmark did not and drew as a missing-glyph box.
     [SerializeField] private string openMarker = "○";
@@ -73,6 +85,7 @@ public class TaskListHUD : MonoBehaviour
     private readonly List<GameObject> rowsEnteringThisRefresh = new();
     private Coroutine panelRoutine;
     private Coroutine headerRoutine;
+    private Coroutine hideRoutine;
 
     private CanvasGroup panelGroup;
     private RectTransform panelRect;
@@ -175,6 +188,26 @@ public class TaskListHUD : MonoBehaviour
         }
 
         bool panelWasVisible = root.activeSelf;
+        bool allDone = true;
+        foreach (TaskManager.TaskEntry entry in localTasks)
+        {
+            allDone &= entry.Completed;
+        }
+
+        // Finished before this HUD ever showed it (joined late, settings toggled): nothing to
+        // celebrate, just stay hidden.
+        if (allDone && !panelWasVisible)
+        {
+            HidePanel();
+            return;
+        }
+
+        if (hideRoutine != null && !allDone)
+        {
+            StopCoroutine(hideRoutine);
+            hideRoutine = null;
+        }
+
         root.SetActive(true);
         EnsureRowCount(localTasks.Count);
 
@@ -206,7 +239,18 @@ public class TaskListHUD : MonoBehaviour
             }
         }
 
-        UpdateHeader(completed, localTasks.Count, panelWasVisible);
+        UpdateHeader(localTasks, panelWasVisible);
+
+        if (warningText != null)
+        {
+            warningText.text = warningMessage;
+            warningText.gameObject.SetActive(!allDone);
+        }
+
+        if (allDone && hideRoutine == null)
+        {
+            hideRoutine = StartCoroutine(HideAfterComplete());
+        }
 
         if (!panelWasVisible)
         {
@@ -220,14 +264,32 @@ public class TaskListHUD : MonoBehaviour
         rowsEnteringThisRefresh.Clear();
     }
 
-    private void UpdateHeader(int completed, int total, bool panelWasVisible)
+    private IEnumerator HideAfterComplete()
+    {
+        yield return new WaitForSeconds(animate ? hideAfterCompleteDelay : 0f);
+        hideRoutine = null;
+        HidePanel();
+    }
+
+    private void UpdateHeader(List<TaskManager.TaskEntry> tasks, bool panelWasVisible)
     {
         if (headerText == null)
         {
             return;
         }
 
-        string text = string.Format(headerFormat, completed, total);
+        int groupId = 0;
+        foreach (TaskManager.TaskEntry entry in tasks)
+        {
+            if (!entry.Completed && entry.IsGroup)
+            {
+                groupId = entry.GroupId;
+            }
+        }
+
+        string text = groupId != 0 && subscribedManager != null
+            ? string.Format(groupHeader, subscribedManager.GetGroupSize(groupId))
+            : soloHeader;
         bool changed = panelWasVisible && lastHeaderText != null && lastHeaderText != text;
 
         headerText.text = text;
@@ -346,6 +408,12 @@ public class TaskListHUD : MonoBehaviour
 
     private void HidePanel()
     {
+        if (hideRoutine != null)
+        {
+            StopCoroutine(hideRoutine);
+            hideRoutine = null;
+        }
+
         if (root.activeSelf)
         {
             // Snap rather than fade out: the panel hides when the player dies or the round resets,

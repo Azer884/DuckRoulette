@@ -82,17 +82,12 @@ public class Shooting : NetworkBehaviour
             hasShot.Value = false;
             _shotExecuted = false;
 
-            // GameManager picks the first gun holder and broadcasts PlayerShootingScriptClientRpc
-            // from its own OnNetworkSpawn, which runs before PlayerSpawner has actually spawned any
-            // player objects - that broadcast's GetLocalPlayerObject() lookup is still null then, so
-            // it silently no-ops. Nothing re-sent it afterward, so nobody visibly held the gun until
-            // the first round timeout (30s later) force-reassigned it - looking like "the gun starts
-            // on one player then switches to another". Self-correct here instead, since this runs
-            // exactly when this player's own object actually finishes spawning.
-            if (GameManager.Instance != null && GameManager.Instance.playerWithGun.Value == OwnerClientId)
-            {
-                enabled = true;
-            }
+            // The first gun holder is NOT armed here any more. Enabling Shooting flips haveGun, and
+            // GunStateChanger then shows the third-person gun to everyone - so the opening holder
+            // was the one player whose gun was out for all to see from the first frame, which gives
+            // away the one thing the game is about. Like every later hand-off (see GameManager's
+            // PlayerShootingScriptClientRpc) the gun starts holstered: HideGun lets the holder draw
+            // it with Change Weapon, and GunHolderAlertHUD tells them privately that they have it.
         }
 
         base.OnNetworkSpawn();

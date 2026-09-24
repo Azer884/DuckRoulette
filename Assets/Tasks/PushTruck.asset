@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 086586a6b8e441f408598de9662e9c05, type: 3}
-  m_Name: TeamUp
+  m_Name: PushTruck
   m_EditorClassIdentifier: Assembly-CSharp::Challenge
-  taskName: Team Up
-  taskDiscription: Try to team up with another player
+  taskName: Push Truck
+  taskDiscription: Push the truck to the river together
   interactionVerb: 
   icon: {fileID: 0}
-  difficulty: 0
-  taskType: 0
+  difficulty: 2
+  taskType: 2

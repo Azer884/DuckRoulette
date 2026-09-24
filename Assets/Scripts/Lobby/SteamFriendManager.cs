@@ -155,7 +155,7 @@ public class SteamFriendsManager : MonoBehaviour
         friendObject.playerName.text = friend.Name;
         friendObject.steamid = friend.Id;
         AssingFriendImage(f, friend.Id);
-        friendObject.GetComponent<Button>().interactable = online;
+        friendObject.SetAvailable(online);
         //friendObject.onlineStats.color = statusColor;
 
         return f;
@@ -185,7 +185,7 @@ public class SteamFriendsManager : MonoBehaviour
         if (friend.IsPlayingThisGame)
         {
             inGameFriends[friend] = friendUI;
-            friendUI.GetComponent<Button>().interactable = true;
+            friendUI.GetComponent<FriendObject>().SetAvailable(true);
             if (!alphaOrder)
             {
                 friendUI.transform.SetAsFirstSibling();
@@ -195,7 +195,7 @@ public class SteamFriendsManager : MonoBehaviour
         else if (friend.IsOnline)
         {
             onlineFriends[friend] = friendUI;
-            friendUI.GetComponent<Button>().interactable = true;
+            friendUI.GetComponent<FriendObject>().SetAvailable(true);
             if (!alphaOrder)
             {
                 friendUI.transform.SetAsFirstSibling();
@@ -206,7 +206,7 @@ public class SteamFriendsManager : MonoBehaviour
         {
             //friendUI.GetComponent<FriendObject>().onlineStats.color = offlineColor;
             offlineFriends[friend] = friendUI;
-            friendUI.GetComponent<Button>().interactable = false;
+            friendUI.GetComponent<FriendObject>().SetAvailable(false);
             if (!alphaOrder)
             {
                 friendUI.transform.SetAsFirstSibling();

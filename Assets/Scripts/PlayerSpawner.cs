@@ -64,11 +64,35 @@ public class PlayerSpawner : NetworkBehaviour
 
         if (IsHost)
         {
-            foreach (ulong id in clientsCompleted)
+            StartCoroutine(SpawnPlayersWhenMapReady(new List<ulong>(clientsCompleted)));
+        }
+    }
+
+    // The procedural map is built by MapSeedSync a frame after the scene spawns, so the ground may
+    // not exist yet when the load event completes. Spawn poses are raycast onto the terrain, so wait
+    // for it (with a cap, so a map that never builds cannot block the match from starting).
+    private IEnumerator SpawnPlayersWhenMapReady(List<ulong> clientIds)
+    {
+        float waitUntil = Time.realtimeSinceStartup + 10f;
+        while (DuckRoulette.MapGen.MapSeedSync.Current != null && !DuckRoulette.MapGen.MapSeedSync.Current.IsBuilt &&
+               Time.realtimeSinceStartup < waitUntil)
+        {
+            yield return null;
+        }
+
+        // Colliders of a mesh built this frame are only queryable after the physics scene syncs.
+        Physics.SyncTransforms();
+
+        List<PlayerSpawnPlacer.SpawnPose> poses = PlayerSpawnPlacer.Place(clientIds.Count);
+        for (int i = 0; i < clientIds.Count; i++)
+        {
+            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientIds[i]))
             {
-                GameObject player0 = Instantiate(player);
-                player0.GetComponent<NetworkObject>().SpawnAsPlayerObject(id, true);
+                continue;
             }
+
+            GameObject player0 = Instantiate(player, poses[i].Position, poses[i].Rotation);
+            player0.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientIds[i], true);
         }
     }
 

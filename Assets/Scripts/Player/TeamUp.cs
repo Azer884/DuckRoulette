@@ -6,7 +6,6 @@ using UnityEngine.InputSystem;
 public class TeamUp : NetworkBehaviour
 {
     private InputAction interactAction, endTeamUpAction;
-    private List<GameObject> validPlayers = new List<GameObject>();
     public bool isTeamedUp = false;
     public int teamMateId = -1;
     public GameObject teamMate;
@@ -18,10 +17,15 @@ public class TeamUp : NetworkBehaviour
     private float lastTeamUpTime = -5f; // Initialize to allow immediate team-up
     public bool haveRequest = false;
     private int requesterId = -1; // Add this line to store requesterId
+    private float requestDeadline;
     private int perfectDap = 0;
     public Transform dapPosition;
     public Renderer[] renderers;
     public Color teamColor = Color.green;
+
+    [SerializeField, Tooltip("How directly the camera has to face another player before they are " +
+        "the team-up target (dot product of camera forward and the direction to them).")]
+    private float lookAtThreshold = 0.6f;
 
     public event System.Action OnTeamUp, OnExitTeamUp;
 
@@ -30,6 +34,19 @@ public class TeamUp : NetworkBehaviour
     // confirmed/ended (see TeamUpResponseServerRpc/EndTeamUpServerRpc), replacing what used to be
     // a purely local material mutation that only the two participants themselves could see.
     public NetworkVariable<Color> outlineColor = new(Color.black, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    // responder client id -> (Time.time the block ends, block length). Mirrors the server's own
+    // cooldown so the prompt can grey out and fill back up instead of sending a doomed request.
+    private readonly Dictionary<ulong, (float until, float length)> declinedUntil = new();
+
+    // The frame an incoming request was answered on. The same Interact press that accepted it
+    // must not also reach Interact (pick something up) later in that frame.
+    private static int requestClosedFrame = -1;
+    private static bool localRequestPending;
+
+    /// <summary>True while the local player is answering a team-up request - Interact stays
+    /// disabled until they accept, reject or the timer runs out.</summary>
+    public static bool BlocksInteract => localRequestPending || requestClosedFrame == Time.frameCount;
 
     private bool isPaused;
 
@@ -78,6 +95,11 @@ public class TeamUp : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         outlineColor.OnValueChanged -= HandleOutlineColorChanged;
+
+        if (IsOwner)
+        {
+            ClearIncomingRequest();
+        }
     }
 
     private void HandleOutlineColorChanged(Color oldValue, Color newValue)
@@ -108,6 +130,12 @@ public class TeamUp : NetworkBehaviour
             return;
         }
 
+        if (haveRequest)
+        {
+            UpdateIncomingRequest();
+            return;
+        }
+
         if (isTeamedUp)
         {
             if (endTeamUpAction.triggered)
@@ -131,75 +159,166 @@ public class TeamUp : NetworkBehaviour
         TryToTeamUp();
     }
 
-    private void TryToTeamUp()
+    // Accept with Interact, reject with End Team Up, or let the bar run out. Distance is checked
+    // by the server when the answer arrives, so the responder does not have to stay face to face.
+    private void UpdateIncomingRequest()
     {
-        int numColliders = Physics.OverlapSphereNonAlloc(teamUpArea.position, teamUpRaduis, teamUpResults, otherPlayers);
-        validPlayers.Clear();
-
-        for (int i = 0; i < numColliders; i++)
+        if (interactAction.triggered)
         {
-            if (teamUpResults[i].GetComponentInParent<TeamUp>() != null)
-            {
-                TeamUp teamUpComponent = teamUpResults[i].GetComponentInParent<TeamUp>();
-                if(teamUpComponent != GetComponentInParent<TeamUp>())
-                {
-                    validPlayers.Add(teamUpComponent.gameObject);
-                }
-            }
+            AcceptRequest();
+            return;
         }
-        if (validPlayers?.Count > 0)
+
+        if (endTeamUpAction.triggered || Time.time >= requestDeadline)
         {
-            InteractionPromptHUD.Show("Team Up", interactAction);
-
-            if (interactAction.triggered)
+            if (GameManager.Instance != null)
             {
-                if (GameManager.Instance != null)
-                {
-                    if (!isTeamedUp && Time.time >= lastTeamUpTime + teamUpCooldown && !haveRequest)
-                    {
-                        GameManager.Instance.TeamUpRequestServerRpc(validPlayers[0].GetComponent<NetworkObject>().OwnerClientId);
-                        lastTeamUpTime = Time.time;
-                    }
-                    else if (haveRequest)
-                    {
-                        isTeamedUp = true;
-                        haveRequest = false;
-                        teamMateId = requesterId;
-                        perfectDap = UnityEngine.Random.Range(0, 2);
-                        //Play the dap animation and sound
-
-                        GameManager.Instance.TeamUpResponseServerRpc((ulong)requesterId, dapPosition.position, perfectDap);
-                        MessageBox.Informate("You have teamed up with player " + requesterId, Color.green, MessagePriority.High);
-
-                        // Change the color of the player
-                        AddTeamMate();
-                    }
-                }
+                GameManager.Instance.DeclineTeamUpServerRpc();
             }
-        }
-        else
-        {
-            InteractionPromptHUD.Hide();
 
-            if (haveRequest)
-            {
-                haveRequest = false;
-            }
+            ClearIncomingRequest();
         }
     }
 
-    public void RequestTeamUp(ulong requesterId)
+    private void AcceptRequest()
+    {
+        if (GameManager.Instance == null)
+        {
+            ClearIncomingRequest();
+            return;
+        }
+
+        ulong requester = (ulong)requesterId;
+        perfectDap = UnityEngine.Random.Range(0, 2);
+        GameManager.Instance.TeamUpResponseServerRpc(requester, dapPosition.position, perfectDap);
+
+        isTeamedUp = true;
+        teamMateId = requesterId;
+        MessageBox.Informate("You have teamed up with " + GameManager.Instance.GetPlayerNickname(requester), Color.green, MessagePriority.High);
+
+        NetworkObject requesterObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(requester);
+        AddTeamMate(requesterObject != null ? requesterObject.gameObject : null);
+
+        ClearIncomingRequest();
+    }
+
+    private void TryToTeamUp()
+    {
+        TeamUp target = FindLookedAtPlayer();
+        if (target == null)
+        {
+            InteractionPromptHUD.Hide();
+            return;
+        }
+
+        ulong targetId = target.OwnerClientId;
+
+        // Turned down recently: the prompt stays up but greyed, filling back to its own colour
+        // as the block runs out, so the player can see when they may ask again.
+        if (declinedUntil.TryGetValue(targetId, out var block))
+        {
+            float remaining = block.until - Time.time;
+            if (remaining > 0f)
+            {
+                float progress = 1f - remaining / Mathf.Max(0.01f, block.length);
+                InteractionPromptHUD.ShowCooldown("Team Up", interactAction, progress);
+                return;
+            }
+
+            declinedUntil.Remove(targetId);
+        }
+
+        InteractionPromptHUD.Show("Team Up", interactAction);
+
+        if (interactAction.triggered && GameManager.Instance != null && !BlocksInteract &&
+            Time.time >= lastTeamUpTime + teamUpCooldown)
+        {
+            GameManager.Instance.TeamUpRequestServerRpc(targetId);
+            lastTeamUpTime = Time.time;
+            MessageBox.Informate("Team up request sent to " + GameManager.Instance.GetPlayerNickname(targetId), Color.yellow);
+        }
+    }
+
+    // The nearby player the camera is most directly facing, if any is faced closely enough.
+    private TeamUp FindLookedAtPlayer()
+    {
+        int numColliders = Physics.OverlapSphereNonAlloc(teamUpArea.position, teamUpRaduis, teamUpResults, otherPlayers);
+        Camera cam = Camera.main;
+        Transform view = cam != null ? cam.transform : transform;
+
+        TeamUp best = null;
+        float bestDot = lookAtThreshold;
+
+        for (int i = 0; i < numColliders; i++)
+        {
+            TeamUp candidate = teamUpResults[i].GetComponentInParent<TeamUp>();
+            if (candidate == null || candidate == this)
+            {
+                continue;
+            }
+
+            if (candidate.TryGetComponent(out Death death) && death.isDead.Value)
+            {
+                continue;
+            }
+
+            Vector3 toCandidate = candidate.transform.position + Vector3.up - view.position;
+            float dot = Vector3.Dot(view.forward, toCandidate.normalized);
+            if (dot > bestDot)
+            {
+                bestDot = dot;
+                best = candidate;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>The server forwarded another player's request. Interact is locked until this is
+    /// answered, and the alert on the left counts down the time left to accept.</summary>
+    public void RequestTeamUp(ulong requesterId, float timeout)
     {
         if (isTeamedUp)
         {
             return;
         }
+
+        this.requesterId = (int)requesterId;
+        haveRequest = true;
+        localRequestPending = true;
+        requestDeadline = Time.time + timeout;
+
+        InteractionPromptHUD.Hide();
+
+        string name = GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(requesterId) : "Player " + requesterId;
+        TeamUpRequestHUD.Show(name, interactAction, endTeamUpAction, timeout);
+    }
+
+    /// <summary>Closes the incoming request alert without answering - the request was answered,
+    /// timed out, or its sender left.</summary>
+    public void ClearIncomingRequest()
+    {
+        if (haveRequest || localRequestPending)
+        {
+            requestClosedFrame = Time.frameCount;
+        }
+
+        haveRequest = false;
+        localRequestPending = false;
+        requesterId = -1;
+        TeamUpRequestHUD.Hide();
+    }
+
+    /// <summary>The player this client asked said no, or ignored it. No asking them again for
+    /// <paramref name="cooldown"/> seconds.</summary>
+    public void OnRequestDeclined(ulong responderId, float cooldown)
+    {
+        declinedUntil[responderId] = (Time.time + cooldown, cooldown);
+
         if (GameManager.Instance != null)
         {
-            MessageBox.Informate("Player " + GameManager.Instance.GetPlayerNickname(requesterId) + " wants to team up with you. Press E to accept.", Color.yellow, MessagePriority.Medium);
+            MessageBox.Informate(GameManager.Instance.GetPlayerNickname(responderId) + " didn't team up with you.", Color.red);
         }
-        this.requesterId = (int)requesterId; // Store the requesterId
-        haveRequest = true;
     }
 
     public void EndTeamUpOnServer()
@@ -226,9 +345,18 @@ public class TeamUp : NetworkBehaviour
         SFXManager.Instance.PlayAt(clipToPlay, dapPosition, UnityEngine.Random.Range(0.9f, 1.1f), SFXManager.Instance.dapMixerGroup);
     }
 
+    /// <summary>Called on the requester once the server confirms the team-up.</summary>
     public void AddTeamMate()
     {
-        teamMate = validPlayers[0];
+        NetworkObject mateObject = NetworkManager.Singleton != null && teamMateId >= 0
+            ? NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject((ulong)teamMateId)
+            : null;
+        AddTeamMate(mateObject != null ? mateObject.gameObject : null);
+    }
+
+    private void AddTeamMate(GameObject mate)
+    {
+        teamMate = mate;
         OnTeamUp?.Invoke();
         // Outline color itself is applied server-side via outlineColor (see GameManager's
         // TeamUpResponseServerRpc) so every viewer sees it, not just this client.

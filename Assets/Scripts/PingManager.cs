@@ -1,4 +1,3 @@
-using Unity.Netcode;
 using UnityEngine;
 using TMPro;
 
@@ -41,34 +40,9 @@ public class PingManager : MonoBehaviour
         if (pingText == null)
             return;
 
-        // Prefer the global StatTracker if available
-        if (StatTracker.Instance != null)
-        {
-            pingText.text = $"Ping: {StatTracker.Instance.currentPing:F0} ms";
-            return;
-        }
-
-        // Fallback: try to get RTT from the active transport (if supported)
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.NetworkConfig != null && NetworkManager.Singleton.IsClient)
-        {
-            try
-            {
-                // Many transports return RTT in milliseconds as an unsigned long
-                var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-                if (transport != null)
-                {
-                    ulong rtt = transport.GetCurrentRtt(NetworkManager.Singleton.LocalClientId);
-                    pingText.text = $"Ping: {rtt} ms";
-                    return;
-                }
-            }
-            catch
-            {
-                // ignore and fallthrough to N/A
-            }
-        }
-
-        // Nothing available
-        pingText.text = "Ping: N/A";
+        // Measured by NetworkPing's own round trip. The transport can't be asked: FacepunchTransport
+        // always reports 0, which is why this used to read "0 ms" for everyone.
+        float ping = NetworkPing.CurrentPingMs;
+        pingText.text = ping >= 0f ? $"Ping: {ping:F0} ms" : "Ping: N/A";
     }
 }

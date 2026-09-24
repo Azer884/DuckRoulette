@@ -14,8 +14,8 @@ namespace DuckRoulette.Tests.Unit
     {
         private GameObject _go;
         private TaskManager _tm;
-        private HashSet<Challenge> _registered;
-        private List<Challenge> _registeredSnapshot;
+        private Dictionary<Challenge, int> _registered;
+        private List<KeyValuePair<Challenge, int>> _registeredSnapshot;
         private readonly List<Challenge> _created = new();
         private Random.State _randomState;
 
@@ -26,7 +26,7 @@ namespace DuckRoulette.Tests.Unit
             _randomState = Random.state;
             Random.InitState(42);
 
-            _registered = Reflect.Get<HashSet<Challenge>>(typeof(TaskManager), "registeredObjectives");
+            _registered = Reflect.Get<Dictionary<Challenge, int>>(typeof(TaskManager), "registeredObjectives");
             _registeredSnapshot = _registered.ToList();
             _registered.Clear();
 
@@ -41,10 +41,11 @@ namespace DuckRoulette.Tests.Unit
 
             // Awake/OnDestroy never run in edit mode, so the NetworkList's native buffer is ours to free.
             Reflect.Get<NetworkList<TaskManager.TaskEntry>>(_tm, "assignedTasks")?.Dispose();
+            Reflect.Get<NetworkList<int>>(_tm, "doneInWorld")?.Dispose();
             Object.DestroyImmediate(_go);
 
             _registered.Clear();
-            foreach (Challenge c in _registeredSnapshot) _registered.Add(c);
+            foreach (var pair in _registeredSnapshot) _registered[pair.Key] = pair.Value;
 
             foreach (Challenge c in _created) Object.DestroyImmediate(c);
             _created.Clear();
@@ -63,7 +64,8 @@ namespace DuckRoulette.Tests.Unit
 
         private NetworkList<TaskManager.TaskEntry> Assigned => Reflect.Get<NetworkList<TaskManager.TaskEntry>>(_tm, "assignedTasks");
 
-        private List<int> Pick() => (List<int>)Reflect.Call(_tm, "PickTasksForPlayer");
+        private int PickSolo(int excluded = -1) => (int)Reflect.Call(_tm, "PickSoloTask", 1UL, excluded);
+        private int PickGroup() => (int)Reflect.Call(_tm, "PickGroupTask");
 
         [Test]
         public void HasCompletedAllTasks_NothingAssigned_True()
@@ -97,65 +99,70 @@ namespace DuckRoulette.Tests.Unit
         }
 
         [Test]
-        public void DistributeTasks_WhenNotServer_DealsNothing()
+        public void OnGunHandedOff_WhenNotServer_ChangesNothing()
         {
-            _tm.tasks = new[] { Make("A"), Make("B") };
-            _tm.DistributeTasks(new List<ulong> { 1, 2 });
-            Assert.That(Assigned.Count, Is.EqualTo(0));
+            _tm.tasks = new[] { Make("A") };
+            Assigned.Add(new TaskManager.TaskEntry { ClientId = 1, TaskIndex = 0, Completed = true });
+            _tm.OnGunHandedOff();
+            Assert.That(Assigned.Count, Is.EqualTo(1));
         }
 
         [Test]
-        public void PickTasks_DistinctRegisteredOnly_UpToTasksPerRound()
+        public void PickSolo_RegisteredNonGroupOnly()
         {
             Challenge unregistered = Make("NoObjectiveInLevel", register: false);
-            _tm.tasks = new[] { Make("A"), Make("B"), unregistered, Make("C"), Make("D") };
-            int unregisteredIndex = 2;
+            Challenge group = Make("Group", Challenge.TaskType.ThreePlus);
+            _tm.tasks = new[] { Make("A"), unregistered, group, Make("B", Challenge.TaskType.Useless) };
 
-            for (int i = 0; i < 100; i++)
-            {
-                List<int> picked = Pick();
-                Assert.That(picked, Has.Count.EqualTo(3));
-                Assert.That(picked, Is.Unique);
-                Assert.That(picked, Has.No.Member(unregisteredIndex));
-                Assert.That(picked, Has.All.InRange(0, 4));
-            }
-        }
-
-        [Test]
-        public void PickTasks_PoolSmallerThanQuota_ReturnsWholePool()
-        {
-            _tm.tasks = new[] { Make("A"), null, Make("B") };
-            List<int> picked = Pick();
-            Assert.That(picked, Is.EquivalentTo(new[] { 0, 2 }));
-        }
-
-        [Test]
-        public void PickTasks_NoTasksAuthored_ReturnsEmpty()
-        {
-            _tm.tasks = new Challenge[0];
-            LogAssert.Expect(LogType.Warning, "TaskManager: no tasks authored, nobody will get any.");
-            Assert.That(Pick(), Is.Empty);
-        }
-
-        [Test]
-        public void PickTasks_EveryTaskEventuallyOffered()
-        {
-            _tm.tasks = new[] { Make("A"), Make("B"), Make("C"), Make("D"), Make("E") };
             var seen = new HashSet<int>();
-            for (int i = 0; i < 100; i++) seen.UnionWith(Pick());
-            Assert.That(seen, Is.EquivalentTo(Enumerable.Range(0, 5)));
+            for (int i = 0; i < 100; i++) seen.Add(PickSolo());
+            Assert.That(seen, Is.EquivalentTo(new[] { 0, 3 }));
         }
 
         [Test]
-        public void RegisterObjective_NullIgnored_UnregisterRemoves()
+        public void PickSolo_SkipsTasksSomeoneElseHoldsOpen_AndTheExcludedOne()
+        {
+            _tm.tasks = new[] { Make("A"), Make("B"), Make("C") };
+            Assigned.Add(new TaskManager.TaskEntry { ClientId = 2, TaskIndex = 0, Completed = false });
+            Assigned.Add(new TaskManager.TaskEntry { ClientId = 3, TaskIndex = 1, Completed = true });
+
+            var seen = new HashSet<int>();
+            for (int i = 0; i < 100; i++) seen.Add(PickSolo(excluded: 2));
+            Assert.That(seen, Is.EquivalentTo(new[] { 1 }), "open tasks are never shared; finished ones are free again");
+        }
+
+        [Test]
+        public void PickSolo_NothingAvailable_ReturnsMinusOne()
+        {
+            _tm.tasks = new[] { Make("A") };
+            Assert.That(PickSolo(excluded: 0), Is.EqualTo(-1));
+            _tm.tasks = new Challenge[0];
+            Assert.That(PickSolo(), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void PickGroup_OnlyRegisteredThreePlusNotAlreadyOpen()
+        {
+            _tm.tasks = new[] { Make("A"), Make("G1", Challenge.TaskType.ThreePlus), Make("G2", Challenge.TaskType.ThreePlus),
+                Make("G3", Challenge.TaskType.ThreePlus, register: false) };
+            Assigned.Add(new TaskManager.TaskEntry { ClientId = 1, TaskIndex = 2, GroupId = 5, Completed = false });
+
+            for (int i = 0; i < 50; i++) Assert.That(PickGroup(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void RegisterObjective_NullIgnored_RefCounted()
         {
             Assert.DoesNotThrow(() => TaskManager.RegisterObjective(null));
             Assert.DoesNotThrow(() => TaskManager.UnregisterObjective(null));
 
             Challenge a = Make("A");
-            Assert.That(_registered, Has.Member(a));
+            TaskManager.RegisterObjective(a);
+            Assert.That(TaskManager.IsObjectiveRegistered(a), Is.True);
             TaskManager.UnregisterObjective(a);
-            Assert.That(_registered, Has.No.Member(a));
+            Assert.That(TaskManager.IsObjectiveRegistered(a), Is.True, "a second objective for the same task is still live");
+            TaskManager.UnregisterObjective(a);
+            Assert.That(TaskManager.IsObjectiveRegistered(a), Is.False);
         }
 
         [Test]
@@ -191,9 +198,10 @@ namespace DuckRoulette.Tests.Unit
         [Test]
         public void TaskEntry_EqualityAndNetworkSerializationRoundTrip()
         {
-            var entry = new TaskManager.TaskEntry { ClientId = ulong.MaxValue - 1, TaskIndex = 7, Completed = true };
+            var entry = new TaskManager.TaskEntry { ClientId = ulong.MaxValue - 1, TaskIndex = 7, Completed = true, GroupId = 3, RoundsOpen = 2 };
             Assert.That(entry.Equals(entry), Is.True);
-            Assert.That(entry.Equals(new TaskManager.TaskEntry { ClientId = entry.ClientId, TaskIndex = 7, Completed = false }), Is.False);
+            Assert.That(entry.Equals(new TaskManager.TaskEntry { ClientId = entry.ClientId, TaskIndex = 7, Completed = false, GroupId = 3, RoundsOpen = 2 }), Is.False);
+            Assert.That(entry.Equals(new TaskManager.TaskEntry { ClientId = entry.ClientId, TaskIndex = 7, Completed = true, GroupId = 4, RoundsOpen = 2 }), Is.False);
 
             using var writer = new FastBufferWriter(64, Allocator.Temp);
             writer.WriteNetworkSerializable(entry);

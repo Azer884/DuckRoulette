@@ -39,6 +39,28 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     public string InteractionPrompt => "Hide";
     public int holderId = -1;
 
+    // Every live hiding spot, so the server can ask "is this player hidden?" without a scene
+    // search - TaskManager counts a hidden player as standing still.
+    private static readonly System.Collections.Generic.HashSet<HidingSpot> All = new();
+
+    /// <summary>True when this client is currently inside any hiding spot.</summary>
+    public static bool IsClientHiding(ulong clientId)
+    {
+        foreach (HidingSpot spot in All)
+        {
+            if (spot != null && spot.IsHeld && spot.holderId == (int)clientId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void OnEnable() => All.Add(this);
+
+    private void OnDisable() => All.Remove(this);
+
     private InputAction lookAction;
     private float yaw, pitch;
     private bool isLocalHider;

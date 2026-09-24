@@ -29,8 +29,12 @@ public class GameManager : NetworkBehaviour
     // responderId -> requesterId, tracks requests the server actually sent out so a
     // TeamUpResponseServerRpc call can be validated against a real pending request.
     private readonly Dictionary<ulong, ulong> _pendingTeamUpRequests = new();
-    // Reused by DistributeTasks so the per-round hand-out doesn't allocate a fresh list each time.
-    private readonly List<ulong> _taskRecipients = new();
+    // responderId -> Time.time the pending request above was sent, so an unanswered request
+    // expires on the server even if the responder's client never reports back.
+    private readonly Dictionary<ulong, float> _pendingTeamUpTimes = new();
+    // (requester, responder) -> Time.time until which requester may not ask responder again,
+    // set when a request is rejected or runs out.
+    private readonly Dictionary<(ulong, ulong), float> _teamUpDeclineCooldowns = new();
     private Coroutine _switchPlayerRoutine;
 
     // --- Server-side anti-cheat bookkeeping (see Docs/SecurityAudit.md) ---
@@ -61,6 +65,10 @@ public class GameManager : NetworkBehaviour
     private const float SlapCountResetSeconds = 60f;
     private const float TeamUpMaxDistance = 8f;
     private const float TeamUpRequestCooldown = 4f;
+    // How long the responder has to accept, and how long a turned-down requester has to wait
+    // before asking that same player again.
+    public const float TeamUpRequestTimeout = 8f;
+    public const float TeamUpDeclineCooldown = 30f;
 
     [SerializeField, Tooltip("Percent chance that a shower that has already been rolled comes in " +
         "as a full storm instead - hail, a gale, and the campfire put out.")]
@@ -227,6 +235,12 @@ public class GameManager : NetworkBehaviour
 
     private void CheckPlayerGunScript()
     {
+        // Every hand-off runs through here, after the new holder was picked - so an open task has
+        // already cost its holder this turn before it ages or gets swapped.
+        if (TaskManager.Instance != null)
+        {
+            TaskManager.Instance.OnGunHandedOff();
+        }
         RoundManager.Instance?.StartRound();
 
         // The new gun holder must be able to trigger/reload as soon as their turn starts -
@@ -253,7 +267,6 @@ public class GameManager : NetworkBehaviour
             UpdatePlayerShootingScripts();
         }
 
-        DistributeTasks();
         _switchPlayerRoutine = null;
     }
 
@@ -776,11 +789,22 @@ public class GameManager : NetworkBehaviour
         }
 
         _pendingTeamUpRequests.Remove(clientId);
+        _pendingTeamUpTimes.Remove(clientId);
         foreach (ulong responderId in new List<ulong>(_pendingTeamUpRequests.Keys))
         {
             if (_pendingTeamUpRequests[responderId] == clientId)
             {
                 _pendingTeamUpRequests.Remove(responderId);
+                _pendingTeamUpTimes.Remove(responderId);
+                CancelTeamUpRequestClientRpc(TargetOnly(responderId));
+            }
+        }
+
+        foreach (var cooldownKey in new List<(ulong, ulong)>(_teamUpDeclineCooldowns.Keys))
+        {
+            if (cooldownKey.Item1 == clientId || cooldownKey.Item2 == clientId)
+            {
+                _teamUpDeclineCooldowns.Remove(cooldownKey);
             }
         }
 
@@ -915,36 +939,113 @@ public class GameManager : NetworkBehaviour
             RpcValidation.IsInAnyTeam(_teams, requesterId) || RpcValidation.IsInAnyTeam(_teams, teamMateId) ||
             !RpcValidation.IsWithinDistance(requesterObject.transform.position, teamMateObject.transform.position, TeamUpMaxDistance) ||
             (_lastTeamUpRequestTime.TryGetValue(requesterId, out float lastRequest) &&
-             !RpcValidation.IsCooldownElapsed(lastRequest, now, TeamUpRequestCooldown)))
+             !RpcValidation.IsCooldownElapsed(lastRequest, now, TeamUpRequestCooldown)) ||
+            // The target is already answering someone, or turned this requester down recently.
+            _pendingTeamUpRequests.ContainsKey(teamMateId) ||
+            (_teamUpDeclineCooldowns.TryGetValue((requesterId, teamMateId), out float blockedUntil) && now < blockedUntil))
         {
             return;
         }
 
         _lastTeamUpRequestTime[requesterId] = now;
         _pendingTeamUpRequests[teamMateId] = requesterId;
+        _pendingTeamUpTimes[teamMateId] = now;
 
-        var clientRpcParams = new ClientRpcParams
+        // "Try to team up" only asks for the attempt - the other player does not have to accept.
+        if (TaskManager.Instance != null)
         {
-            Send = new ClientRpcSendParams
-            {
-                TargetClientIds = new List<ulong> { teamMateId }
-            }
+            TaskManager.Instance.CompleteTaskForPlayer(requesterId, TaskManager.Instance.TeamUpTask);
+        }
+
+        SendTeamUpRequestClientRpc(requesterId, TeamUpRequestTimeout, TargetOnly(teamMateId));
+    }
+
+    private static ClientRpcParams TargetOnly(ulong clientId)
+    {
+        return new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new List<ulong> { clientId } }
         };
-        SendTeamUpRequestClientRpc(requesterId, clientRpcParams);
     }
 
     [ClientRpc]
-    private void SendTeamUpRequestClientRpc(ulong senderId, ClientRpcParams clientRpcParams = default)
+    private void SendTeamUpRequestClientRpc(ulong senderId, float timeout, ClientRpcParams clientRpcParams = default)
     {
         _ = clientRpcParams;
-        if (NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().TryGetComponent<TeamUp>(out var teamUp))
+        NetworkObject localPlayer = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayer != null && localPlayer.TryGetComponent<TeamUp>(out var teamUp))
         {
             if (teamUp.isTeamedUp)
             {
                 return;
             }
 
-            teamUp.RequestTeamUp(senderId);
+            teamUp.RequestTeamUp(senderId, timeout);
+        }
+    }
+
+    /// <summary>The responder said no (or let the timer run out). The requester is blocked from
+    /// asking this player again for TeamUpDeclineCooldown seconds.</summary>
+    [ServerRpc(RequireOwnership = false)]
+    public void DeclineTeamUpServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        ulong responderId = serverRpcParams.Receive.SenderClientId;
+        if (_pendingTeamUpRequests.TryGetValue(responderId, out ulong requesterId))
+        {
+            ExpireTeamUpRequest(responderId, requesterId);
+        }
+    }
+
+    private void ExpireTeamUpRequest(ulong responderId, ulong requesterId)
+    {
+        _pendingTeamUpRequests.Remove(responderId);
+        _pendingTeamUpTimes.Remove(responderId);
+        _teamUpDeclineCooldowns[(requesterId, responderId)] = Time.time + TeamUpDeclineCooldown;
+
+        TeamUpDeclinedClientRpc(responderId, TeamUpDeclineCooldown, TargetOnly(requesterId));
+        CancelTeamUpRequestClientRpc(TargetOnly(responderId));
+    }
+
+    // The server's own clock for unanswered requests - a responder whose client never reports
+    // back (alt-tabbed, crashed) must not hold the requester or themselves in limbo.
+    private void Update()
+    {
+        if (!IsServer || _pendingTeamUpTimes.Count == 0)
+        {
+            return;
+        }
+
+        float now = Time.time;
+        foreach (ulong responderId in new List<ulong>(_pendingTeamUpTimes.Keys))
+        {
+            // Small grace so the responder's own timeout (same length) lands first.
+            if (now - _pendingTeamUpTimes[responderId] > TeamUpRequestTimeout + 1f &&
+                _pendingTeamUpRequests.TryGetValue(responderId, out ulong requesterId))
+            {
+                ExpireTeamUpRequest(responderId, requesterId);
+            }
+        }
+    }
+
+    [ClientRpc]
+    private void TeamUpDeclinedClientRpc(ulong responderId, float cooldown, ClientRpcParams clientRpcParams = default)
+    {
+        _ = clientRpcParams;
+        NetworkObject localPlayer = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayer != null && localPlayer.TryGetComponent<TeamUp>(out var teamUp))
+        {
+            teamUp.OnRequestDeclined(responderId, cooldown);
+        }
+    }
+
+    [ClientRpc]
+    private void CancelTeamUpRequestClientRpc(ClientRpcParams clientRpcParams = default)
+    {
+        _ = clientRpcParams;
+        NetworkObject localPlayer = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+        if (localPlayer != null && localPlayer.TryGetComponent<TeamUp>(out var teamUp))
+        {
+            teamUp.ClearIncomingRequest();
         }
     }
 
@@ -960,6 +1061,7 @@ public class GameManager : NetworkBehaviour
             return;
         }
         _pendingTeamUpRequests.Remove(responderId);
+        _pendingTeamUpTimes.Remove(responderId);
 
         // A stale request can't create a second team for someone already teamed, or join two
         // players who have since walked apart.
@@ -1152,31 +1254,13 @@ public class GameManager : NetworkBehaviour
         OnWeatherChanged(phase);
     }
 
-    #region Tasks
+    public bool IsGameEnded => _isGameEnded;
 
-    // The results used to live in a private dictionary here that nothing ever read, wrote a
-    // completion to, or replicated. TaskManager owns them now: it replicates the assignments so
-    // each client can draw its own list, and answers HasCompletedAllTasks below.
-    private void DistributeTasks()
-    {
-        if (!IsServer || TaskManager.Instance == null || NetworkManager.Singleton == null)
-        {
-            return;
-        }
+    /// <summary>Server only. Alive and still in the match.</summary>
+    public bool IsPlayerAlive(ulong clientId) => _playerStates.TryGetValue(clientId, out bool isAlive) && isAlive;
 
-        _taskRecipients.Clear();
-        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
-        {
-            if (_playerStates.TryGetValue(clientId, out bool isAlive) && isAlive)
-            {
-                _taskRecipients.Add(clientId);
-            }
-        }
-
-        TaskManager.Instance.DistributeTasks(_taskRecipients);
-    }
-
-    #endregion
+    /// <summary>Server only. Whether this player is currently teamed up with someone.</summary>
+    public bool IsInAnyTeam(ulong clientId) => RpcValidation.IsInAnyTeam(_teams, clientId);
 
     public int AlivePlayersCount()
     {
@@ -1278,6 +1362,10 @@ public class GameManager : NetworkBehaviour
 
         _playerStates[clientId] = false;
         _alivePlayersCount.Value = Mathf.Max(0, _alivePlayersCount.Value - 1);
+        if (TaskManager.Instance != null)
+        {
+            TaskManager.Instance.OnPlayerRemoved(clientId);
+        }
 
         if (reassignGun && playerWithGun.Value == clientId)
         {

@@ -173,17 +173,9 @@ public class Movement : NetworkBehaviour
         }
         else
         {
-            // Spawn-slot positioning is a one-time, spawn-only concern (a networked-game concept -
-            // the offline tutorial keeps whatever position the scene placed it at). It used to live
-            // inside ApplyOwnerVisualState, but that method is also re-run later by
-            // Movement.SetModelVisible(true) (HidingSpot's exit path) to restore cam/layer state -
-            // which was silently teleporting the player back to their spawn slot instead of wherever
-            // they actually stood before hiding.
-            if (!IsLocalMode)
-            {
-                transform.position = new Vector3(0, 2, (int)OwnerClientId * 2);
-            }
-
+            // No spawn-slot positioning here any more: the server picks each player's spawn pose
+            // on the generated map (PlayerSpawnPlacer) and it arrives in the spawn payload. This
+            // used to force (0, 2, clientId * 2) on the owner, overriding that pose.
             ApplyOwnerVisualState();
         }
     }

@@ -70,10 +70,21 @@ public class LoadingScreenController : NetworkBehaviour
     [Header("Other Players")]
     public Transform otherPlayersContainer;
     public GameObject otherPlayerBarTemplate;
+    // Optional heading over the list, only shown while there is someone else to list.
+    public GameObject otherPlayersHeader;
 
     [Header("Bottom")]
     public TextMeshProUGUI tipText;
     public string[] tips;
+
+    [Header("Status")]
+    // Optional. When set, the local player's name goes here and myPercentText shows only the number.
+    public TextMeshProUGUI myNameText;
+    // Optional one-line description of what the load is waiting on right now.
+    public TextMeshProUGUI statusText;
+    public string waitingForPlayersStatus = "Waiting for everyone to arrive...";
+    public string loadingSceneStatus = "Loading the map...";
+    public string waitingForOthersStatus = "Waiting for the slowpokes...";
 
     [Header("Progress Pacing")]
     // Loading happens in two phases and the bar gives each one half of its width:
@@ -106,6 +117,10 @@ public class LoadingScreenController : NetworkBehaviour
     private const float PhaseOneCeiling = 0.5f;
     // Unity parks a load whose activation is held at 0.9, so 0..0.9 is the whole real load curve.
     private const float HeldLoadProgress = 0.9f;
+    // Share of the bar the network part of the load gets. The rest belongs to what happens after
+    // the game scene activates - building the procedural map and spawning this player - which
+    // LoadingOverlayHold finishes on this same canvas once this object is gone.
+    private const float SceneLoadShare = 0.85f;
     private const string LoadingSceneName = "LoadingScreen";
 
     private readonly NetworkList<ProgressEntry> progress = new NetworkList<ProgressEntry>();
@@ -132,6 +147,7 @@ public class LoadingScreenController : NetworkBehaviour
     // whichever arrives first, and read by OnSceneLoadBegin so a load that only shows up after the
     // signal already passed never gets held.
     private bool activationLatched;
+    private bool overlayHandedOff;
 
     private void Awake()
     {
@@ -281,6 +297,10 @@ public class LoadingScreenController : NetworkBehaviour
         // load was still being set up, holding it here would strand this client on the loading
         // screen with no second signal ever coming.
         pendingOp.allowSceneActivation = activationLatched || sceneActivationAllowed.Value;
+        if (pendingOp.allowSceneActivation)
+        {
+            HandOffOverlay();
+        }
     }
 
     private void OnActivationAllowedChanged(bool previous, bool current)
@@ -319,6 +339,7 @@ public class LoadingScreenController : NetworkBehaviour
 
         if (pendingOp != null)
         {
+            HandOffOverlay();
             pendingOp.allowSceneActivation = true;
         }
     }
@@ -368,11 +389,17 @@ public class LoadingScreenController : NetworkBehaviour
 
             myDisplayedProgress = Mathf.MoveTowards(myDisplayedProgress, target, barSmoothingSpeed * Time.unscaledDeltaTime);
             SetMyProgress(myDisplayedProgress);
+            UpdateStatus();
 
             if (myDisplayedProgress >= 1f)
             {
                 ReportProgressServerRpc(1f);
-                yield break;
+                // Keep the status line honest while this client waits on everyone else.
+                while (true)
+                {
+                    UpdateStatus();
+                    yield return null;
+                }
             }
 
             if (Time.unscaledTime >= nextReportTime && !Mathf.Approximately(myDisplayedProgress, lastReported))
@@ -407,17 +434,85 @@ public class LoadingScreenController : NetworkBehaviour
 
     private void SetMyProgress(float value)
     {
+        float shown = value * SceneLoadShare;
         if (myProgressBar != null)
         {
-            myProgressBar.value = value;
+            myProgressBar.value = shown;
         }
 
-        // No separate name field on the "my progress" row - fold it into the existing percent
-        // text instead of adding new UI.
+        if (myNameText != null)
+        {
+            myNameText.text = SteamClient.Name;
+        }
+
         if (myPercentText != null)
         {
-            myPercentText.text = $"{SteamClient.Name} - {Mathf.RoundToInt(value * 100)}%";
+            // Without a separate name field the name is folded into the percent text.
+            myPercentText.text = myNameText != null
+                ? $"{Mathf.RoundToInt(shown * 100)}%"
+                : $"{SteamClient.Name} - {Mathf.RoundToInt(shown * 100)}%";
         }
+    }
+
+    private void UpdateStatus()
+    {
+        if (statusText == null)
+        {
+            return;
+        }
+
+        string status;
+        if (pendingOp == null)
+        {
+            status = waitingForPlayersStatus;
+        }
+        else if (pendingOp.progress >= HeldLoadProgress && !activationLatched)
+        {
+            status = waitingForOthersStatus;
+        }
+        else
+        {
+            status = loadingSceneStatus;
+        }
+
+        if (statusText.text != status)
+        {
+            statusText.text = status;
+        }
+    }
+
+    // Hands the loading canvas over to LoadingOverlayHold right before the game scene is let
+    // through. The Single-mode load would otherwise destroy it the moment the scene activates, and
+    // the player would be dropped into a map that is still being generated, with no local player
+    // yet - a frozen frame, then a camera popping in. The overlay keeps covering the screen until
+    // the map is built and this player has spawned.
+    private void HandOffOverlay()
+    {
+        if (overlayHandedOff || myProgressBar == null)
+        {
+            return;
+        }
+
+        Canvas canvas = myProgressBar.GetComponentInParent<Canvas>();
+        if (canvas == null)
+        {
+            return;
+        }
+
+        overlayHandedOff = true;
+        canvas = canvas.rootCanvas;
+
+        var remoteBars = new List<Slider>();
+        foreach (KeyValuePair<ulong, PlayerRow> pair in otherRows)
+        {
+            if (pair.Value.Bar != null)
+            {
+                remoteBars.Add(pair.Value.Bar);
+            }
+        }
+
+        LoadingOverlayHold hold = canvas.gameObject.AddComponent<LoadingOverlayHold>();
+        hold.Begin(myProgressBar, myPercentText, myNameText != null, statusText, remoteBars, SceneLoadShare);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -531,7 +626,7 @@ public class LoadingScreenController : NetworkBehaviour
             row.Displayed = Mathf.MoveTowards(row.Displayed, row.Target, barSmoothingSpeed * Time.unscaledDeltaTime);
             if (row.Bar != null)
             {
-                row.Bar.value = row.Displayed;
+                row.Bar.value = row.Displayed * SceneLoadShare;
             }
         }
     }
@@ -584,6 +679,11 @@ public class LoadingScreenController : NetworkBehaviour
         }
 
         PruneDepartedRows(myId);
+
+        if (otherPlayersHeader != null)
+        {
+            otherPlayersHeader.SetActive(otherRows.Count > 0);
+        }
     }
 
     // Rows used to outlive their player: someone who dropped mid-load left a frozen, half-filled

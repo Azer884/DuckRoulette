@@ -3879,6 +3879,7 @@ MonoBehaviour:
   - {fileID: 6611295453059689895}
   - {fileID: 2764494379678518831}
   teamColor: {r: 0, g: 0.49411765, b: 1, a: 1}
+  lookAtThreshold: 0.6
   outlineColor:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -14151,7 +14152,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0867fa44c5713384fb0b45dcff918937, type: 2}
   - {fileID: 11400000, guid: 1f2f22862e3cc074980eb9d4835fb4e7, type: 2}
   - {fileID: 11400000, guid: 6127d27d42d630b49bc2d6241c60e1e2, type: 2}
-  tasksPerRound: 3
+  - {fileID: 11400000, guid: 9bf4cf8ac909c254cb1b9d1019ae8a7f, type: 2}
+  - {fileID: 11400000, guid: 54b67f89d10b7a740bb64b2d534a7232, type: 2}
+  stationaryRadius: 4
+  idleFractionOfRound: 0.5
+  evaluateInterval: 0.5
+  minGroupSize: 3
+  roundsBeforeSwap: 2
+  teamUpTask: {fileID: 11400000, guid: 6127d27d42d630b49bc2d6241c60e1e2, type: 2}
 --- !u!1 &6094000583348113555
 GameObject:
   m_ObjectHideFlags: 0
