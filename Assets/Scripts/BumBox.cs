@@ -1,3 +1,6 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -29,6 +32,62 @@ public class BumBox : NetworkBehaviour, IInteractable
 
     private AudioSource _audioSource;
 
+    [Header("Map-wide music events")]
+    [SerializeField, Tooltip("Seconds between the moments the boombox is heard across the whole " +
+        "map (2D for everyone), picked at random in this range.")]
+    private Vector2 broadcastIntervalRange = new(45f, 90f);
+    [SerializeField, Tooltip("How long, in seconds, one of those map-wide moments lasts.")]
+    private Vector2 broadcastDurationRange = new(12f, 20f);
+
+    // True while the music is heard everywhere at full volume instead of from the box. Server
+    // decides, so every player hears the switch at the same moment.
+    private readonly NetworkVariable<bool> broadcasting = new(false);
+
+    private static readonly List<BumBox> spawned = new();
+
+    /// <summary>The boombox the game music comes from (the map can place two; the one spawned
+    /// first wins), or null when there is none.</summary>
+    public static BumBox Primary
+    {
+        get
+        {
+            BumBox best = null;
+            foreach (BumBox box in spawned)
+            {
+                if (box != null && box.IsSpawned && (best == null || box.NetworkObjectId < best.NetworkObjectId))
+                {
+                    best = box;
+                }
+            }
+            return best;
+        }
+    }
+
+    /// <summary>Raised on every peer when a box switches track. MusicManager plays it.</summary>
+    public static event Action<BumBox, AudioClip> TrackChanged;
+
+    /// <summary>The track picked with the Change Music key, or null before anyone has pressed it.</summary>
+    public AudioClip CurrentClip =>
+        playlist != null && trackIndex.Value >= 0 && trackIndex.Value < playlist.Length ? playlist[trackIndex.Value] : null;
+
+    /// <summary>True while the music is heard across the whole map instead of from the box.</summary>
+    public bool IsBroadcasting => broadcasting.Value;
+
+    /// <summary>MusicManager takes over this box's music: its own speaker goes quiet (so the song
+    /// isn't heard twice) and its pulse follows the manager's source instead.</summary>
+    public void SetDrivenBy(AudioSource musicSource)
+    {
+        if (_audioSource != null)
+        {
+            _audioSource.mute = musicSource != null;
+        }
+
+        if (TryGetComponent(out SoundToScale pulse))
+        {
+            pulse.audioSource = musicSource != null ? musicSource : _audioSource;
+        }
+    }
+
 
     // The boombox is its own objective: it already implements IInteractable for pick-up, so it
     // registers its task here instead of carrying a TaskObjective component (only one
@@ -51,6 +110,13 @@ public class BumBox : NetworkBehaviour, IInteractable
     public override void OnNetworkSpawn()
     {
         trackIndex.OnValueChanged += OnTrackChanged;
+        broadcasting.OnValueChanged += OnBroadcastingChanged;
+        spawned.Add(this);
+
+        if (IsServer)
+        {
+            StartCoroutine(BroadcastLoop());
+        }
 
         // A late joiner gets whatever is already playing. -1 means nobody has pressed the key
         // yet, so the authored AudioSource clip is still the right one and is left alone.
@@ -63,6 +129,34 @@ public class BumBox : NetworkBehaviour, IInteractable
     public override void OnNetworkDespawn()
     {
         trackIndex.OnValueChanged -= OnTrackChanged;
+        broadcasting.OnValueChanged -= OnBroadcastingChanged;
+        spawned.Remove(this);
+        StopAllCoroutines();
+    }
+
+    // Server only: every so often the music the box plays is blasted to the whole map for a while.
+    private IEnumerator BroadcastLoop()
+    {
+        while (IsSpawned)
+        {
+            yield return new WaitForSeconds(UnityEngine.Random.Range(broadcastIntervalRange.x, broadcastIntervalRange.y));
+            if (Primary != this)
+            {
+                continue;
+            }
+
+            broadcasting.Value = true;
+            yield return new WaitForSeconds(UnityEngine.Random.Range(broadcastDurationRange.x, broadcastDurationRange.y));
+            broadcasting.Value = false;
+        }
+    }
+
+    private void OnBroadcastingChanged(bool previous, bool current)
+    {
+        if (current && Primary == this)
+        {
+            MessageBox.Informate("The boombox is blasting across the whole map!", new Color(1f, 0.557f, 0.024f));
+        }
     }
 
     /// <summary>Called on the local player's client by Interact when the Change Music key is
@@ -98,6 +192,17 @@ public class BumBox : NetworkBehaviour, IInteractable
         trackIndex.Value = (trackIndex.Value + 1) % playlist.Length;
     }
 
+    /// <summary>Server only: move on to the next song (the current one finished playing).</summary>
+    public void ServerNextTrack()
+    {
+        if (!IsServer || playlist == null || playlist.Length == 0)
+        {
+            return;
+        }
+
+        trackIndex.Value = (trackIndex.Value + 1) % playlist.Length;
+    }
+
     private void OnTrackChanged(int previous, int current)
     {
         ApplyTrack(current);
@@ -120,6 +225,8 @@ public class BumBox : NetworkBehaviour, IInteractable
         // new track would go silent until someone hit Mute twice. Play() unconditionally.
         _audioSource.clip = clip;
         _audioSource.Play();
+
+        TrackChanged?.Invoke(this, clip);
     }
 
     public void Interact(ulong clientId)

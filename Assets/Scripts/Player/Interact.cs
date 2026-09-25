@@ -9,6 +9,10 @@ public class Interact : NetworkBehaviour
     public LayerMask pickUpLayerMask;
     public float maxDistance = 5f;
     public Transform bumBoxPickUpPosition, fakeBox, fakeboxShadow;
+
+    // Authored sizes of the two stand-in meshes, for a real box whose root scale is 1.
+    private Vector3 fakeBoxBaseScale = Vector3.one, fakeboxShadowBaseScale = Vector3.one;
+    private bool fakeScalesCached;
     private Transform pickedUpObject;
     private Transform mainCameraTransform;
     public Shooting shooting;
@@ -199,8 +203,16 @@ public class Interact : NetworkBehaviour
                         bumBoxPickUpPosition.rotation
                     );
 
-                    fakeBox.localScale = pickedUpObject.localScale;
-                    fakeboxShadow.localScale = pickedUpObject.localScale;
+                    if (!fakeScalesCached)
+                    {
+                        fakeBoxBaseScale = fakeBox.localScale;
+                        fakeboxShadowBaseScale = fakeboxShadow.localScale;
+                        fakeScalesCached = true;
+                    }
+
+                    // Match the real box's size (the map scales it), on top of the stand-in's own scale.
+                    fakeBox.localScale = Vector3.Scale(fakeBoxBaseScale, pickedUpObject.lossyScale);
+                    fakeboxShadow.localScale = Vector3.Scale(fakeboxShadowBaseScale, pickedUpObject.lossyScale);
                 }
             }
 

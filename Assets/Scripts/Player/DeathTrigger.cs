@@ -73,7 +73,10 @@ public class DeathTrigger : MonoBehaviour
 
     public void OnTriggerEnter(Collider other)
     {
-        if (!other.transform.parent.TryGetComponent(out BulletBehavior bullet))
+        // Anything else passing through (a carried boombox is a trigger and, being a networked
+        // prop, has no parent at all) used to throw here on transform.parent.
+        BulletBehavior bullet = other.GetComponentInParent<BulletBehavior>();
+        if (bullet == null)
         {
             return;
         }

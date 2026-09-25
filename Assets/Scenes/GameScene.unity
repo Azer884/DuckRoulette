@@ -64984,7 +64984,7 @@ MonoBehaviour:
       regions: 040000000700000003000000
       count: {x: 1, y: 1}
       role: 2
-      sizeTarget: 1
+      sizeTarget: 3
       scaleJitter: {x: 1, y: 1}
       footprintPadding: 0.6
       selfSpacing: 0
@@ -65242,6 +65242,35 @@ MonoBehaviour:
       physicsBody: 0
       physicsDensity: 20
       addMeshCollider: 1
+    - label: Ball
+      enabled: 1
+      prefabs:
+      - {fileID: 168473544698354245, guid: 27faae57a78093b4fa9040121de011f5, type: 3}
+      regions: 06000000030000000700000005000000
+      count: {x: 1, y: 1}
+      role: 0
+      sizeTarget: 1
+      scaleJitter: {x: 0.8, y: 1.2}
+      footprintPadding: 0.6
+      selfSpacing: 0
+      maxSlope: 0.4
+      edgeMargin: 10
+      alignToGround: 0
+      tiltDegrees: 5
+      yOffset: 2.19
+      faceAwayFromEdge: 0
+      hugEdge: 0
+      edgeSnap: 0
+      pollutionRadius: 0
+      flattenRadius: 0
+      sitOnBase: 0
+      faceRegionCentre: 0
+      frontClearance: 0
+      snapToWall: 0
+      wallBury: 0
+      physicsBody: 0
+      physicsDensity: 20
+      addMeshCollider: 0
     coverToCover: 14
     challengeToChallenge: 26
     coverToChallenge: 9

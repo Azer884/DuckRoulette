@@ -321,10 +321,10 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   holderId: 0
   playlist:
+  - {fileID: 8300000, guid: 523d42d22f5db3c43bbbfba2259f35e1, type: 3}
   - {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
   - {fileID: 8300000, guid: 1659e416a9f4f2347a2b8356d53cb73e, type: 3}
   - {fileID: 8300000, guid: c76315145c0ad044fbb1c6295f3647d0, type: 3}
-  - {fileID: 8300000, guid: e75fcf201bb09f84aa441d07e0482da9, type: 3}
   musicTask: {fileID: 11400000, guid: ce1df3d21161fd74c9d1e9c3bd8b1b44, type: 2}
 --- !u!54 &5244328016597167218
 Rigidbody:

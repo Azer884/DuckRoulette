@@ -324,7 +324,13 @@ MonoBehaviour:
   fadeDuration: 7.5
   musicClips:
   - {fileID: 8300000, guid: e75fcf201bb09f84aa441d07e0482da9, type: 3}
-  - {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
+  - {fileID: 8300000, guid: 523d42d22f5db3c43bbbfba2259f35e1, type: 3}
+  spatialFadeSeconds: 12.43
+  travelSeconds: 25.9
+  broadcastBlendSeconds: 3.98
+  minDistance: 4
+  maxDistance: 45
+  trackCrossfadeSeconds: 1
 --- !u!4 &119620256
 Transform:
   m_ObjectHideFlags: 0
@@ -906,7 +912,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfa26a53a7698bf419303958802f73cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  amount: 100
 --- !u!1 &2119555546
 GameObject:
   m_ObjectHideFlags: 0
@@ -1095,6 +1100,7 @@ MonoBehaviour:
   rainLoopClip: {fileID: 8300000, guid: f5df38976dca08a40a6a761bc2e04db5, type: 3}
   windLoopClip: {fileID: 0}
   hailLoopClip: {fileID: 0}
+  thunderClips: []
   uiSource: {fileID: 0}
 --- !u!1 &8113528663145672095
 GameObject:

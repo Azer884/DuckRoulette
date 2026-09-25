@@ -1812,15 +1812,15 @@ PrefabInstance:
       objectReference: {fileID: 8300000, guid: 1659e416a9f4f2347a2b8356d53cb73e, type: 3}
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalScale.x
-      value: 15
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalScale.y
-      value: 15
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalScale.z
-      value: 15
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6364610338348799450, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1886,7 +1886,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4024977370053467107, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
-      insertIndex: 8
+      insertIndex: -1
       addedObject: {fileID: 433879565}
   m_SourcePrefab: {fileID: 100100000, guid: 9cd597eba71016b4b92597312bcb4101, type: 3}
 --- !u!1 &433879564 stripped
@@ -1907,6 +1907,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holderId: -1
+  playlist: []
 --- !u!1001 &453636764
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14028,14 +14029,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LeftFoot: {fileID: 2578297483697910794}
   RightFoot: {fileID: 4055887065689550940}
-  footOffset: 0.12
   layerMask:
     serializedVersion: 2
     m_Bits: 129
-  deltaAmplifier: 1
-  leftFootWeight: 0
-  rightFootWeight: 0
-  isLegs: 1
+  rayAbove: 0.5
+  rayBelow: 0.45
+  maxPelvisDrop: 0.35
+  idleWeight: 1
+  movingWeight: 0.6
+  fullMovingSpeed: 4
+  rotationWeight: 0.8
+  groundedDistance: 0.25
+  footSpeed: 18
+  pelvisSpeed: 10
+  weightSpeed: 6
 --- !u!4 &531768059661234394
 Transform:
   m_ObjectHideFlags: 0
@@ -18192,6 +18199,9 @@ MonoBehaviour:
   initHeight: 0
   crouchHeight: 2.5
   isCrouched: 0
+  crouchCamOffset: {x: 0, y: -0.5, z: 0.35}
+  jumpCamOffset: {x: 0, y: 0, z: 0.2}
+  camOffsetLerpSpeed: 10
   animators:
   - {fileID: 4116219022395734128}
   - {fileID: 7982222124661909791}
@@ -18229,6 +18239,7 @@ MonoBehaviour:
   canMove: 1
   canJump: 1
   canCrouch: 1
+  gamepadLookDegreesPerSecond: 180
 --- !u!114 &4866332289945410147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18266,14 +18277,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LeftFoot: {fileID: 5386726209428070798}
   RightFoot: {fileID: 3151234552426721096}
-  footOffset: 0.12
   layerMask:
     serializedVersion: 2
     m_Bits: 129
-  deltaAmplifier: 1
-  leftFootWeight: 0
-  rightFootWeight: 0
-  isLegs: 0
+  rayAbove: 0.5
+  rayBelow: 0.45
+  maxPelvisDrop: 0.35
+  idleWeight: 1
+  movingWeight: 0.6
+  fullMovingSpeed: 4
+  rotationWeight: 0.8
+  groundedDistance: 0.25
+  footSpeed: 18
+  pelvisSpeed: 10
+  weightSpeed: 6
 --- !u!1 &4901975022519913357
 GameObject:
   m_ObjectHideFlags: 0
