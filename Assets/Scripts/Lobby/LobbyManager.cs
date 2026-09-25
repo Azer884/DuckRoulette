@@ -313,6 +313,10 @@ public class LobbyManager : MonoBehaviour
 
         friendList.gameObject.SetActive(true);
         friendList.Play("FriendListOtherWay");
+
+        // Hosting can start from the Steam overlay (inviting a friend creates the lobby) while
+        // Settings is open; don't leave it drawn on top of the lobby.
+        Settings.CloseAllForScreenChange();
     }
 
     public void ConnectedAsClient()
@@ -330,6 +334,9 @@ public class LobbyManager : MonoBehaviour
             if(child.childCount > 0) Destroy(child.GetChild(0).gameObject);
         }
 
+        // Accepting a Steam invite from the overlay while Settings was open used to leave the
+        // settings panel drawn over the lobby UI.
+        Settings.CloseAllForScreenChange();
     }
 
     public void Disconnected()

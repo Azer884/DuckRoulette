@@ -23,6 +23,7 @@ public class GameNetworkManager : MonoBehaviour
     private int mapIndex = 2;
 
     private readonly SemaphoreSlim actionLock = new SemaphoreSlim(1, 1);
+    private static bool handledLaunchConnect;
 
     private void Awake()
     {
@@ -48,7 +49,16 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyInvite += SteamMatchmaking_OnLobbyInvite;
         SteamMatchmaking.OnLobbyGameCreated += SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += SteamFriends_OnGameLobbyJoinRequested;
+        SteamFriends.OnGameRichPresenceJoinRequested += SteamFriends_OnGameRichPresenceJoinRequested;
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // Launched by Steam from a friend's "Join Game" while the game wasn't running: the
+        // connect string arrives on the command line instead of as a callback. Only once per run.
+        if (!handledLaunchConnect)
+        {
+            handledLaunchConnect = true;
+            TryJoinFromConnectString(string.Join(" ", System.Environment.GetCommandLineArgs()));
+        }
 
         // This object lives in the Lobby scene, so it is rebuilt every time the host brings the
         // party back from a match (a networked Lobby load that keeps the session alive). The
@@ -71,6 +81,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyInvite -= SteamMatchmaking_OnLobbyInvite;
         SteamMatchmaking.OnLobbyGameCreated -= SteamMatchmaking_OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested -= SteamFriends_OnGameLobbyJoinRequested;
+        SteamFriends.OnGameRichPresenceJoinRequested -= SteamFriends_OnGameRichPresenceJoinRequested;
         SceneManager.sceneLoaded -= OnSceneLoaded;
 
         if (NetworkManager.Singleton == null)
@@ -120,8 +131,40 @@ public class GameNetworkManager : MonoBehaviour
     private void SteamMatchmaking_OnLobbyMemberLeave(Lobby _lobby, Friend _steamId)
     {
         Debug.Log("Member left.");
-        LobbyManager.instance.SendMessageToChat($"{_steamId.Name} has left", _steamId.Id, true);
-        NetworkTransmission.instance.RemoveMeFromDictionaryServerRPC(_steamId.Id);
+
+        // The host leaving closes the party. Steam would otherwise just hand lobby ownership to
+        // another member, so everyone left behind stayed "in party" together with nobody hosting
+        // the Netcode session - their friends lists kept showing each other as in the party.
+        NetworkManager manager = NetworkManager.Singleton;
+        bool isClient = manager != null && !manager.IsServer;
+        if (isClient && transport != null && _steamId.Id == transport.targetSteamId)
+        {
+            HostLeftParty();
+            return;
+        }
+
+        if (LobbyManager.instance != null)
+        {
+            LobbyManager.instance.SendMessageToChat($"{_steamId.Name} has left", _steamId.Id, true);
+        }
+
+        if (NetworkTransmission.instance != null && NetworkTransmission.instance.IsSpawned)
+        {
+            NetworkTransmission.instance.RemoveMeFromDictionaryServerRPC(_steamId.Id);
+        }
+    }
+
+    private void HostLeftParty()
+    {
+        DisconnectNotice.SetReason(DisconnectNotice.HostLeftMessage);
+        InteractionPromptHUD.Hide();
+        SpectateHUD.HideAll();
+        DisconnectInternal(false);
+
+        if (SceneManager.GetActiveScene().name != "Lobby")
+        {
+            SceneManager.LoadScene("Lobby");
+        }
     }
 
     private void SteamMatchmaking_OnLobbyMemberJoined(Lobby _lobby, Friend _steamId)
@@ -150,17 +193,22 @@ public class GameNetworkManager : MonoBehaviour
             return;
         }
 
+        // "type" lets every member (not only the host, who owns the toggles) know the lobby's
+        // visibility - RichPresence shows private lobbies as such and offers no "Join Game" for them.
         if (LobbyManager.instance.privateToggle.isOn)
         {
             _lobby.SetPrivate();
+            _lobby.SetData("type", "private");
         }
         else if (LobbyManager.instance.friendToggle.isOn)
         {
             _lobby.SetFriendsOnly();
+            _lobby.SetData("type", "friends");
         }
         else
         {
             _lobby.SetPublic();
+            _lobby.SetData("type", "public");
         }
 
         _lobby.SetJoinable(true);
@@ -354,7 +402,11 @@ public class GameNetworkManager : MonoBehaviour
 
     private void DisconnectInternal(bool onPurpose)
     {
-        PerformActionWithLock(() =>
+        // Teardown must always run. It used to go through PerformActionWithLock, which silently
+        // does nothing while another lobby action holds the lock (e.g. a join still awaiting
+        // Steam) - leaving the player "in party" in a lobby whose session was already gone.
+        bool acquired = actionLock.Wait(0);
+        try
         {
             if (NetworkManager.Singleton != null)
             {
@@ -396,7 +448,20 @@ public class GameNetworkManager : MonoBehaviour
                 LobbySaver.instance.currentLobby?.Leave();
                 LobbySaver.instance.currentLobby = null;
             }
-        });
+
+            RefreshRichPresence();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+        finally
+        {
+            if (acquired)
+            {
+                actionLock.Release();
+            }
+        }
     }
 
     private async Task PerformActionWithLock(System.Func<Task> action)
@@ -501,20 +566,51 @@ public class GameNetworkManager : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
     {
-        UpdateRichPresenceStatus(scene.name);
+        RefreshRichPresence();
     }
-    public void UpdateRichPresenceStatus(string SceneName)
-    {
-        string richPresenceKey = "steam_display";
 
-        if (SceneName.Equals("GameScene"))
+    // Everything about rich presence now lives in RichPresence; this only asks it to update now.
+    private static void RefreshRichPresence() => RichPresence.Refresh();
+
+    // A friend clicked "Join Game" on our rich presence (RichPresence sets "connect" while the
+    // lobby can be joined). Only honoured from the menus - never pulls a player out of a match.
+    private void SteamFriends_OnGameRichPresenceJoinRequested(Friend friend, string connect)
+    {
+        TryJoinFromConnectString(connect);
+    }
+
+    private void TryJoinFromConnectString(string connect)
+    {
+        if (string.IsNullOrEmpty(connect))
         {
-            SteamFriends.SetRichPresence(richPresenceKey, "In-Game #Map1");
+            return;
         }
-        else if (SceneName.Contains("Lobby"))
+
+        int index = connect.IndexOf(RichPresence.ConnectPrefix.Trim(), System.StringComparison.Ordinal);
+        if (index < 0)
         {
-            SteamFriends.SetRichPresence(richPresenceKey, "In-Lobby");
+            return;
         }
+
+        string idText = connect.Substring(index + RichPresence.ConnectPrefix.Trim().Length).Trim();
+        int space = idText.IndexOf(' ');
+        if (space >= 0)
+        {
+            idText = idText.Substring(0, space);
+        }
+
+        if (!ulong.TryParse(idText, out ulong lobbyId) || SceneManager.GetActiveScene().name != "Lobby")
+        {
+            return;
+        }
+
+        if (LobbySaver.instance != null && LobbySaver.instance.currentLobby.HasValue &&
+            LobbySaver.instance.currentLobby.Value.Id.Value == lobbyId)
+        {
+            return;
+        }
+
+        SteamFriends_OnGameLobbyJoinRequested(new Lobby(lobbyId), default);
     }
     public string PendingGameSceneName { get; private set; }
 

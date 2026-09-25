@@ -42,8 +42,6 @@ public class GunHolderAlertHUD : MonoBehaviour
     [SerializeField] private float announceHold = 2.2f;
     [SerializeField] private float dockDuration = 0.6f;
     [SerializeField] private float fadeOut = 0.3f;
-    [SerializeField] private float pulseScale = 0.07f;
-    [SerializeField] private float pulseFrequency = 4f;
 
     [Header("Colors")]
     [SerializeField] private Color holsteredColor = new(1f, 0.5568628f, 0.023529412f, 1f);
@@ -151,9 +149,8 @@ public class GunHolderAlertHUD : MonoBehaviour
         panel.anchoredPosition = Vector2.Lerp(announcePosition, dockedPosition, eased);
         panel.sizeDelta = Vector2.Lerp(announceSize, dockedSize, eased);
 
-        // Pulses while shouting, settles once docked.
-        float pulse = 1f + Mathf.Sin(stateTime * pulseFrequency * Mathf.PI * 2f) * pulseScale * (1f - eased);
-        panel.localScale = Vector3.one * pulse;
+        // Steady: no pulsing/shaking while it's on screen.
+        panel.localScale = Vector3.one;
 
         if (panelGroup != null)
         {

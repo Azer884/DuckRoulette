@@ -1,7 +1,8 @@
 using System.Globalization;
 using UnityEngine;
 
-// Read side of the Settings.ini "Game" and "Accessibility" sections.
+// Read side of the Settings.ini "Game" and "Accessibility" sections, plus the voice chat mode
+// from "Audio".
 //
 // SettingsManager owns the file, the UI writes into it through ObjectSettings the same way the
 // Graphics/Audio tabs do, and everything that has to *react* to those values (Movement, the screen
@@ -12,6 +13,15 @@ public static class GameplaySettings
 {
     public const string GameSection = "Game";
     public const string AccessibilitySection = "Accessibility";
+    public const string AudioSection = "Audio";
+
+    // Order matches the Voice Chat Mode dropdown in SettingsMenu.prefab.
+    public enum VoiceMode
+    {
+        PushToTalk = 0,
+        ToggleToTalk = 1,
+        OpenMic = 2,
+    }
 
     // Raised after the cache has been invalidated, for the one-shot appliers (field of view,
     // UI scale) that push a value somewhere rather than polling it.
@@ -25,6 +35,9 @@ public static class GameplaySettings
     private static bool toggleCrouch;
     private static bool toggleSprint;
     private static bool showTaskList;
+    private static bool showFps;
+    private static bool showPing;
+    private static VoiceMode voiceChatMode;
 
     private static bool reduceMotion;
     private static bool flashingEffects;
@@ -40,6 +53,9 @@ public static class GameplaySettings
     public static bool ToggleCrouch { get { EnsureCache(); return toggleCrouch; } }
     public static bool ToggleSprint { get { EnsureCache(); return toggleSprint; } }
     public static bool ShowTaskList { get { EnsureCache(); return showTaskList; } }
+    public static bool ShowFps { get { EnsureCache(); return showFps; } }
+    public static bool ShowPing { get { EnsureCache(); return showPing; } }
+    public static VoiceMode VoiceChatMode { get { EnsureCache(); return voiceChatMode; } }
 
     public static bool ReduceMotion { get { EnsureCache(); return reduceMotion; } }
     public static bool FlashingEffects { get { EnsureCache(); return flashingEffects; } }
@@ -92,6 +108,9 @@ public static class GameplaySettings
         toggleCrouch = GetBool(settings, GameSection, "ToggleCrouch", false);
         toggleSprint = GetBool(settings, GameSection, "ToggleSprint", false);
         showTaskList = GetBool(settings, GameSection, "ShowTaskList", true);
+        showFps = GetBool(settings, GameSection, "ShowFps", false);
+        showPing = GetBool(settings, GameSection, "ShowPing", false);
+        voiceChatMode = (VoiceMode)Mathf.Clamp(Mathf.RoundToInt(GetFloat(settings, AudioSection, "VoiceChatMode", 0f)), 0, 2);
 
         reduceMotion = GetBool(settings, AccessibilitySection, "ReduceMotion", false);
         flashingEffects = GetBool(settings, AccessibilitySection, "FlashingEffects", true);

@@ -78,8 +78,62 @@ namespace DuckRoulette.Tests.Unit
             // Coin.Value files already in players' Steam Cloud use exactly this shape; renaming the
             // field would silently reset everyone to the default.
             _coin.amount = 42;
-            Assert.That(JsonUtility.ToJson(new CoinData(_coin)), Is.EqualTo("{\"coinAmount\":42}"));
+            StringAssert.StartsWith("{\"coinAmount\":42", JsonUtility.ToJson(new CoinData(_coin)));
             Assert.That(JsonUtility.FromJson<CoinData>("{\"coinAmount\":1337}").coinAmount, Is.EqualTo(1337));
+        }
+
+        [Test]
+        public void Verify_AcceptsCorrectlySignedSave()
+        {
+            var data = new CoinData(_coin) { coinAmount = 250, steamId = 76561198000000001UL };
+            data.signature = SaveSystem.Sign(250, data.steamId);
+            Assert.That(SaveSystem.Verify(data, data.steamId), Is.True);
+            Assert.That(data.coinAmount, Is.EqualTo(250));
+        }
+
+        [Test]
+        public void Verify_RejectsEditedAmount()
+        {
+            var data = new CoinData(_coin) { coinAmount = 250, steamId = 76561198000000001UL };
+            data.signature = SaveSystem.Sign(250, data.steamId);
+            data.coinAmount = 999999;
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("integrity check"));
+            Assert.That(SaveSystem.Verify(data, data.steamId), Is.False);
+            Assert.That(data.coinAmount, Is.Zero);
+        }
+
+        [Test]
+        public void Verify_RejectsSaveFromAnotherAccount()
+        {
+            var data = new CoinData(_coin) { coinAmount = 250, steamId = 76561198000000001UL };
+            data.signature = SaveSystem.Sign(250, data.steamId);
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("integrity check"));
+            Assert.That(SaveSystem.Verify(data, 76561198000000002UL), Is.False);
+            Assert.That(data.coinAmount, Is.Zero);
+        }
+
+        [Test]
+        public void Verify_CapsOldUnsignedSave()
+        {
+            var data = JsonUtility.FromJson<CoinData>("{\"coinAmount\":50000}");
+            Assert.That(SaveSystem.Verify(data, 76561198000000001UL), Is.False);
+            Assert.That(data.coinAmount, Is.EqualTo(SaveSystem.LegacyMaxCoins));
+
+            var small = JsonUtility.FromJson<CoinData>("{\"coinAmount\":80}");
+            Assert.That(SaveSystem.Verify(small, 76561198000000001UL), Is.True);
+            Assert.That(small.coinAmount, Is.EqualTo(80));
+        }
+
+        [Test]
+        public void UpdateCoinAmount_RejectsOversizedChangeAndNeverGoesNegative()
+        {
+            _coin.amount = 10;
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Rejected coin change"));
+            _coin.UpdateCoinAmount(Coin.MaxSingleChange + 1);
+            Assert.That(_coin.amount, Is.EqualTo(10));
+
+            _coin.UpdateCoinAmount(-50);
+            Assert.That(_coin.amount, Is.Zero);
         }
 
         [Test]

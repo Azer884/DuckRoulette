@@ -97,6 +97,14 @@ public class Cosmetics : MonoBehaviour
     {
         string data = $"{hatIndex},{accessorieIndex},{shirtIndex}";
 
+        // Steam Cloud is per Steam account, so the outfit follows the account to any PC. Without
+        // Steam there is nowhere account-bound to put it.
+        if (!SteamClient.IsValid)
+        {
+            Debug.LogWarning("Steam isn't running; cosmetic choice not saved.");
+            return;
+        }
+
         // Use SteamRemoteStorage to save data to Steam Cloud
         bool success = SteamRemoteStorage.FileWrite(SaveFileName, System.Text.Encoding.UTF8.GetBytes(data));
         if (!success)
@@ -111,7 +119,7 @@ public class Cosmetics : MonoBehaviour
 
     private void LoadCosmeticIndexes()
     {
-        if (SteamRemoteStorage.FileExists(SaveFileName))
+        if (SteamClient.IsValid && SteamRemoteStorage.FileExists(SaveFileName))
         {
             byte[] fileData = SteamRemoteStorage.FileRead(SaveFileName);
             if (fileData != null)

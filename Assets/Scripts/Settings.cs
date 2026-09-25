@@ -92,15 +92,47 @@ public class Settings : MonoBehaviour
         friends.SetActive(false);
     }
 
+    /// <summary>Closes every open settings panel without restoring the menus it hid. For screen
+    /// changes that happen behind the player's back (accepting a Steam invite from the overlay
+    /// while Settings is open): the new screen is already correct, and restoring the old menus
+    /// would put them back on top of it.</summary>
+    public static void CloseAllForScreenChange()
+    {
+        foreach (Settings settings in FindObjectsByType<Settings>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            settings.CloseWithoutRestoring();
+        }
+    }
+
+    private void CloseWithoutRestoring()
+    {
+        if (settingsMenu == null || !settingsMenu.activeSelf)
+        {
+            return;
+        }
+
+        settingsMenu.SetActive(false);
+        isMenusActivated.Clear();
+
+        if (animator != null)
+        {
+            animator.Play(menus.Count > 0 && menus[0].activeSelf ? "SettingsAndOthers" : "ExiitToSettings");
+        }
+    }
+
     public void OnReturnClick()
     {
         settingsMenu.SetActive(false);
 
-        for (int i = 0; i < menus.Count; i++)
+        // Empty after CloseAllForScreenChange - nothing to restore then.
+        if (isMenusActivated.Count == menus.Count)
         {
-            menus[i].SetActive(isMenusActivated[i]);
+            for (int i = 0; i < menus.Count; i++)
+            {
+                menus[i].SetActive(isMenusActivated[i]);
+            }
+            friends.SetActive(isFriendsActive);
         }
-        friends.SetActive(isFriendsActive);
 
         // Check if menus list has enough elements before accessing index 3
         if (menus.Count > 3 && menus[3].activeSelf)

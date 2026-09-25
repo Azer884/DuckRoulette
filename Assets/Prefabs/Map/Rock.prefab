@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 9086181042048171558}
   - component: {fileID: 240965796073741467}
   - component: {fileID: 6850253318740075155}
-  - component: {fileID: 2828933388567132634}
   - component: {fileID: 7992167707416195227}
   m_Layer: 0
   m_Name: Rock
@@ -92,33 +91,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!54 &2828933388567132634
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616440189193386292}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!64 &7992167707416195227
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -140,4 +112,4 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
-  m_Mesh: {fileID: 8672550147502720921, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+  m_Mesh: {fileID: -561946047348813703, guid: 13ee00534ef55b440add704a3b367230, type: 3}

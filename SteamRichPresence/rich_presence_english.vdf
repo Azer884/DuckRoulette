@@ -1,0 +1,16 @@
+"lang"
+{
+	"Language"	"english"
+	"Tokens"
+	{
+		"#Status_MainMenu"		"In the main menu"
+		"#Status_Lobby"			"In a lobby (%members%/%max%)"
+		"#Status_LobbyPrivate"	"In a private lobby (%members%/%max%)"
+		"#Status_Loading"		"Loading into %map%"
+		"#Status_Playing"		"Playing on %map% - %alive% ducks left"
+		"#Status_Spectating"	"Spectating on %map% - %alive% ducks left"
+		"#Status_MatchOver"		"Match over on %map%"
+		"#Status_Tutorial"		"In the tutorial"
+		"#Status_Customizing"	"Customizing their duck"
+	}
+}

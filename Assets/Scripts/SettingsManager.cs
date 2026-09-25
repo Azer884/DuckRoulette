@@ -131,6 +131,8 @@ public class SettingsManager : MonoBehaviour
         SetSetting("Game", "ToggleCrouch", "false");
         SetSetting("Game", "ToggleSprint", "false");
         SetSetting("Game", "ShowTaskList", "true");
+        SetSetting("Game", "ShowFps", "false");
+        SetSetting("Game", "ShowPing", "false");
 
         SetSetting("Accessibility", "ReduceMotion", "false");
         SetSetting("Accessibility", "FlashingEffects", "true");
@@ -281,6 +283,8 @@ public class SettingsManager : MonoBehaviour
         {
             case "Audio":
                 ApplyAudioSettings();
+                // Voice chat mode lives here and is read through GameplaySettings' cache.
+                GameplaySettings.Invalidate();
                 break;
             case "Graphics":
                 ApplyGraphicsSettings();

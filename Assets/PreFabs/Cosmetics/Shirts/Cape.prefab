@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 8350618147681333431}
   - component: {fileID: 8876592805696469071}
   - component: {fileID: 4545758024486249865}
+  - component: {fileID: 3919448528032380813}
+  - component: {fileID: 6651454444198656170}
   m_Layer: 2
   m_Name: Cape
   m_TagString: Untagged
@@ -562,20 +564,8 @@ Cloth:
     collisionSphereDistance: 3.4028235e+38
   - maxDistance: 3.4028235e+38
     collisionSphereDistance: 3.4028235e+38
-  m_CapsuleColliders:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  m_SphereColliders:
-  - first: {fileID: 0}
-    second: {fileID: 0}
+  m_CapsuleColliders: []
+  m_SphereColliders: []
   m_SelfCollisionDistance: 0
   m_SelfCollisionStiffness: 0.2
   m_SelfAndInterCollisionIndices: 
@@ -584,3 +574,43 @@ Cloth:
   - {x: 0.6666667, y: 0.16666667, z: 0.16666667}
   - {x: 0.5, y: 0.5, z: 0}
   m_VirtualParticleIndices: 
+--- !u!114 &3919448528032380813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5694610207221917096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d4dad86669788d43b6b230954cc7679, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Weather.CapeCloth
+  bodyColliderNames:
+  - LowerSpin
+  - Spin
+  - Upper_Arm_L
+  - Upper_Arm_R
+  - UpperLeg_L
+  - UpperLeg_R
+  headColliderName: Head
+  bodyLayers:
+  - Player
+  - Shadow
+--- !u!114 &6651454444198656170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5694610207221917096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20887d8e9f494fc2a99198d96f2b955f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Weather.ClothWindReceiver
+  windScale: 0.9
+  maxRandomAcceleration: 4
+  responseSeconds: 0.35
+  simulationDistance: 30
+  distanceCheckInterval: 0.5

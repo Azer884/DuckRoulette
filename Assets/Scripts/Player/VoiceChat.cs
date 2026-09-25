@@ -201,6 +201,19 @@ public class VoiceChat : NetworkBehaviour
     {
         if (!IsOwner) return;
 
+        // The Voice Chat Mode dropdown in Settings used to save its value without anything ever
+        // reading it, so every player was stuck on the prefab's push-to-talk default. Follow the
+        // saved setting (cached, cheap to read every frame) so a change applies immediately.
+        GameplaySettings.VoiceMode mode = GameplaySettings.VoiceChatMode;
+        pushToTalk = mode == GameplaySettings.VoiceMode.PushToTalk;
+        toggleToTalk = mode == GameplaySettings.VoiceMode.ToggleToTalk;
+        openMic = mode == GameplaySettings.VoiceMode.OpenMic;
+        if (!toggleToTalk)
+        {
+            // Leaving toggle mode drops a latched "talking" state, so switching back starts muted.
+            toggleActive = false;
+        }
+
         if (talkAction.triggered)
         {
             toggleActive = !toggleActive; // Toggle the state on key press

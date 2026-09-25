@@ -54,6 +54,15 @@ public class SteamFriendsManager : MonoBehaviour
 
     // Steam's lobby callbacks can arrive before GameNetworkManager has stored the lobby in
     // LobbySaver (both listen to the same events), so a cheap once-a-second recheck backs them up.
+    // The panel is hidden and shown a lot; don't show stale "In party" labels for up to a second.
+    private void OnEnable()
+    {
+        if (allFriends.Count > 0)
+        {
+            RefreshPartyMembership();
+        }
+    }
+
     private void Update()
     {
         partyRefreshTimer += Time.unscaledDeltaTime;

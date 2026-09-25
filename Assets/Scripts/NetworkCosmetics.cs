@@ -91,7 +91,7 @@ public class NetworkCosmetics : NetworkBehaviour
 
     private void LoadCosmeticIndexes()
     {
-        if (SteamRemoteStorage.FileExists(SaveFileName))
+        if (SteamClient.IsValid && SteamRemoteStorage.FileExists(SaveFileName))
         {
             byte[] fileData = SteamRemoteStorage.FileRead(SaveFileName);
             if (fileData != null)

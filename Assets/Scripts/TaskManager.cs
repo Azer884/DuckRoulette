@@ -561,14 +561,7 @@ public class TaskManager : NetworkBehaviour
         RemoveEntriesFor(clientId);
         DissolveUndersizedGroups();
 
-        // Down to the last two: tasks stop applying entirely, so drop whatever is still open
-        // rather than leave a stale task nobody can act on for the rest of the match.
-        GameManager game = GameManager.Instance;
-        if (game != null && game.AlivePlayersCount() <= 2)
-        {
-            assignedTasks.Clear();
-            idle.Clear();
-        }
+        // Dropping every task once two or fewer are alive happens in Update, every frame.
     }
 
     private void DissolveUndersizedGroups()
