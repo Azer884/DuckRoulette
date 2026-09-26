@@ -321,7 +321,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicManager
   audioMixer: {fileID: 24100000, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
-  fadeDuration: 7.5
+  fadeDuration: 5
   musicClips:
   - {fileID: 8300000, guid: e75fcf201bb09f84aa441d07e0482da9, type: 3}
   - {fileID: 8300000, guid: 523d42d22f5db3c43bbbfba2259f35e1, type: 3}
@@ -331,6 +331,12 @@ MonoBehaviour:
   minDistance: 4
   maxDistance: 45
   trackCrossfadeSeconds: 1
+  wallLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  muffledCutoff: 448
+  muffledVolume: 0.5
+  muffleBlendSeconds: 0.25
 --- !u!4 &119620256
 Transform:
   m_ObjectHideFlags: 0

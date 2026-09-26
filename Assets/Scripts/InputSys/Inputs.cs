@@ -262,6 +262,24 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PullGun"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000032"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""StowGun"",
+                    ""type"": ""Button"",
+                    ""id"": ""1a2b3c4d-0001-4000-8000-000000000033"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -454,12 +472,34 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""a6779262-0b1b-4475-9224-c54d957d7937"",
-                    ""path"": ""<Mouse>/scroll/up"",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000033"",
+                    ""path"": ""<Keyboard>/f"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
                     ""action"": ""Change Weapon"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000034"",
+                    ""path"": ""<Mouse>/scroll/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""PullGun"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1a2b3c4d-0002-4000-8000-000000000035"",
+                    ""path"": ""<Mouse>/scroll/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""StowGun"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -554,7 +594,7 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""1a2b3c4d-0002-4000-8000-000000000001"",
-                    ""path"": ""<Keyboard>/f"",
+                    ""path"": ""<Keyboard>/m"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
@@ -1086,6 +1126,8 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         m_PlayerControls_Blackjack = m_PlayerControls.FindAction("Blackjack", throwIfNotFound: true);
         m_PlayerControls_LeaveBlackjack = m_PlayerControls.FindAction("LeaveBlackjack", throwIfNotFound: true);
         m_PlayerControls_ChangeMusic = m_PlayerControls.FindAction("ChangeMusic", throwIfNotFound: true);
+        m_PlayerControls_PullGun = m_PlayerControls.FindAction("PullGun", throwIfNotFound: true);
+        m_PlayerControls_StowGun = m_PlayerControls.FindAction("StowGun", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Pause = m_UI.FindAction("Pause", throwIfNotFound: true);
@@ -1199,6 +1241,8 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_PlayerControls_Blackjack;
     private readonly InputAction m_PlayerControls_LeaveBlackjack;
     private readonly InputAction m_PlayerControls_ChangeMusic;
+    private readonly InputAction m_PlayerControls_PullGun;
+    private readonly InputAction m_PlayerControls_StowGun;
     /// <summary>
     /// Provides access to input actions defined in input action map "PlayerControls".
     /// </summary>
@@ -1287,6 +1331,14 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @ChangeMusic => m_Wrapper.m_PlayerControls_ChangeMusic;
         /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/PullGun".
+        /// </summary>
+        public InputAction @PullGun => m_Wrapper.m_PlayerControls_PullGun;
+        /// <summary>
+        /// Provides access to the underlying input action "PlayerControls/StowGun".
+        /// </summary>
+        public InputAction @StowGun => m_Wrapper.m_PlayerControls_StowGun;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_PlayerControls; }
@@ -1369,6 +1421,12 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @ChangeMusic.started += instance.OnChangeMusic;
             @ChangeMusic.performed += instance.OnChangeMusic;
             @ChangeMusic.canceled += instance.OnChangeMusic;
+            @PullGun.started += instance.OnPullGun;
+            @PullGun.performed += instance.OnPullGun;
+            @PullGun.canceled += instance.OnPullGun;
+            @StowGun.started += instance.OnStowGun;
+            @StowGun.performed += instance.OnStowGun;
+            @StowGun.canceled += instance.OnStowGun;
         }
 
         /// <summary>
@@ -1437,6 +1495,12 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
             @ChangeMusic.started -= instance.OnChangeMusic;
             @ChangeMusic.performed -= instance.OnChangeMusic;
             @ChangeMusic.canceled -= instance.OnChangeMusic;
+            @PullGun.started -= instance.OnPullGun;
+            @PullGun.performed -= instance.OnPullGun;
+            @PullGun.canceled -= instance.OnPullGun;
+            @StowGun.started -= instance.OnStowGun;
+            @StowGun.performed -= instance.OnStowGun;
+            @StowGun.canceled -= instance.OnStowGun;
         }
 
         /// <summary>
@@ -1842,6 +1906,20 @@ public partial class @Inputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnChangeMusic(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "PullGun" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPullGun(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "StowGun" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnStowGun(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

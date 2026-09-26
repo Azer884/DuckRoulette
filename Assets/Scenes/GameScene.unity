@@ -8074,6 +8074,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1213150244231153206, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
+      propertyPath: m_Padding.m_Bottom
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 2121321496395751923, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -8373,6 +8377,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2357253814139729646, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4293522417
+      objectReference: {fileID: 0}
+    - target: {fileID: 2357253814139729646, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 2571741702933111436, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
@@ -8461,7 +8473,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: GunHolderAlertHUD
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 7212954171200155836, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278619903
+      objectReference: {fileID: 0}
+    - target: {fileID: 7212954171200155836, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 4139770376546534985, guid: 9e6f90e44af61b046aa0ac4a606c165b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

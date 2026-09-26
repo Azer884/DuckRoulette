@@ -3,17 +3,23 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // Runs even while Shooting is disabled (that's the whole point): keeps the assigned player's
-// gun hidden until they explicitly draw it with the Change Weapon input, and forces it back
-// down the instant their turn ends - mirrors TutorialManager's offline HandleWeaponSwitching.
+// gun hidden until they explicitly draw it (Change Weapon toggle, or scroll up/down to pull/
+// stow explicitly), and forces it back down the instant their turn ends - mirrors
+// TutorialManager's offline HandleWeaponSwitching.
 public class HideGun : MonoBehaviour
 {
     [SerializeField] private Shooting gunScript;
     private InputAction changeWeaponAction;
+    private InputAction pullGunAction;
+    private InputAction stowGunAction;
     private NetworkObject networkObject;
 
     private void Awake()
     {
-        changeWeaponAction = GetComponent<InputSystem>().inputActions.FindAction("Change Weapon");
+        InputActionAsset inputActions = GetComponent<InputSystem>().inputActions;
+        changeWeaponAction = inputActions.FindAction("Change Weapon");
+        pullGunAction = inputActions.FindAction("PullGun");
+        stowGunAction = inputActions.FindAction("StowGun");
         networkObject = GetComponent<NetworkObject>();
     }
 
@@ -44,6 +50,14 @@ public class HideGun : MonoBehaviour
         if (changeWeaponAction.triggered)
         {
             gunScript.enabled = !gunScript.enabled;
+        }
+        else if (pullGunAction.triggered)
+        {
+            gunScript.enabled = true;
+        }
+        else if (stowGunAction.triggered)
+        {
+            gunScript.enabled = false;
         }
     }
 }

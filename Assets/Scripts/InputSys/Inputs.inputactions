@@ -175,6 +175,24 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "PullGun",
+                    "type": "Button",
+                    "id": "1a2b3c4d-0001-4000-8000-000000000032",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "StowGun",
+                    "type": "Button",
+                    "id": "1a2b3c4d-0001-4000-8000-000000000033",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -367,12 +385,34 @@
                 },
                 {
                     "name": "",
-                    "id": "a6779262-0b1b-4475-9224-c54d957d7937",
-                    "path": "<Mouse>/scroll/up",
+                    "id": "1a2b3c4d-0002-4000-8000-000000000033",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard",
                     "action": "Change Weapon",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1a2b3c4d-0002-4000-8000-000000000034",
+                    "path": "<Mouse>/scroll/up",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "PullGun",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1a2b3c4d-0002-4000-8000-000000000035",
+                    "path": "<Mouse>/scroll/down",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "StowGun",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -467,7 +507,7 @@
                 {
                     "name": "",
                     "id": "1a2b3c4d-0002-4000-8000-000000000001",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/m",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard",
