@@ -50,6 +50,9 @@ public class Shooting : NetworkBehaviour
     [SerializeField] private int _localPinnedBulletPosition = 1;
 
     public bool HasGun => IsLocalMode ? _localHaveGun : haveGun.Value;
+    // Public for GunUI - "1/6" (loaded) vs "0/6" (needs a reload) and the reload wheel's
+    // full/empty chamber swap all key off the same reloaded flag Reload()/ExecuteShot() use.
+    public bool IsReloaded => IsReloadedNow;
     private bool IsReloadedNow => IsLocalMode ? _localIsReloaded : GameManager.Instance.isReloaded.Value;
     private bool ShootingAllowedNow => IsLocalMode || GameManager.Instance.canShoot.Value;
 
@@ -146,9 +149,9 @@ public class Shooting : NetworkBehaviour
         // the next gun phase would be permanently unable to trigger.
         isTriggered = false;
 
-        // While sliding, defer the hand-pose switch instead of cutting the slide short - it gets
-        // applied by Movement.EndSliding once the player actually gets back up.
-        if (movement == null || !movement.IsSliding)
+        // While sliding (or while the hands are still hidden waiting for the camera to settle),
+        // defer the hand-pose switch - Movement applies it once the hands are shown again.
+        if (movement == null || !movement.DefersHandsPose)
         {
             HandsState(true);
         }

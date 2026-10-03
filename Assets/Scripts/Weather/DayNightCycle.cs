@@ -355,7 +355,15 @@ namespace Weather
             // Fixed angle, not anti-solar - see the tooltip on moonLightElevation for why.
             Quaternion moonRotation = Quaternion.Euler(moonLightElevation, moonLightYaw, 0f);
 
-            Quaternion rotation = Quaternion.Slerp(sunRotation, moonRotation, moonShare);
+            // Blend the light DIRECTIONS, not the rotations. The sun (yaw sunYaw) and the moon (yaw
+            // sunYaw + 180) differ by a half turn, so their quaternions are exactly orthogonal and
+            // their dot product is +/-0 depending on float noise. Quaternion.Slerp picks its path
+            // from that sign, so mid-dusk it flipped between two opposite arcs from frame to frame
+            // and the shadows jumped between two directions. Slerping the forward vectors has a
+            // single shortest arc, and re-applying it to the sun rotation keeps the roll stable.
+            Vector3 sunForward = sunRotation * Vector3.forward;
+            Vector3 blendedForward = Vector3.Slerp(sunForward, moonRotation * Vector3.forward, moonShare);
+            Quaternion rotation = Quaternion.FromToRotation(sunForward, blendedForward) * sunRotation;
 
             // Hold the light a little above the horizon. Only the pitch is changed, so it still
             // comes from the side of the sky the sun is setting on.

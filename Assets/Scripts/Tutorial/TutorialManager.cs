@@ -31,7 +31,6 @@ public partial class TutorialManager : MonoBehaviour
 
     [Header("Shared Rig Wiring (injected into Movement/Shooting/Interact)"), Space]
     [SerializeField] private Transform camHolder;
-    [SerializeField] private float movementSpeed = 2.0f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float crouchHeight;
     [SerializeField] private Animator[] animators;
@@ -123,7 +122,6 @@ public partial class TutorialManager : MonoBehaviour
         if (shootingComp == null) shootingComp = gameObject.AddComponent<Shooting>();
 
         movementComp.camHolder = camHolder;
-        movementComp.movementSpeed = movementSpeed;
         movementComp.jumpHeight = jumpHeight;
         movementComp.crouchHeight = crouchHeight;
         movementComp.animators = animators;

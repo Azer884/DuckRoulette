@@ -2,6 +2,7 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using Weather;
 
 // Player-facing feedback for RoundManager's per-round shot clock (previously a
 // NetworkVariable<float> with no UI reading it at all - the gun holder got force-shot with
@@ -25,6 +26,15 @@ public class ShotClockUI : MonoBehaviour
     [SerializeField] private Color yourTurnColor = new(1f, 0.75f, 0.15f, 1f);
     [SerializeField] private Color urgentColor = new(1f, 0.25f, 0.2f, 1f);
     [SerializeField] private float urgentThreshold = 5f;
+
+    [Header("Rotation")]
+    [SerializeField, Tooltip("Degrees the fill sweeps from full (0) to empty - a half turn, not a full one.")]
+    private float fullSweepDegrees = 180f;
+
+    [Header("Background day/night")]
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Color dayBackgroundColor = Color.black;
+    [SerializeField] private Color nightBackgroundColor = Color.white;
 
     private int _lastTickSecond = -1;
 
@@ -89,8 +99,35 @@ public class ShotClockUI : MonoBehaviour
         float duration = Mathf.Max(0.01f, RoundManager.Instance.RoundDuration);
         float ratio = Mathf.Clamp01(remaining / duration);
 
-        fillImage.fillAmount = ratio;
-        timerText.text = Mathf.CeilToInt(remaining).ToString();
+        // Rotates CCW as the round runs out instead of draining a fill wedge - full at 0deg,
+        // empty at -fullSweepDegrees.
+        float angle = Mathf.Lerp(0f, fullSweepDegrees, 1f - ratio);
+        fillImage.rectTransform.localEulerAngles = new Vector3(0f, 0f, -angle);
+
+        // Numbers only ever belong on this, the always-on bar - the moment a second bar (hiding
+        // spot or storm) joins it, this one goes back to being a plain bar too.
+        bool secondBarShowing = HidingSpotTimerUI.Instance != null && HidingSpotTimerUI.Instance.IsShowing;
+        bool stormBarShowing = WeatherSystem.Instance != null && WeatherSystem.Instance.Phase == WeatherPhase.Storm;
+        bool hideNumber = secondBarShowing || stormBarShowing;
+
+        if (timerText.gameObject.activeSelf == hideNumber)
+        {
+            timerText.gameObject.SetActive(!hideNumber);
+        }
+        if (!hideNumber)
+        {
+            timerText.text = Mathf.CeilToInt(remaining).ToString();
+        }
+
+        if (backgroundImage != null)
+        {
+            bool isNight = WeatherSystem.Instance != null && WeatherSystem.Instance.IsNight;
+            bool badWeather = WeatherSystem.Instance != null && WeatherSystem.Instance.Phase != WeatherPhase.Clear;
+            float whiteLerp = isNight || badWeather ? 1f : 0f;
+            Color bgColor = Color.Lerp(dayBackgroundColor, nightBackgroundColor, whiteLerp);
+            bgColor.a = backgroundImage.color.a;
+            backgroundImage.color = bgColor;
+        }
 
         ulong gunHolder = GameManager.Instance.playerWithGun.Value;
         bool isMyTurn = gunHolder == NetworkManager.Singleton.LocalClientId;

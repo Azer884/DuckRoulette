@@ -33,11 +33,23 @@ public class HidingSpot : NetworkBehaviour, IInteractable
 
     public string causeOfLeaving;
     public float hideDuration = 10f;
+    [Tooltip("Tint HidingSpotTimerUI's bar while this spot is occupied, so a log and a pipe " +
+        "door don't have to share one colour.")]
+    public Color barColor = new(0.251f, 0.812f, 0f, 1f);
 
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = false;
     public string InteractionPrompt => "Hide";
     public int holderId = -1;
+
+    /// <summary>The hiding spot the local client is currently inside, or null. Read by
+    /// HidingSpotTimerUI - this is the only hiding spot whose countdown the local player's own
+    /// HUD ever needs, so it's simpler than a lookup by holderId through NetworkManager.</summary>
+    public static HidingSpot LocalActive { get; private set; }
+
+    /// <summary>Seconds left on this spot's hide timer. Only meaningful while this is
+    /// <see cref="LocalActive"/>.</summary>
+    public float RemainingHideTime { get; private set; }
 
     // Every live hiding spot, so the server can ask "is this player hidden?" without a scene
     // search - TaskManager counts a hidden player as standing still.
@@ -316,6 +328,11 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         lookAction = null;
         lookPivot = null;
 
+        if (LocalActive == this)
+        {
+            LocalActive = null;
+        }
+
         if (hidingCamera != null) hidingCamera.gameObject.SetActive(false);
 
         NetworkObject localPlayer = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
@@ -367,18 +384,15 @@ public class HidingSpot : NetworkBehaviour, IInteractable
             return;
         }
 
-        Vector2 look = lookAction.ReadValue<Vector2>();
-        float sensitivityX = 1f;
-        float sensitivityY = 1f;
-
-        if (SettingsManager.Instance != null)
+        // Same mouse/gamepad conversion and sensitivity settings as the normal player camera.
+        Vector2 look = LookInput.ReadDegrees(lookAction);
+        if (GameplaySettings.InvertLookY)
         {
-            sensitivityX = SettingsManager.Instance.MouseSensitivityX;
-            sensitivityY = SettingsManager.Instance.MouseSensitivityY;
+            look.y = -look.y;
         }
 
-        yaw = Mathf.Clamp(yaw + look.x * sensitivityX * Time.deltaTime, minYaw, maxYaw);
-        pitch = Mathf.Clamp(pitch - look.y * sensitivityY * Time.deltaTime, minPitch, maxPitch);
+        yaw = Mathf.Clamp(yaw + look.x, minYaw, maxYaw);
+        pitch = Mathf.Clamp(pitch - look.y, minPitch, maxPitch);
 
         // World-space, not local: lookPivotRestRotation is already levelled against world up
         // (see EnterLocalHidingView), so applying pitch/yaw here keeps the camera level
@@ -437,12 +451,25 @@ public class HidingSpot : NetworkBehaviour, IInteractable
 
     private void StartCountDown()
     {
+        LocalActive = this;
+        RemainingHideTime = hideDuration;
         StartCoroutine(CountDown());
     }
 
     private IEnumerator CountDown()
     {
-        yield return new WaitForSeconds(hideDuration);
+        float elapsed = 0f;
+        while (elapsed < hideDuration)
+        {
+            elapsed += Time.deltaTime;
+            RemainingHideTime = Mathf.Max(0f, hideDuration - elapsed);
+            yield return null;
+        }
+
+        if (LocalActive == this)
+        {
+            LocalActive = null;
+        }
 
         Drop();
     }

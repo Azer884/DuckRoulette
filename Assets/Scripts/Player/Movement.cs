@@ -16,7 +16,6 @@ public class Movement : NetworkBehaviour
     public Transform camHolder;
     [SerializeField] private GameObject secondCamHolder;
     [SerializeField] private GameObject cam;
-    public float movementSpeed = 2.0f;
     public Rig spinRig;
     private float xRotation = 0f;
 
@@ -93,17 +92,17 @@ public class Movement : NetworkBehaviour
     private CameraShaker cameraShaker;
 
     
+    // Walk speed, sprint, ice and slide numbers live in PlayerMovementTuning (one asset shared by
+    // the networked player and the tutorial) rather than per-instance fields here.
+    private static PlayerMovementTuning Tuning => PlayerMovementTuning.Active;
+    public float MovementSpeed => Tuning.walkSpeed;
+
     private bool isOnIce = false; // Check if the player is on ice
     private bool isSliding = false;
     private float slideStartTime = 0f;
     private float slideEndTime = 0f; // When momentum depletes
-    private float slidePunishmentDuration = 0.6f; // Extra punishment time after momentum depletes
     private Vector3 slideDirection = Vector3.zero;
-    
-    [SerializeField] private float iceFriction = 0.98f; // Ice friction (less than 1 for sliding)
-    [SerializeField] private float slidingSpeedMultiplier = 7f; // Speed boost during tobogganing
-    [SerializeField] private float slidingFriction = 0.95f; // Friction for sliding deceleration
-    [SerializeField] private float slidingStopThreshold = 0.1f; // Minimum velocity to stop sliding
+
     [SerializeField] private float slidingHeight = 0.5f;
     public GameObject slidingCam;
     public Rig rig;
@@ -156,11 +155,24 @@ public class Movement : NetworkBehaviour
     public bool IsSliding => isSliding;
     public bool IsRunning => isRunning;
 
-    // Degrees per second a fully deflected stick turns the player at controller sensitivity 1.
-    // See DoLooking for why gamepad look needs this and mouse look does not.
-    [SerializeField] private float gamepadLookDegreesPerSecond = 180f;
+    // Turn rate, in degrees per second, that drives the "Turning" animator parameter to full.
+    private const float TurningAnimFullDegreesPerSecond = 20f;
 
     float mouseXSmooth = 0f;
+
+    // Owner-only: the first-person legs/hands stay hidden while the camera is still blending back to
+    // the player's eye (getting up from a slide, leaving a hiding spot), so the blend never shows
+    // the camera passing through the player's own body.
+    private bool bodyRevealPending;
+    private int bodyRevealRequestFrame;
+    private float bodyRevealDeadline;
+    private CinemachineCamera firstPersonVcam;
+    private CinemachineCamera slidingVcam;
+    private CinemachineCore.GetBlendOverrideDelegate previousBlendOverride;
+    private bool blendOverrideRegistered;
+
+    // Shooting defers its gun hand pose while this is true; it gets applied once the hands are back.
+    public bool DefersHandsPose => isSliding || bodyRevealPending;
 
     public override void OnNetworkSpawn()
     {
@@ -202,6 +214,14 @@ public class Movement : NetworkBehaviour
         isSliding = false;
         isOnIce = false;
         slideStartTime = 0f;
+
+        // A reset mid-wait must not leave the legs/hands switched off for good.
+        if (bodyRevealPending)
+        {
+            bodyRevealPending = false;
+            if (legs != null) legs.SetActive(true);
+            if (Hands != null) Hands.SetActive(true);
+        }
         slideEndTime = 0f;
         slideDirection = Vector3.zero;
 
@@ -243,6 +263,7 @@ public class Movement : NetworkBehaviour
     public override void OnDestroy()
     {
         GameplaySettings.Changed -= ApplyFieldOfViewSetting;
+        UnregisterSlideExitBlend();
         base.OnDestroy();
     }
 
@@ -301,6 +322,10 @@ public class Movement : NetworkBehaviour
         ApplyFieldOfViewSetting();
         GameplaySettings.Changed += ApplyFieldOfViewSetting;
 
+        // Start only runs on the owner/offline player (remote copies are disabled in
+        // OnNetworkSpawn first), and only that player's camera ever blends out of its slide cam.
+        RegisterSlideExitBlend();
+
         lastPosition = transform.position;
 
         // Offline (tutorial) mode never receives OnNetworkSpawn - apply the owner-side
@@ -318,6 +343,7 @@ public class Movement : NetworkBehaviour
         DoLooking();
         UpdateCameraOffset();
         UpdateFov();
+        UpdateBodyReveal();
         UpdateRunVfx(isRunning);
         Vector3 currentPos = transform.position;
         Vector3 deltaPosition = currentPos - lastPosition;
@@ -393,36 +419,10 @@ public class Movement : NetworkBehaviour
 
     private void DoLooking()
     {
-        Vector2 looking = GetPlayerLook();
-        bool isGamepadLook = IsGamepadLookInput();
-
-        float sensitivityX = 1f;
-        float sensitivityY = 1f;
-
-        if (SettingsManager.Instance != null)
-        {
-            if (isGamepadLook)
-            {
-                sensitivityX = SettingsManager.Instance.ControllerSensitivityX;
-                sensitivityY = SettingsManager.Instance.ControllerSensitivityY;
-            }
-            else
-            {
-                sensitivityX = SettingsManager.Instance.MouseSensitivityX;
-                sensitivityY = SettingsManager.Instance.MouseSensitivityY;
-            }
-        }
-
-        // A gamepad stick reports a normalised [-1, 1] value; the mouse reports a per-frame pixel
-        // delta, which is tens of units. Feeding both through the same multiplier meant a stick held
-        // at full tilt turned the player about one degree per SECOND at sensitivity 1 - the whole
-        // reason controller look felt unusably slow even with the setting maxed. Gamepad look is
-        // scaled into degrees per second here so sensitivity 1 is a normal turn rate; the mouse path
-        // is left exactly as it was so existing mouse sensitivity settings still feel the same.
-        float deviceScale = isGamepadLook ? gamepadLookDegreesPerSecond : 1f;
-
-        float lookX = looking.x * sensitivityX * deviceScale * Time.deltaTime;
-        float lookY = looking.y * sensitivityY * deviceScale * Time.deltaTime;
+        // Mouse and stick are converted to degrees differently - see LookInput.
+        Vector2 lookDegrees = LookInput.ReadDegrees(lookAction);
+        float lookX = lookDegrees.x;
+        float lookY = lookDegrees.y;
 
         if (GameplaySettings.InvertLookY)
         {
@@ -435,14 +435,10 @@ public class Movement : NetworkBehaviour
         camHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         transform.Rotate(Vector3.up * lookX);
 
-        mouseXSmooth = Mathf.Lerp(mouseXSmooth, looking.x / 20, 4 * Time.deltaTime);
+        // Driven by the actual turn rate so mouse and stick animate alike at any framerate.
+        float turnRate = Time.deltaTime > 0f ? lookX / Time.deltaTime : 0f;
+        mouseXSmooth = Mathf.Lerp(mouseXSmooth, turnRate / TurningAnimFullDegreesPerSecond, 4 * Time.deltaTime);
         mouseXSmooth = Mathf.Clamp(mouseXSmooth, -1, 1);
-    }
-
-    private bool IsGamepadLookInput()
-    {
-        var activeControl = lookAction != null ? lookAction.activeControl : null;
-        return activeControl != null && activeControl.device is Gamepad;
     }
 
 
@@ -505,7 +501,7 @@ public class Movement : NetworkBehaviour
         }
 
         isRunning = sprintHeld && movement.y > 0 && !isCrouched;
-        speedMultiplier = isRunning ? 2.0f : 1.0f;
+        speedMultiplier = isRunning ? Tuning.sprintMultiplier : 1.0f;
         targetFov = isRunning ? runFov : walkFov;
 
         if (isSliding)
@@ -516,18 +512,20 @@ public class Movement : NetworkBehaviour
         {
             Vector3 move = transform.right * movement.x + transform.forward * movement.y;
             float parryBoost = Time.time <= parrySpeedBoostEndTime ? groundParrySpeedBoostMultiplier : 1f;
+            float speed = Tuning.walkSpeed * speedMultiplier * parryBoost;
 
             if (isOnIce)
             {
                 // Ice sliding with movement control
-                velocity.x = Mathf.Lerp(velocity.x, move.x * movementSpeed * speedMultiplier * parryBoost * 1.2f, Time.deltaTime * iceFriction);
-                velocity.z = Mathf.Lerp(velocity.z, move.z * movementSpeed * speedMultiplier * parryBoost * 1.2f, Time.deltaTime * iceFriction);
+                float iceSpeed = speed * Tuning.iceSpeedMultiplier;
+                velocity.x = Mathf.Lerp(velocity.x, move.x * iceSpeed, Time.deltaTime * Tuning.iceFriction);
+                velocity.z = Mathf.Lerp(velocity.z, move.z * iceSpeed, Time.deltaTime * Tuning.iceFriction);
             }
             else
             {
                 // Regular movement
-                velocity.x = movementSpeed * speedMultiplier * parryBoost * move.x;
-                velocity.z = movementSpeed * speedMultiplier * parryBoost * move.z;
+                velocity.x = speed * move.x;
+                velocity.z = speed * move.z;
             }
         }
 
@@ -683,29 +681,25 @@ public class Movement : NetworkBehaviour
 
     private void HandleSliding()
     {
+        PlayerMovementTuning tuning = Tuning;
         float slideElapsed = Time.time - slideStartTime;
-        
-        // Check if slide momentum is depleted (below threshold)
+
+        // Momentum is spent once the slide slows below the stop speed, or hits its time cap.
         float momentumMagnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;
-        if (momentumMagnitude < slidingStopThreshold && slideEndTime == 0f)
+        if (slideEndTime == 0f && (momentumMagnitude < tuning.slideStopSpeed || slideElapsed >= tuning.slideMaxDuration))
         {
-            slideEndTime = Time.time; // Mark when momentum ended
+            slideEndTime = Time.time;
         }
-        
-        // Calculate total lock duration: (momentum duration) + punishment
-        float momentumDuration = slideEndTime > 0f ? slideEndTime - slideStartTime : slideElapsed;
-        float totalLockDuration = momentumDuration + slidePunishmentDuration;
-        
-        // End slide when total duration is reached
-        if (slideElapsed >= totalLockDuration)
+
+        // Then a short recovery before normal movement comes back.
+        if (slideEndTime > 0f && Time.time - slideEndTime >= tuning.slideRecoveryDuration)
         {
             EndSliding();
             return;
         }
-        
+
         // Decay the slide direction smoothly until it reaches near-zero
-        float decayRate = 1.5f; // Slower decay so the slide travels farther
-        slideDirection = Vector3.Lerp(slideDirection, Vector3.zero, Time.deltaTime * decayRate);
+        slideDirection = Vector3.Lerp(slideDirection, Vector3.zero, Time.deltaTime * tuning.slideDecayRate);
         
         velocity.x = slideDirection.x;
         velocity.z = slideDirection.z;
@@ -727,11 +721,11 @@ public class Movement : NetworkBehaviour
         float horizontalSpeed = new Vector3(velocity.x, 0, velocity.z).magnitude;
         if (horizontalSpeed > 0.1f)
         {
-            slideDirection = new Vector3(velocity.x, 0, velocity.z).normalized * horizontalSpeed * 2.5f;
+            slideDirection = new Vector3(velocity.x, 0, velocity.z).normalized * horizontalSpeed * Tuning.slideSpeedMultiplier;
         }
         else
         {
-            slideDirection = transform.forward * 3.5f;
+            slideDirection = transform.forward * Tuning.slideStandingSpeed;
         }
         
         // Give slight upward velocity for jump effect
@@ -752,19 +746,125 @@ public class Movement : NetworkBehaviour
         isSliding = false;
 
         rig.weight = Mathf.Lerp(rig.weight, 1, Time.deltaTime * 5f);
-        legs.SetActive(true);
         FPShadow.SetActive(true);
-        Hands.SetActive(true);
         slidingCam.SetActive(false);
 
         spinRig.weight = 1f;
 
-        // The gun may have changed hands while sliding - that switch was deferred (see
-        // Shooting.OnEnable) so the slide could finish uninterrupted. Apply it now that we're up.
+        // The camera now blends from the slide cam (on the full body's head bone) back up to
+        // first person; legs and hands come back once it arrives. A gun hand-off deferred during
+        // the slide (see Shooting.OnEnable) is applied at that point too.
+        HideBodyUntilCameraSettles();
+    }
+
+    private void HideBodyUntilCameraSettles()
+    {
+        if (legs != null) legs.SetActive(false);
+        if (Hands != null) Hands.SetActive(false);
+
+        bodyRevealPending = true;
+        bodyRevealRequestFrame = Time.frameCount;
+        bodyRevealDeadline = Time.time + Tuning.bodyRevealTimeout;
+    }
+
+    private void UpdateBodyReveal()
+    {
+        // A new slide hides the body itself and asks again when it ends.
+        if (!bodyRevealPending || isSliding)
+        {
+            return;
+        }
+
+        if (Time.time < bodyRevealDeadline && !IsFirstPersonCameraSettled())
+        {
+            return;
+        }
+
+        bodyRevealPending = false;
+        if (legs != null) legs.SetActive(true);
+        if (Hands != null) Hands.SetActive(true);
+
         if (IsHoldingGun() && shootingComponent != null)
         {
             shootingComponent.ApplyGunHandsPose();
         }
+    }
+
+    private bool IsFirstPersonCameraSettled()
+    {
+        // The brain only picks up a camera switch in its own LateUpdate, so the frame that asked
+        // can't tell a blend that is about to start from one that already finished.
+        if (Time.frameCount <= bodyRevealRequestFrame)
+        {
+            return false;
+        }
+
+        CinemachineCamera firstPerson = ResolveVcam(camHolder != null ? camHolder.gameObject : null, ref firstPersonVcam);
+        if (firstPerson == null)
+        {
+            return true;
+        }
+
+        CinemachineBrain brain = CinemachineCore.FindPotentialTargetBrain(firstPerson);
+        return brain == null || (!brain.IsBlending && ReferenceEquals(brain.ActiveVirtualCamera, firstPerson));
+    }
+
+    // camHolder/slidingCam are injected at runtime in the tutorial, so resolve lazily.
+    private static CinemachineCamera ResolveVcam(GameObject holder, ref CinemachineCamera cached)
+    {
+        if (cached == null && holder != null)
+        {
+            cached = holder.GetComponent<CinemachineCamera>();
+        }
+
+        return cached;
+    }
+
+    // The scene's default blend is a slow ease, which reads fine for most cuts but leaves getting up
+    // from a slide feeling sluggish. Only blends out of this player's own slide cam are shortened.
+    private void RegisterSlideExitBlend()
+    {
+        if (blendOverrideRegistered)
+        {
+            return;
+        }
+
+        previousBlendOverride = CinemachineCore.GetBlendOverride;
+        CinemachineCore.GetBlendOverride = OverrideSlideExitBlend;
+        blendOverrideRegistered = true;
+    }
+
+    private void UnregisterSlideExitBlend()
+    {
+        if (!blendOverrideRegistered)
+        {
+            return;
+        }
+
+        if (CinemachineCore.GetBlendOverride == (CinemachineCore.GetBlendOverrideDelegate)OverrideSlideExitBlend)
+        {
+            CinemachineCore.GetBlendOverride = previousBlendOverride;
+        }
+
+        previousBlendOverride = null;
+        blendOverrideRegistered = false;
+    }
+
+    private CinemachineBlendDefinition OverrideSlideExitBlend(ICinemachineCamera fromVcam, ICinemachineCamera toVcam,
+        CinemachineBlendDefinition defaultBlend, Object owner)
+    {
+        if (previousBlendOverride != null)
+        {
+            defaultBlend = previousBlendOverride(fromVcam, toVcam, defaultBlend, owner);
+        }
+
+        CinemachineCamera slideVcam = ResolveVcam(slidingCam, ref slidingVcam);
+        if (slideVcam != null && ReferenceEquals(fromVcam, slideVcam))
+        {
+            return new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, Tuning.slideExitCameraBlendTime);
+        }
+
+        return defaultBlend;
     }
 
     private void UpdateRunVfx(bool isRunning)
@@ -1162,6 +1262,7 @@ public class Movement : NetworkBehaviour
     {
         if (!visible)
         {
+            bodyRevealPending = false;
             if (fullBody != null) fullBody.SetActive(false);
             if (thirdPersonCam != null) thirdPersonCam.SetActive(false);
             if (legs != null) legs.SetActive(false);
@@ -1179,7 +1280,17 @@ public class Movement : NetworkBehaviour
 
         // Owner vs. remote disagree on which cam/rig should end up active - let the existing
         // per-role setup decide instead of duplicating that logic here.
-        if (IsOwner) ApplyOwnerVisualState();
-        else ApplyRemoteVisualState();
+        if (IsOwner)
+        {
+            ApplyOwnerVisualState();
+
+            // Leaving a hiding spot: the camera is still blending back from the spot's own
+            // camera, so keep the first-person body out of view until it has arrived.
+            HideBodyUntilCameraSettles();
+        }
+        else
+        {
+            ApplyRemoteVisualState();
+        }
     }
 }

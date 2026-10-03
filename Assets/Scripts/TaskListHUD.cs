@@ -17,13 +17,23 @@ using UnityEngine.UI;
 // Movement is script-driven coroutines rather than an Animator, matching ParryFeedbackHUD and
 // SpectateHUD. The list is rebuilt wholesale from replicated state at arbitrary moments, so the
 // animation is keyed off what actually changed since the last refresh rather than off a clip.
+//
+// Panel entrance is staged in three beats rather than one fade: the "!" icon slides in from the
+// right first, then the background panel fades in behind it, then the row text fades in last - so
+// the eye is pulled to the exclamation mark before anything else even has a shape.
 public class TaskListHUD : MonoBehaviour
 {
     [SerializeField] private GameObject root;
+    [SerializeField, Tooltip("The '!' icon that leads the panel's entrance and flashes on a new " +
+        "task or an unfinished-task warning. Its RectTransform is what slides in from the right.")]
+    private Image warningIcon;
+    [SerializeField, Tooltip("The panel's background image, directly under root - faded in once " +
+        "the '!' icon has finished sliding in.")]
+    private Image panelBackground;
     [SerializeField, Tooltip("Parent the task rows are instantiated under. Put a VerticalLayoutGroup on it.")]
     private Transform rowContainer;
-    [SerializeField, Tooltip("Inactive row prefab/instance cloned per task. Needs a TextMeshProUGUI; " +
-        "an Image named for the icon is optional.")]
+    [SerializeField, Tooltip("Inactive row prefab/instance cloned per task. Needs an Icon Image, " +
+        "a TaskTitle TextMeshProUGUI and a TaskDescription TextMeshProUGUI.")]
     private GameObject rowTemplate;
     [SerializeField] private TextMeshProUGUI headerText;
     [SerializeField, Tooltip("Line under the task telling the player they are off the gun until " +
@@ -54,9 +64,15 @@ public class TaskListHUD : MonoBehaviour
     private bool animate = true;
 
     [Header("Animation - panel appearing")]
-    [SerializeField] private float panelFadeDuration = 0.22f;
-    [SerializeField, Tooltip("How far left the panel slides in from, in reference pixels.")]
-    private float panelSlideDistance = 26f;
+    [SerializeField, Tooltip("How far right the '!' icon (and, after it, the rest of the panel) " +
+        "slides in from, in reference pixels.")]
+    private float panelSlideDistance = 60f;
+    [SerializeField] private float iconSlideDuration = 0.18f;
+    [SerializeField] private float backgroundFadeDuration = 0.16f;
+    [SerializeField] private float textFadeDuration = 0.18f;
+    [SerializeField, Tooltip("Gap after the icon finishes sliding before the background starts " +
+        "fading in, and again before the text starts fading in.")]
+    private float introStageGap = 0.05f;
 
     [Header("Animation - rows appearing")]
     [SerializeField] private float rowFadeDuration = 0.2f;
@@ -74,6 +90,16 @@ public class TaskListHUD : MonoBehaviour
     [SerializeField] private float headerPunchScale = 1.12f;
     [SerializeField] private float headerPunchDuration = 0.22f;
 
+    [Header("Animation - '!' icon attention flash")]
+    [SerializeField, Tooltip("Colour the '!' icon flashes through - on a brand new task, and on " +
+        "the unfinished-task warning at round end.")]
+    private Color iconAlertColor = new(1f, 0.2f, 0.15f, 1f);
+    [SerializeField] private float iconFlashDuration = 0.5f;
+    [SerializeField] private float iconFlashScale = 1.35f;
+    [SerializeField, Tooltip("SFX played alongside the '!' flash, for a new task and for the " +
+        "unfinished-task warning alike.")]
+    private AudioClip attentionClipOverride;
+
     private readonly List<TaskManager.TaskEntry> localTasks = new();
     private readonly List<GameObject> spawnedRows = new();
     private TaskManager subscribedManager;
@@ -81,15 +107,25 @@ public class TaskListHUD : MonoBehaviour
     // Animation bookkeeping. completionState is keyed by task index rather than by row position, so
     // a reordered list can't read as "everything just completed".
     private readonly Dictionary<int, bool> completionState = new();
+    // Tracks TaskEntry.RoundsOpen per task index, so a round ending with the task still open (the
+    // server increments RoundsOpen on every gun hand-off - see TaskManager.OnGunHandedOff) can be
+    // told apart from any other refresh.
+    private readonly Dictionary<int, int> roundsOpenState = new();
     private readonly Dictionary<GameObject, Coroutine> rowRoutines = new();
     private readonly List<GameObject> rowsEnteringThisRefresh = new();
     private Coroutine panelRoutine;
     private Coroutine headerRoutine;
     private Coroutine hideRoutine;
+    private Coroutine iconFlashRoutine;
 
     private CanvasGroup panelGroup;
     private RectTransform panelRect;
+    private RectTransform iconRect;
+    private CanvasGroup iconGroup;
+    private CanvasGroup backgroundGroup;
     private Vector2 panelBasePosition;
+    private Vector2 iconBasePosition;
+    private Color iconBaseColor = Color.white;
     private bool panelBaseCaptured;
     private string lastHeaderText;
 
@@ -127,9 +163,10 @@ public class TaskListHUD : MonoBehaviour
             if (subscribedManager != null)
             {
                 subscribedManager.OnTasksChanged += Refresh;
-                // A new match means a new checklist - forget last round's completion state so the
-                // first refresh seeds quietly instead of popping every already-done task.
+                // A new match means a new checklist - forget last round's completion/age state so
+                // the first refresh seeds quietly instead of popping/warning for work from before.
                 completionState.Clear();
+                roundsOpenState.Clear();
                 Refresh();
             }
             else
@@ -212,6 +249,8 @@ public class TaskListHUD : MonoBehaviour
         EnsureRowCount(localTasks.Count);
 
         int completed = 0;
+        bool anyNewTask = false;
+        bool anyRoundMissed = false;
         for (int i = 0; i < localTasks.Count; i++)
         {
             TaskManager.TaskEntry entry = localTasks[i];
@@ -226,9 +265,22 @@ public class TaskListHUD : MonoBehaviour
             // Only a task this HUD has already seen as open can "just complete". The first sighting
             // of a task seeds the state silently, so opening the list mid-round doesn't fire a burst
             // of pops for work that was finished minutes ago.
-            bool known = completionState.TryGetValue(entry.TaskIndex, out bool previouslyCompleted);
-            bool justCompleted = known && !previouslyCompleted && entry.Completed;
+            bool knownCompletion = completionState.TryGetValue(entry.TaskIndex, out bool previouslyCompleted);
+            bool justCompleted = knownCompletion && !previouslyCompleted && entry.Completed;
             completionState[entry.TaskIndex] = entry.Completed;
+
+            bool knownAge = roundsOpenState.TryGetValue(entry.TaskIndex, out int previousRoundsOpen);
+            if (!knownAge)
+            {
+                // First sighting: this is either a genuinely brand new task, or the first refresh
+                // after (re)subscribing - panelWasVisible tells those two apart below.
+                anyNewTask = true;
+            }
+            else if (!entry.Completed && entry.RoundsOpen > previousRoundsOpen)
+            {
+                anyRoundMissed = true;
+            }
+            roundsOpenState[entry.TaskIndex] = entry.RoundsOpen;
 
             ApplyRow(row, task, entry.Completed);
 
@@ -256,9 +308,20 @@ public class TaskListHUD : MonoBehaviour
         {
             PlayPanelIntro();
         }
-        else if (rowsEnteringThisRefresh.Count > 0)
+        else
         {
-            PlayRowIntros(rowsEnteringThisRefresh, 0f);
+            if (rowsEnteringThisRefresh.Count > 0)
+            {
+                PlayRowIntros(rowsEnteringThisRefresh, 0f);
+            }
+
+            // The panel was already up, so a brand new task slotted into an existing list, or a
+            // round ending with a task still undone, both deserve the same "look here" flash - not
+            // the quiet one the panel's own first appearance already got from PlayPanelIntro.
+            if (animate && (anyNewTask || anyRoundMissed))
+            {
+                PlayIconAlert();
+            }
         }
 
         rowsEnteringThisRefresh.Clear();
@@ -342,35 +405,73 @@ public class TaskListHUD : MonoBehaviour
             return;
         }
 
-        TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (label != null)
-        {
-            string marker = isCompleted ? completedMarker : openMarker;
-            // A stale index (the tasks array was edited mid-match) shows as a plain "?" row
-            // instead of blanking out or throwing.
-            string name = task != null ? task.DisplayName : "?";
-            string description = task != null ? task.taskDiscription : string.Empty;
+        RowRefs refs = GetRowRefs(row);
 
-            string body = string.IsNullOrWhiteSpace(description) ? name : $"{name} - {description}";
+        // A stale index (the tasks array was edited mid-match) shows as a plain "?" row instead of
+        // blanking out or throwing.
+        string name = task != null ? task.DisplayName : "?";
+        string description = task != null ? task.taskDiscription : string.Empty;
+        string marker = isCompleted ? completedMarker : openMarker;
+
+        if (refs.title != null)
+        {
+            string titleBody = $"{marker}  {name}";
             if (isCompleted && strikeCompleted)
             {
-                body = $"<s>{body}</s>";
+                titleBody = $"<s>{titleBody}</s>";
             }
-
-            label.text = $"{marker}  {body}";
-            label.color = isCompleted ? completedColor : openColor;
+            refs.title.text = titleBody;
+            refs.title.color = isCompleted ? completedColor : openColor;
         }
 
-        Image icon = row.GetComponentInChildren<Image>(true);
-        if (icon != null && task != null && task.icon != null)
+        if (refs.description != null)
         {
-            icon.sprite = task.icon;
-            icon.enabled = true;
+            string descBody = isCompleted && strikeCompleted ? $"<s>{description}</s>" : description;
+            refs.description.text = descBody;
+            refs.description.color = isCompleted ? completedColor : openColor;
+            refs.description.gameObject.SetActive(!string.IsNullOrWhiteSpace(description));
         }
-        else if (icon != null)
+
+        if (refs.icon != null && task != null && task.icon != null)
         {
-            icon.enabled = false;
+            refs.icon.sprite = task.icon;
+            refs.icon.enabled = true;
         }
+        else if (refs.icon != null)
+        {
+            refs.icon.enabled = false;
+        }
+    }
+
+    // Row child refs are looked up by name once per row instance and cached, rather than re-walked
+    // every refresh - EnsureRowCount only grows the pool, so this never needs invalidating.
+    private readonly Dictionary<GameObject, RowRefs> rowRefCache = new();
+
+    private struct RowRefs
+    {
+        public TextMeshProUGUI title;
+        public TextMeshProUGUI description;
+        public Image icon;
+    }
+
+    private RowRefs GetRowRefs(GameObject row)
+    {
+        if (rowRefCache.TryGetValue(row, out RowRefs cached))
+        {
+            return cached;
+        }
+
+        RowRefs refs = default;
+        Transform titleT = row.transform.Find("TaskTitle");
+        Transform descT = row.transform.Find("TaskDescription");
+        Transform iconT = row.transform.Find("Icon");
+
+        refs.title = titleT != null ? titleT.GetComponent<TextMeshProUGUI>() : row.GetComponentInChildren<TextMeshProUGUI>(true);
+        refs.description = descT != null ? descT.GetComponent<TextMeshProUGUI>() : null;
+        refs.icon = iconT != null ? iconT.GetComponent<Image>() : row.GetComponentInChildren<Image>(true);
+
+        rowRefCache[row] = refs;
+        return refs;
     }
 
     // -------------------------------------------------------------------------------------------
@@ -397,11 +498,30 @@ public class TaskListHUD : MonoBehaviour
             }
         }
 
+        if (iconRect == null && warningIcon != null)
+        {
+            iconRect = warningIcon.rectTransform;
+            iconGroup = GetOrAddGroup(warningIcon.gameObject);
+            iconBaseColor = warningIcon.color;
+        }
+
+        if (backgroundGroup == null && panelBackground != null)
+        {
+            backgroundGroup = GetOrAddGroup(panelBackground.gameObject);
+        }
+
         // The panel's authored position is the target of the slide, so it has to be captured before
         // the first intro moves it.
-        if (!panelBaseCaptured && panelRect != null)
+        if (!panelBaseCaptured)
         {
-            panelBasePosition = panelRect.anchoredPosition;
+            if (panelRect != null)
+            {
+                panelBasePosition = panelRect.anchoredPosition;
+            }
+            if (iconRect != null)
+            {
+                iconBasePosition = iconRect.anchoredPosition;
+            }
             panelBaseCaptured = true;
         }
     }
@@ -426,6 +546,12 @@ public class TaskListHUD : MonoBehaviour
                 panelRoutine = null;
             }
 
+            if (iconFlashRoutine != null)
+            {
+                StopCoroutine(iconFlashRoutine);
+                iconFlashRoutine = null;
+            }
+
             foreach (GameObject row in spawnedRows)
             {
                 ResetRowVisualState(row);
@@ -435,6 +561,23 @@ public class TaskListHUD : MonoBehaviour
             if (panelGroup != null)
             {
                 panelGroup.alpha = 1f;
+            }
+            if (iconGroup != null)
+            {
+                iconGroup.alpha = 1f;
+            }
+            if (backgroundGroup != null)
+            {
+                backgroundGroup.alpha = 1f;
+            }
+            if (iconRect != null && panelBaseCaptured)
+            {
+                iconRect.anchoredPosition = iconBasePosition;
+                iconRect.localScale = Vector3.one;
+            }
+            if (warningIcon != null)
+            {
+                warningIcon.color = iconBaseColor;
             }
             if (panelRect != null && panelBaseCaptured)
             {
@@ -455,14 +598,11 @@ public class TaskListHUD : MonoBehaviour
 
         if (!animate)
         {
-            if (panelGroup != null)
-            {
-                panelGroup.alpha = 1f;
-            }
-            if (panelRect != null && panelBaseCaptured)
-            {
-                panelRect.anchoredPosition = panelBasePosition;
-            }
+            if (panelGroup != null) panelGroup.alpha = 1f;
+            if (iconGroup != null) iconGroup.alpha = 1f;
+            if (backgroundGroup != null) backgroundGroup.alpha = 1f;
+            if (panelRect != null && panelBaseCaptured) panelRect.anchoredPosition = panelBasePosition;
+            if (iconRect != null && panelBaseCaptured) iconRect.anchoredPosition = iconBasePosition;
 
             foreach (GameObject row in spawnedRows)
             {
@@ -476,31 +616,136 @@ public class TaskListHUD : MonoBehaviour
             StopCoroutine(panelRoutine);
         }
         panelRoutine = StartCoroutine(PanelIntro());
-
-        // Rows trail the panel, so the box arrives first and then fills itself in.
-        PlayRowIntros(spawnedRows, panelFadeDuration * 0.5f, localTasks.Count);
     }
 
+    // Three beats: the "!" slides in from the right, then the background fades in behind it,
+    // then the row text fades in last - each stage starting only once the previous one lands.
     private IEnumerator PanelIntro()
     {
-        Vector2 from = panelBasePosition + new Vector2(-panelSlideDistance, 0f);
+        if (panelGroup != null)
+        {
+            panelGroup.alpha = 1f;
+        }
+
+        if (iconGroup != null)
+        {
+            iconGroup.alpha = 0f;
+        }
+        if (backgroundGroup != null)
+        {
+            backgroundGroup.alpha = 0f;
+        }
+
+        if (iconRect != null)
+        {
+            Vector2 from = iconBasePosition + new Vector2(panelSlideDistance, 0f);
+            yield return SlidePosition(iconRect, iconGroup, from, iconBasePosition, iconSlideDuration);
+        }
+
+        yield return new WaitForSeconds(introStageGap);
+
+        if (backgroundGroup != null)
+        {
+            yield return FadeGroup(backgroundGroup, 0f, 1f, backgroundFadeDuration);
+        }
+
+        yield return new WaitForSeconds(introStageGap);
+
+        // Rows fade in together with their own staggered entrance, standing in for "the text".
+        PlayRowIntros(spawnedRows, 0f, localTasks.Count);
+
+        panelRoutine = null;
+
+        // The icon still gets its attention flash on a first appearance - a brand new task is a
+        // brand new task whether or not the panel itself was already on screen.
+        PlayIconAlert();
+    }
+
+    private IEnumerator SlidePosition(RectTransform rect, CanvasGroup group, Vector2 from, Vector2 to, float duration)
+    {
         float t = 0f;
+        rect.anchoredPosition = from;
+        if (group != null) group.alpha = 0f;
 
-        panelGroup.alpha = 0f;
-        panelRect.anchoredPosition = from;
-
-        while (t < panelFadeDuration)
+        while (t < duration)
         {
             t += Time.deltaTime;
-            float k = EaseOut(Mathf.Clamp01(t / panelFadeDuration));
-            panelGroup.alpha = k;
-            panelRect.anchoredPosition = Vector2.LerpUnclamped(from, panelBasePosition, k);
+            float k = EaseOut(Mathf.Clamp01(t / duration));
+            if (group != null) group.alpha = k;
+            rect.anchoredPosition = Vector2.LerpUnclamped(from, to, k);
             yield return null;
         }
 
-        panelGroup.alpha = 1f;
-        panelRect.anchoredPosition = panelBasePosition;
-        panelRoutine = null;
+        if (group != null) group.alpha = 1f;
+        rect.anchoredPosition = to;
+    }
+
+    private IEnumerator FadeGroup(CanvasGroup group, float from, float to, float duration)
+    {
+        float t = 0f;
+        group.alpha = from;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float k = EaseOut(Mathf.Clamp01(t / duration));
+            group.alpha = Mathf.LerpUnclamped(from, to, k);
+            yield return null;
+        }
+
+        group.alpha = to;
+    }
+
+    // The "!" icon flashing red and scaling up - on a brand new task appearing, and again on the
+    // "you missed a round" warning (Refresh's anyRoundMissed). Same visual both times; only the
+    // trigger differs, so there is one attention cue to associate with "the task list wants you".
+    private void PlayIconAlert()
+    {
+        if (iconRect == null || warningIcon == null)
+        {
+            return;
+        }
+
+        if (iconFlashRoutine != null)
+        {
+            StopCoroutine(iconFlashRoutine);
+        }
+        iconFlashRoutine = StartCoroutine(IconAlertFlash());
+
+        AudioClip clip = attentionClipOverride != null
+            ? attentionClipOverride
+            : (SFXManager.Instance != null ? SFXManager.Instance.taskCompleteClip : null);
+        if (clip != null && SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(clip);
+        }
+    }
+
+    private IEnumerator IconAlertFlash()
+    {
+        float t = 0f;
+        while (t < iconFlashDuration)
+        {
+            if (root == null || !root.activeSelf)
+            {
+                break;
+            }
+
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / iconFlashDuration);
+            // One rise-and-settle arc, same shape as the row completion punch: quick flash to the
+            // alert colour and a scale bump, easing back to rest.
+            float punch = Mathf.Sin(k * Mathf.PI);
+
+            warningIcon.color = Color.LerpUnclamped(iconBaseColor, iconAlertColor, punch);
+            iconRect.localScale = Vector3.one * Mathf.LerpUnclamped(1f, iconFlashScale, punch);
+
+            yield return null;
+        }
+
+        warningIcon.color = iconBaseColor;
+        iconRect.localScale = Vector3.one;
+        iconFlashRoutine = null;
     }
 
     private void PlayRowIntros(List<GameObject> rows, float delay, int limit = int.MaxValue)
@@ -576,7 +821,7 @@ public class TaskListHUD : MonoBehaviour
     private IEnumerator RowCompleted(GameObject row)
     {
         RectTransform rect = row.transform as RectTransform;
-        TextMeshProUGUI label = row.GetComponentInChildren<TextMeshProUGUI>(true);
+        RowRefs refs = GetRowRefs(row);
 
         CanvasGroup group = GetRowGroup(row);
         group.alpha = 1f;
@@ -597,18 +842,26 @@ public class TaskListHUD : MonoBehaviour
             float punch = Mathf.Sin(k * Mathf.PI);
             rect.localScale = Vector3.one * Mathf.LerpUnclamped(1f, completePunchScale, punch);
 
-            if (label != null)
+            if (refs.title != null)
             {
-                label.color = Color.LerpUnclamped(completedColor, completeFlashColor, punch);
+                refs.title.color = Color.LerpUnclamped(completedColor, completeFlashColor, punch);
+            }
+            if (refs.description != null)
+            {
+                refs.description.color = Color.LerpUnclamped(completedColor, completeFlashColor, punch);
             }
 
             yield return null;
         }
 
         rect.localScale = Vector3.one;
-        if (label != null)
+        if (refs.title != null)
         {
-            label.color = completedColor;
+            refs.title.color = completedColor;
+        }
+        if (refs.description != null)
+        {
+            refs.description.color = completedColor;
         }
         rowRoutines.Remove(row);
     }
@@ -637,10 +890,15 @@ public class TaskListHUD : MonoBehaviour
     // authored on the template, so the script still works against an older prefab.
     private CanvasGroup GetRowGroup(GameObject row)
     {
-        CanvasGroup group = row.GetComponent<CanvasGroup>();
+        return GetOrAddGroup(row);
+    }
+
+    private static CanvasGroup GetOrAddGroup(GameObject target)
+    {
+        CanvasGroup group = target.GetComponent<CanvasGroup>();
         if (group == null)
         {
-            group = row.AddComponent<CanvasGroup>();
+            group = target.AddComponent<CanvasGroup>();
             group.interactable = false;
             group.blocksRaycasts = false;
         }

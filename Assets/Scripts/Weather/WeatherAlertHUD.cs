@@ -52,8 +52,20 @@ namespace Weather
         [SerializeField, Tooltip("The bar's container. Faded in as the widget docks.")]
         private CanvasGroup barGroup;
 
-        [SerializeField, Tooltip("Horizontal filled image that drains as the event runs out.")]
+        [SerializeField, Tooltip("The bar's track/background image - lerped black (day) to white " +
+            "(night/rain/storm), matching the round timer and hiding-spot bars.")]
+        private Image barTrack;
+
+        [SerializeField, Tooltip("Rotates as the event runs out - same half-dial look as the " +
+            "round timer and the hiding-spot bar, rather than draining a fill wedge.")]
         private Image barFill;
+
+        [SerializeField, Tooltip("Degrees the bar sweeps from full (0) to empty - a half turn.")]
+        private float barFullSweepDegrees = 180f;
+
+        [Header("Background day/night")]
+        [SerializeField] private Color dayBackgroundColor = Color.black;
+        [SerializeField] private Color nightBackgroundColor = Color.white;
 
         [Header("Announce placement")]
         [SerializeField, Tooltip("Where the alert shouts from, in canvas units from the canvas centre.")]
@@ -331,7 +343,12 @@ namespace Weather
 
             if (barFill != null)
             {
-                barFill.fillAmount = total > 0.01f ? Mathf.Clamp01(remaining / total) : 0f;
+                float fraction = total > 0.01f ? Mathf.Clamp01(remaining / total) : 0f;
+
+                // Rotates CCW as the storm runs out instead of draining a fill wedge - same
+                // half-dial look as the round timer and the hiding-spot bar.
+                float angle = Mathf.Lerp(0f, barFullSweepDegrees, 1f - fraction);
+                barFill.rectTransform.localEulerAngles = new Vector3(0f, 0f, -angle);
 
                 Color barColor = dockedColor;
                 if (expiring)
@@ -346,6 +363,17 @@ namespace Weather
                 barFill.color = barColor;
             }
 
+            if (barTrack != null)
+            {
+                bool isNight = weather != null && weather.IsNight;
+                // Rain counts as "bad weather" here too (this widget is only ever up during Rain
+                // or Storm in the first place), so the one case left is a clear day.
+                float whiteLerp = isNight || (weather != null && weather.Phase != WeatherPhase.Clear) ? 1f : 0f;
+                Color trackColor = Color.Lerp(dayBackgroundColor, nightBackgroundColor, whiteLerp);
+                trackColor.a = barTrack.color.a;
+                barTrack.color = trackColor;
+            }
+
             // The event is over: wind down rather than waiting for a Clear that a despawn might
             // never deliver.
             if (state == State.Docked && weather != null && weather.Phase == WeatherPhase.Clear)
@@ -354,31 +382,35 @@ namespace Weather
             }
         }
 
-        // Read off the live shot clock rect every frame rather than hard-coded, so the bar stays
-        // glued to the clock's right edge through the clock's own urgent pulse and at any
-        // resolution or canvas scale.
+        // Read off the live slot-2 bar rect every frame rather than hard-coded, so the X stays
+        // lined up with it at any resolution or canvas scale. The Y is pinned flush to the top
+        // edge of the screen instead of the slot's own Y - HidingSpotTimerUI hides its own 2ndBar
+        // outright while a storm is active (see its Update), so this isn't competing for the same
+        // vertical spot, just borrowing the slot's horizontal position.
         private Vector2 GetDockPosition()
         {
-            ShotClockUI clock = ShotClockUI.Instance;
-            if (canvasRect == null || clock == null || !clock.IsShowing || clock.Widget == null)
+            RectTransform secondBarRect = HidingSpotTimerUI.Instance != null ? HidingSpotTimerUI.Instance.SecondBarRect : null;
+            if (canvasRect == null || secondBarRect == null)
             {
                 return fallbackDockPosition;
             }
 
-            clock.Widget.GetWorldCorners(clockCorners);
-            // 2 = top-right, 3 = bottom-right.
-            Vector3 rightEdge = (clockCorners[2] + clockCorners[3]) * 0.5f;
+            secondBarRect.GetWorldCorners(clockCorners);
+            Vector3 center = (clockCorners[0] + clockCorners[2]) * 0.5f;
 
             // Both canvases are Screen Space - Overlay, so a null camera is the correct argument
             // for both conversions.
-            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(null, rightEdge);
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(null, center);
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out Vector2 local))
             {
                 return fallbackDockPosition;
             }
 
-            // Centred pivot, so push out by the gap plus half the bar's width.
-            return local + new Vector2(dockGap + dockedSize.x * 0.5f, 0f);
+            // Flush against the top edge: canvas is centre-pivoted, so half its height is the top
+            // edge's Y, minus half the docked bar's own height so the whole bar stays on screen
+            // rather than half of it clipping above the edge.
+            float topEdgeY = canvasRect.rect.height * 0.5f - dockedSize.y * 0.5f;
+            return new Vector2(local.x, topEdgeY);
         }
     }
 }

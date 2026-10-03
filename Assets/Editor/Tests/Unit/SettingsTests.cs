@@ -122,10 +122,68 @@ namespace DuckRoulette.Tests.Unit
 
             Assert.That(GetFloat("Audio", "MasterVolume", -1f), Is.EqualTo(1f));
             Assert.That(GetFloat("Audio", "MusicVolume", -1f), Is.EqualTo(0.8f));
-            Assert.That(GetFloat("Mouse", "SensitivityX", -1f), Is.EqualTo(1f));
+            Assert.That(GetFloat("Mouse", "SensitivityX", -1f), Is.EqualTo(SettingsManager.DefaultMouseSensitivity));
+            Assert.That(GetFloat("Controller", "ControllerSensitivityX", -1f), Is.EqualTo(SettingsManager.DefaultControllerSensitivity));
+            Assert.That(IsTrue(_settings.GetSetting("Game", "ShowFps")), Is.EqualTo(GameplaySettings.DefaultShowFps));
+            Assert.That(IsTrue(_settings.GetSetting("Game", "ShowPing")), Is.EqualTo(GameplaySettings.DefaultShowPing));
             Assert.That(IsTrue(_settings.GetSetting("Graphics", "Fullscreen")), Is.True);
             Assert.That(float.Parse(_settings.GetSetting("Game", "FieldOfView"), CultureInfo.InvariantCulture),
                 Is.InRange(GameplaySettings.MinFieldOfView, GameplaySettings.MaxFieldOfView));
+        }
+
+        [Test]
+        public void MigrateDefaults_OldFile_UpgradesUntouchedDefaultsOnly()
+        {
+            // A v1 file: no Meta section, sensitivities and HUD toggles at the old defaults except
+            // SensitivityY, which the player changed.
+            _settings.SetSetting("Mouse", "SensitivityX", "1.0");
+            _settings.SetSetting("Mouse", "SensitivityY", "0.4");
+            _settings.SetSetting("Controller", "ControllerSensitivityX", "1.0");
+            _settings.SetSetting("Game", "ShowFps", "false");
+
+            Assert.That((bool)Reflect.Call(_settings, "MigrateDefaults"), Is.True);
+
+            Assert.That(GetFloat("Mouse", "SensitivityX", -1f), Is.EqualTo(SettingsManager.DefaultMouseSensitivity));
+            Assert.That(GetFloat("Mouse", "SensitivityY", -1f), Is.EqualTo(0.4f));
+            Assert.That(GetFloat("Controller", "ControllerSensitivityX", -1f), Is.EqualTo(SettingsManager.DefaultControllerSensitivity));
+            Assert.That(GetFloat("Controller", "ControllerSensitivityY", -1f), Is.EqualTo(SettingsManager.DefaultControllerSensitivity));
+            Assert.That(IsTrue(_settings.GetSetting("Game", "ShowFps")), Is.EqualTo(GameplaySettings.DefaultShowFps));
+            Assert.That(IsTrue(_settings.GetSetting("Game", "ShowPing")), Is.EqualTo(GameplaySettings.DefaultShowPing));
+        }
+
+        [Test]
+        public void MigrateDefaults_CustomControllerSensitivity_KeepsOldTurnSpeed()
+        {
+            // v2 file: controller X customised under the old x20 binding scale, Y at the default.
+            _settings.SetSetting("Meta", "DefaultsVersion", "2");
+            _settings.SetSetting("Controller", "ControllerSensitivityX", "0.1");
+            _settings.SetSetting("Controller", "ControllerSensitivityY", SettingsManager.DefaultControllerSensitivity.ToString(CultureInfo.InvariantCulture));
+            _settings.SetSetting("Mouse", "SensitivityX", "0.4");
+
+            Assert.That((bool)Reflect.Call(_settings, "MigrateDefaults"), Is.True);
+
+            Assert.That(GetFloat("Controller", "ControllerSensitivityX", -1f), Is.EqualTo(2f).Within(1e-5f));
+            Assert.That(GetFloat("Controller", "ControllerSensitivityY", -1f), Is.EqualTo(SettingsManager.DefaultControllerSensitivity));
+            Assert.That(GetFloat("Mouse", "SensitivityX", -1f), Is.EqualTo(0.4f));
+
+            // Scaling clamps to the slider range.
+            _settings.SetSetting("Meta", "DefaultsVersion", "2");
+            _settings.SetSetting("Controller", "ControllerSensitivityX", "3");
+            Reflect.Call(_settings, "MigrateDefaults");
+            Assert.That(GetFloat("Controller", "ControllerSensitivityX", -1f), Is.EqualTo(SettingsManager.MaxSensitivity));
+        }
+
+        [Test]
+        public void MigrateDefaults_CurrentFile_LeavesPlayerChoicesAlone()
+        {
+            Reflect.Call(_settings, "SetDefaultSettings");
+            _settings.SetSetting("Mouse", "SensitivityX", "1.0");
+            _settings.SetSetting("Game", "ShowFps", "false");
+
+            Assert.That((bool)Reflect.Call(_settings, "MigrateDefaults"), Is.False);
+
+            Assert.That(GetFloat("Mouse", "SensitivityX", -1f), Is.EqualTo(1f));
+            Assert.That(IsTrue(_settings.GetSetting("Game", "ShowFps")), Is.False);
         }
 
         [Test]

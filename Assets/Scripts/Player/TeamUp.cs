@@ -275,7 +275,7 @@ public class TeamUp : NetworkBehaviour
     }
 
     /// <summary>The server forwarded another player's request. Interact is locked until this is
-    /// answered, and the alert on the left counts down the time left to accept.</summary>
+    /// answered, and the alert on the right counts down the time left to accept.</summary>
     public void RequestTeamUp(ulong requesterId, float timeout)
     {
         if (isTeamedUp)
@@ -291,7 +291,7 @@ public class TeamUp : NetworkBehaviour
         InteractionPromptHUD.Hide();
 
         string name = GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(requesterId) : "Player " + requesterId;
-        TeamUpRequestHUD.Show(name, interactAction, endTeamUpAction, timeout);
+        TeamUpRequestHUD.Show(name, requesterId, interactAction, endTeamUpAction, timeout);
     }
 
     /// <summary>Closes the incoming request alert without answering - the request was answered,

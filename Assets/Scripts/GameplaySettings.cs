@@ -48,6 +48,11 @@ public static class GameplaySettings
     public const float MaxFieldOfView = 110f;
     public const float DefaultFieldOfView = 60f;
 
+    // SettingsManager writes these into a fresh Settings.ini too, so they are the one place to
+    // change what a new player sees.
+    public const bool DefaultShowFps = true;
+    public const bool DefaultShowPing = true;
+
     public static float FieldOfView { get { EnsureCache(); return fieldOfView; } }
     public static bool InvertLookY { get { EnsureCache(); return invertLookY; } }
     public static bool ToggleCrouch { get { EnsureCache(); return toggleCrouch; } }
@@ -108,8 +113,8 @@ public static class GameplaySettings
         toggleCrouch = GetBool(settings, GameSection, "ToggleCrouch", false);
         toggleSprint = GetBool(settings, GameSection, "ToggleSprint", false);
         showTaskList = GetBool(settings, GameSection, "ShowTaskList", true);
-        showFps = GetBool(settings, GameSection, "ShowFps", false);
-        showPing = GetBool(settings, GameSection, "ShowPing", false);
+        showFps = GetBool(settings, GameSection, "ShowFps", DefaultShowFps);
+        showPing = GetBool(settings, GameSection, "ShowPing", DefaultShowPing);
         voiceChatMode = (VoiceMode)Mathf.Clamp(Mathf.RoundToInt(GetFloat(settings, AudioSection, "VoiceChatMode", 0f)), 0, 2);
 
         reduceMotion = GetBool(settings, AccessibilitySection, "ReduceMotion", false);
