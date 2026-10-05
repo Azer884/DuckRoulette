@@ -65,17 +65,17 @@ public class ButtonManager : MonoBehaviour
 
     public void OnPointerEnter(BaseEventData eventData)
     {
-        if (eventData is PointerEventData pointerEventData && !TryGetComponent(out TMP_InputField _))
+        if (eventData is PointerEventData && !TryGetComponent(out TMP_InputField _) && EventSystem.current != null)
         {
-            pointerEventData.selectedObject = pointerEventData.pointerEnter;
+            EventSystem.current.SetSelectedGameObject(gameObject, eventData);
         }
     }
 
     public void OnPointerExit(BaseEventData eventData)
     {
-        if (eventData is PointerEventData pointerEventData)
+        if (eventData is PointerEventData && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject)
         {
-            pointerEventData.selectedObject = null;
+            EventSystem.current.SetSelectedGameObject(null, eventData);
         }
     }
 

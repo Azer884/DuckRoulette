@@ -18738,6 +18738,7 @@ MonoBehaviour:
   liveChamberFullSprite: {fileID: 707995266745677991}
   spinDuration: 0.4
   spinExtraTurns: 2
+  spinStartDelay: 6.1
 --- !u!1 &7199412675602682852
 GameObject:
   m_ObjectHideFlags: 0

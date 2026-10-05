@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -36,7 +37,15 @@ public class ShotClockUI : MonoBehaviour
     [SerializeField] private Color dayBackgroundColor = Color.black;
     [SerializeField] private Color nightBackgroundColor = Color.white;
 
+    [Header("Number fade")]
+    [SerializeField, Tooltip("Seconds the number takes to fade out/in when a second bar " +
+        "(hiding spot or storm) joins or leaves this one.")]
+    private float numberFadeDuration = 0.4f;
+
     private int _lastTickSecond = -1;
+    private CanvasGroup timerTextGroup;
+    private bool? lastHideNumber;
+    private Coroutine numberFadeRoutine;
 
     /// <summary>The clock widget's rect. Non-null even while hidden, so check
     /// <see cref="IsShowing"/> too before positioning against it.</summary>
@@ -58,6 +67,15 @@ public class ShotClockUI : MonoBehaviour
         if (turnLabel != null)
         {
             turnLabel.gameObject.SetActive(false);
+        }
+
+        if (timerText != null)
+        {
+            timerTextGroup = timerText.GetComponent<CanvasGroup>();
+            if (timerTextGroup == null)
+            {
+                timerTextGroup = timerText.gameObject.AddComponent<CanvasGroup>();
+            }
         }
     }
 
@@ -105,15 +123,22 @@ public class ShotClockUI : MonoBehaviour
         fillImage.rectTransform.localEulerAngles = new Vector3(0f, 0f, -angle);
 
         // Numbers only ever belong on this, the always-on bar - the moment a second bar (hiding
-        // spot or storm) joins it, this one goes back to being a plain bar too.
+        // spot or storm) joins it, this one goes back to being a plain bar too. Fades rather than
+        // snaps off, so the number doesn't just vanish the instant the storm bar appears.
         bool secondBarShowing = HidingSpotTimerUI.Instance != null && HidingSpotTimerUI.Instance.IsShowing;
         bool stormBarShowing = WeatherSystem.Instance != null && WeatherSystem.Instance.Phase == WeatherPhase.Storm;
         bool hideNumber = secondBarShowing || stormBarShowing;
 
-        if (timerText.gameObject.activeSelf == hideNumber)
+        if (lastHideNumber != hideNumber)
         {
-            timerText.gameObject.SetActive(!hideNumber);
+            lastHideNumber = hideNumber;
+            if (numberFadeRoutine != null)
+            {
+                StopCoroutine(numberFadeRoutine);
+            }
+            numberFadeRoutine = StartCoroutine(FadeNumber(hideNumber));
         }
+
         if (!hideNumber)
         {
             timerText.text = Mathf.CeilToInt(remaining).ToString();
@@ -142,6 +167,47 @@ public class ShotClockUI : MonoBehaviour
             : Vector3.one;
 
         TickAudio(remaining, urgent);
+    }
+
+    private IEnumerator FadeNumber(bool hide)
+    {
+        if (timerTextGroup == null)
+        {
+            if (timerText != null)
+            {
+                timerText.gameObject.SetActive(!hide);
+            }
+            yield break;
+        }
+
+        // Fading in: the text object has to be active again before the alpha ramps up, or
+        // nothing renders at all while it climbs from 0.
+        if (!hide)
+        {
+            timerText.gameObject.SetActive(true);
+        }
+
+        float from = timerTextGroup.alpha;
+        float to = hide ? 0f : 1f;
+        float t = 0f;
+
+        while (t < numberFadeDuration)
+        {
+            t += Time.deltaTime;
+            timerTextGroup.alpha = Mathf.Lerp(from, to, Mathf.Clamp01(t / numberFadeDuration));
+            yield return null;
+        }
+
+        timerTextGroup.alpha = to;
+
+        // Fully faded out: deactivate so it stops needing an Update pass (and stops occupying a
+        // layout slot) while hidden.
+        if (hide)
+        {
+            timerText.gameObject.SetActive(false);
+        }
+
+        numberFadeRoutine = null;
     }
 
     // One tick per whole second, tracked by the second the clock is currently showing rather

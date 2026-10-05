@@ -1,12 +1,14 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 // The gun readout on the local player's own HUD (Player.prefab/.../GunUI): "0/6" or "1/6" loaded
-// state, a prompt that reads "Reload [R]" until the gun is loaded and then "Trigger [RMB]" (or the
-// matching controller glyph on a gamepad), and a 6-chamber wheel that spins on every reload with
-// the live round's chamber swapping from its empty sprite to its full one.
+// state, a prompt that reads "Reload (R)" until the gun is loaded and then "Trigger (RMB)" (or the
+// matching controller glyph on a gamepad), and a 6-chamber wheel that spins on every reload. All
+// three only flip to their "loaded" look once that spin actually lands, not the instant the gun
+// itself reports reloaded - firing still snaps everything back to unloaded right away.
 //
 // Lives on the player prefab itself (one instance per player, like InteractionPromptHUD's prompt
 // but per-owner rather than a scene singleton) since it only ever has anything to say about this
@@ -32,19 +34,31 @@ public class GunUI : MonoBehaviour
         "the six chamber Images underneath stay at their authored angles.")]
     private RectTransform gunWheel;
     [SerializeField, Tooltip("The chamber that holds the live round - swaps to Full Chamber Sprite " +
-        "once reloaded, back to Empty Chamber Sprite once it's fired or a new round starts.")]
+        "once the reload spin lands, back to Empty Chamber Sprite the instant it's fired or a new " +
+        "round starts.")]
     private Image liveChamberEmptySprite;
     [SerializeField] private Image liveChamberFullSprite;
     [SerializeField] private float spinDuration = 0.4f;
     [SerializeField, Tooltip("Full turns the wheel spins through during a reload, on top of " +
         "whatever fraction lands it back at its resting rotation.")]
     private int spinExtraTurns = 2;
+    [SerializeField, Tooltip("Seconds into the Reload animation at which the actual cylinder " +
+        "swap happens on the gun model - the wheel waits this long before spinning, so the UI " +
+        "lines up with the real gun instead of spinning the moment R is pressed.")]
+    private float spinStartDelay = 5f;
 
     private InputAction reloadAction, triggerAction;
     private float wheelSpinT = -1f;
     private float wheelStartAngle;
     private float wheelTargetAngle;
     private bool wasReloaded;
+    private Coroutine delayedSpinRoutine;
+    // Everything the UI shows as "loaded" - the chamber sprite, the 1/6 readout, and the
+    // Reload/Trigger prompt - waits for the spin to actually land instead of flipping the
+    // instant the gun itself reports reloaded, well before the wheel has even started turning.
+    // Unreloading (fired, or a new round) still snaps all of it back immediately.
+    private bool chamberSwapPending;
+    private bool displayReloaded;
 
     private void Awake()
     {
@@ -53,12 +67,7 @@ public class GunUI : MonoBehaviour
             shooting = GetComponent<Shooting>();
         }
 
-        InputSystem inputSystem = GetComponent<InputSystem>();
-        if (inputSystem != null)
-        {
-            reloadAction = inputSystem.inputActions.FindAction("Reload");
-            triggerAction = inputSystem.inputActions.FindAction("Trigger");
-        }
+        ResolveInputActions();
 
         if (liveChamberFullSprite != null)
         {
@@ -66,6 +75,31 @@ public class GunUI : MonoBehaviour
         }
 
         SetVisible(false);
+    }
+
+    // InputActionAsset.FindAction() can come back null for a prefab-instance's asset if this
+    // runs before InputSystem's own OnEnable() has run Enable() on it - Awake order between
+    // sibling components on the same freshly-instantiated GameObject isn't guaranteed, so
+    // GunUI.Awake() can land before that happens and capture a dead null permanently. Re-tried
+    // lazily from Update() instead of assumed to have worked once in Awake.
+    private void ResolveInputActions()
+    {
+        if (reloadAction != null && triggerAction != null)
+        {
+            return;
+        }
+
+        // GunUI sits on a UI child object (Player/.../GunUI), not on the Player root that
+        // actually carries InputSystem - GetComponent alone (only the exact same GameObject)
+        // always came back null here; this needed GetComponentInParent.
+        InputSystem inputSystem = GetComponentInParent<InputSystem>();
+        if (inputSystem == null || inputSystem.inputActions == null)
+        {
+            return;
+        }
+
+        reloadAction = inputSystem.inputActions.FindAction("Reload");
+        triggerAction = inputSystem.inputActions.FindAction("Trigger");
     }
 
     private void OnEnable()
@@ -82,16 +116,35 @@ public class GunUI : MonoBehaviour
         {
             shooting.OnReloaded -= HandleReloaded;
         }
+
+        if (delayedSpinRoutine != null)
+        {
+            StopCoroutine(delayedSpinRoutine);
+            delayedSpinRoutine = null;
+        }
     }
 
     private void HandleReloaded()
     {
+        if (delayedSpinRoutine != null)
+        {
+            StopCoroutine(delayedSpinRoutine);
+        }
+        delayedSpinRoutine = StartCoroutine(DelayedSpin());
+    }
+
+    private IEnumerator DelayedSpin()
+    {
+        yield return new WaitForSeconds(spinStartDelay);
+
         // Spin forward from wherever the wheel currently sits, landing back at its resting angle
         // plus a few extra full turns - so every reload reads as a spin, not a snap, however many
         // reloads have already happened this life.
         wheelStartAngle = gunWheel != null ? gunWheel.localEulerAngles.z : 0f;
         wheelTargetAngle = wheelStartAngle + 360f * spinExtraTurns;
         wheelSpinT = 0f;
+        chamberSwapPending = true;
+        delayedSpinRoutine = null;
     }
 
     private void Update()
@@ -103,11 +156,21 @@ public class GunUI : MonoBehaviour
         }
 
         SetVisible(true);
+        ResolveInputActions();
 
         bool reloaded = shooting.IsReloaded;
-        ApplyShotsText(reloaded);
-        ApplyPrompt(reloaded);
-        ApplyLiveChamber(reloaded);
+
+        // Fired (or a new round starting un-reloaded) snaps everything back to the unloaded
+        // state right away - only the reloaded-looking state waits on the spin landing.
+        if (!reloaded)
+        {
+            chamberSwapPending = false;
+            displayReloaded = false;
+        }
+
+        ApplyShotsText(displayReloaded);
+        ApplyPrompt(displayReloaded);
+        ApplyLiveChamber(displayReloaded);
         ApplyWheelSpin();
 
         wasReloaded = reloaded;
@@ -162,7 +225,7 @@ public class GunUI : MonoBehaviour
             {
                 promptText.gameObject.SetActive(true);
                 string binding = InteractionPromptHUD.GetBindingLabel(action);
-                promptText.text = string.IsNullOrEmpty(binding) ? label : $"{label} [{binding}]";
+                promptText.text = string.IsNullOrEmpty(binding) ? label : $"{label} ({binding})";
             }
         }
     }
@@ -194,6 +257,12 @@ public class GunUI : MonoBehaviour
         {
             gunWheel.localEulerAngles = new Vector3(0f, 0f, wheelTargetAngle);
             wheelSpinT = -1f;
+
+            if (chamberSwapPending)
+            {
+                chamberSwapPending = false;
+                displayReloaded = true;
+            }
             return;
         }
 
