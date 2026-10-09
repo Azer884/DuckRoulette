@@ -815,7 +815,7 @@ public class GameManager : NetworkBehaviour
         {
             ulong survivorId = team.Item1 == clientId ? team.Item2 : team.Item1;
             _teams.Remove(team);
-            SetPlayerOutlineColor(survivorId, Color.black);
+            SetOutlineColorClientRpc(survivorId, survivorId, Color.black, TargetOnly(survivorId));
 
             var clientRpcParams = new ClientRpcParams
             {
@@ -1132,22 +1132,41 @@ public class GameManager : NetworkBehaviour
         {
             color = responderTeamUp.teamColor;
         }
-        SetPlayerOutlineColor(requesterId, color);
-        SetPlayerOutlineColor(responderId, color);
+        SetPairOutlineColor(requesterId, responderId, color);
 
         SendTeamUpResponseClientRpc(responderId, clientRpcParams);
     }
 
-    // Server-authoritative outline color so every peer (not just the two teamed players) sees it
-    // on both players, not just each other's local view of them.
-    private void SetPlayerOutlineColor(ulong clientId, Color color)
+    // Outline is pushed only to the two teamed players' own clients, via a ClientRpc targeted at
+    // just their two client ids - not a NetworkVariable, which can only be Everyone or Owner and
+    // so cannot be scoped to this pair. Every outlined player applies the colour to both
+    // themselves and their teammate locally, so bystanders never see it.
+    private void SetPairOutlineColor(ulong clientIdA, ulong clientIdB, Color color)
     {
-        if (NetworkManager.Singleton != null &&
-            NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client) &&
-            client.PlayerObject != null &&
-            client.PlayerObject.TryGetComponent(out TeamUp teamUp))
+        var clientRpcParams = new ClientRpcParams
         {
-            teamUp.outlineColor.Value = color;
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new List<ulong> { clientIdA, clientIdB }
+            }
+        };
+
+        SetOutlineColorClientRpc(clientIdA, clientIdB, color, clientRpcParams);
+    }
+
+    [ClientRpc]
+    private void SetOutlineColorClientRpc(ulong clientIdA, ulong clientIdB, Color color, ClientRpcParams clientRpcParams = default)
+    {
+        _ = clientRpcParams;
+
+        if (TryGetPlayerObject(clientIdA, out NetworkObject objectA) && objectA.TryGetComponent(out TeamUp teamUpA))
+        {
+            teamUpA.ApplyOutlineColor(color);
+        }
+
+        if (TryGetPlayerObject(clientIdB, out NetworkObject objectB) && objectB.TryGetComponent(out TeamUp teamUpB))
+        {
+            teamUpB.ApplyOutlineColor(color);
         }
     }
 
@@ -1185,8 +1204,7 @@ public class GameManager : NetworkBehaviour
         _teams.RemoveAll(team => (team.Item1 == serverRpcParams.Receive.SenderClientId && team.Item2 == teamMateId) ||
                                  (team.Item1 == teamMateId && team.Item2 == serverRpcParams.Receive.SenderClientId));
 
-        SetPlayerOutlineColor(serverRpcParams.Receive.SenderClientId, Color.black);
-        SetPlayerOutlineColor(teamMateId, Color.black);
+        SetPairOutlineColor(serverRpcParams.Receive.SenderClientId, teamMateId, Color.black);
 
         SendEndTeamUpClientRpc(clientRpcParams);
     }

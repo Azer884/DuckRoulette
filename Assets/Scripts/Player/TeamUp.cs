@@ -29,11 +29,10 @@ public class TeamUp : NetworkBehaviour
 
     public event System.Action OnTeamUp, OnExitTeamUp;
 
-    // Server-authoritative so every peer (not just the two teamed players' own clients) sees the
-    // outline - GameManager sets this on both players' TeamUp components when a team-up is
-    // confirmed/ended (see TeamUpResponseServerRpc/EndTeamUpServerRpc), replacing what used to be
-    // a purely local material mutation that only the two participants themselves could see.
-    public NetworkVariable<Color> outlineColor = new(Color.black, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    // Outline is only for the two teamed players, not every peer - GameManager pushes it with a
+    // ClientRpc targeted at just those two clients (see TeamUpResponseServerRpc/
+    // EndTeamUpServerRpc) instead of a NetworkVariable, which has no read permission between
+    // "everyone" and "owner only" and so cannot be scoped to an arbitrary pair of clients.
 
     // responder client id -> (Time.time the block ends, block length). Mirrors the server's own
     // cooldown so the prompt can grey out and fill back up instead of sending a doomed request.
@@ -76,11 +75,6 @@ public class TeamUp : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Every peer needs this - it's what actually paints the outline on screen for whoever's
-        // looking, including bystanders who aren't part of the team-up at all.
-        outlineColor.OnValueChanged += HandleOutlineColorChanged;
-        ApplyOutlineColor(outlineColor.Value);
-
         if (!IsOwner)
         {
             enabled = false;
@@ -94,20 +88,15 @@ public class TeamUp : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        outlineColor.OnValueChanged -= HandleOutlineColorChanged;
-
         if (IsOwner)
         {
             ClearIncomingRequest();
         }
     }
 
-    private void HandleOutlineColorChanged(Color oldValue, Color newValue)
-    {
-        ApplyOutlineColor(newValue);
-    }
-
-    private void ApplyOutlineColor(Color color)
+    /// <summary>Called locally by the ClientRpc GameManager sends only to the two teamed
+    /// players, so nobody outside the team-up ever paints or clears this outline.</summary>
+    public void ApplyOutlineColor(Color color)
     {
         if (renderers == null)
         {

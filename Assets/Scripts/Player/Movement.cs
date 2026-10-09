@@ -1216,7 +1216,7 @@ public class Movement : NetworkBehaviour
             }
             else
             {
-                if (!Physics.Raycast(transform.position, Vector3.up, 2.0f))
+                if (!Physics.Raycast(transform.position, Vector3.up, initHeight))
                 {
                     controller.height = initHeight;
                     isCrouched = false;
