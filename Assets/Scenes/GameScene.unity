@@ -1836,7 +1836,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -1889,7 +1889,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -23079,7 +23079,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8365429345097860108, guid: 68f1b8e524aab834ba6fe4d0627be8e7, type: 3}
       propertyPath: forcePhaseOnStart
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8365429345097860113, guid: 68f1b8e524aab834ba6fe4d0627be8e7, type: 3}
       propertyPath: groundMask.m_Bits

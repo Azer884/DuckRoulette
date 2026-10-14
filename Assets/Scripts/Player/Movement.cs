@@ -56,6 +56,7 @@ public class Movement : NetworkBehaviour
 
     [Header("Crouch Variables"), Space]
     public float initHeight;
+    private Vector3 initCenter;
     public float crouchHeight;
     public bool isCrouched;
 
@@ -293,6 +294,7 @@ public class Movement : NetworkBehaviour
         cameraShaker = CameraShaker.GetOrAdd(gameObject);
         shootingComponent = GetComponent<Shooting>();
         initHeight = controller.height;
+        initCenter = controller.center;
         Cursor.lockState = CursorLockMode.Locked;
 
         moveAction = inputActions.FindAction("Move");
@@ -457,6 +459,15 @@ public class Movement : NetworkBehaviour
 
     private void DoMovement()
     {
+        // The server places spawn poses by raycasting against the procedural terrain, but that
+        // terrain is a client-side mesh built a frame or more after the scene loads. An owner
+        // whose own copy isn't built yet would otherwise free-fall under gravity for those frames
+        // and land under the map once it finally appears. Hold still until it's there.
+        if (DuckRoulette.MapGen.MapSeedSync.Current != null && !DuckRoulette.MapGen.MapSeedSync.Current.IsBuilt)
+        {
+            return;
+        }
+
         bool wasGrounded = grounded;
         grounded = controller.isGrounded;
         // Record the last time we were on ground to allow coyote-time jumps
@@ -731,7 +742,7 @@ public class Movement : NetworkBehaviour
         // Give slight upward velocity for jump effect
         velocity.y = Mathf.Sqrt(jumpHeight * 0.5f * -2f * gravity);
 
-        controller.height = slidingHeight;
+        SetControllerHeight(slidingHeight);
         legs.SetActive(false);
         FPShadow.SetActive(false);
         Hands.SetActive(false);
@@ -1180,6 +1191,16 @@ public class Movement : NetworkBehaviour
         SetAnimatorBool(handAnim, handParameters, IsSlidingHash, isSliding);
     }
 
+    // CharacterController resizes symmetrically around its center, so shrinking height without
+    // moving center also lifts the capsule's bottom off the ground - which left the feet floating
+    // (or caught on bridge geometry) while sliding or crouched. This keeps the bottom anchored to
+    // initCenter's bottom and only moves the top.
+    private void SetControllerHeight(float height)
+    {
+        controller.height = height;
+        controller.center = initCenter - Vector3.up * (initHeight - height) * 0.5f;
+    }
+
     private void DoCrouch()
     {
         // Tutorial gating: crouch stays locked until TutorialManager enables it.
@@ -1211,14 +1232,14 @@ public class Movement : NetworkBehaviour
         {
             if (crouchWanted)
             {
-                controller.height = crouchHeight;
+                SetControllerHeight(crouchHeight);
                 isCrouched = true;
             }
             else
             {
                 if (!Physics.Raycast(transform.position, Vector3.up, initHeight))
                 {
-                    controller.height = initHeight;
+                    SetControllerHeight(initHeight);
                     isCrouched = false;
                 }
                 else

@@ -303,9 +303,13 @@ namespace DuckRoulette.MapGen
 
             if (rule.alignToGround)
             {
+                // Yaw first (around the prop's own up), ground tilt second - the other order spins
+                // the already-tilted prop around world up, which can swing one end down into the
+                // slope instead of resting flat on it.
                 Vector3 normal = GroundNormal(heightMap, point, heightMultiplier);
-                instance.transform.localRotation = Quaternion.AngleAxis(yaw, Vector3.up)
-                                                   * Quaternion.FromToRotation(Vector3.up, normal);
+                instance.transform.localRotation = Quaternion.FromToRotation(Vector3.up, normal)
+                                                   * Quaternion.AngleAxis(yaw, Vector3.up)
+                                                   * Quaternion.Euler(0f, 0f, rule.zSpawnOffset);
             }
             else
             {

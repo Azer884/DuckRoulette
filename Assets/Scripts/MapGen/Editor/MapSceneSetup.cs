@@ -273,9 +273,11 @@ namespace DuckRoulette.MapGen
                 count = new Vector2Int(2, 5),
                 role = PropRole.Cover,
                 sizeTarget = 6f,
-                // No alignToGround: that tilts the prefab to match the ground normal, which also
-                // twists it around Z. The log's hiding pose is authored in the prefab and must
-                // stay as-is - only yaw (rotation around Y) should vary per spawn.
+                alignToGround = true,
+                // Prefab's long axis is authored along local Z, not Z=forward/X - this spins it
+                // 90 degrees into the right lie before the per-spawn yaw and ground tilt are applied.
+                zSpawnOffset = 90f,
+                sitOnBase = true,
                 maxSlope = 0.3f,
             });
 

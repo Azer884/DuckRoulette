@@ -4255,11 +4255,6 @@ MonoBehaviour:
   - {fileID: 2764494379678518831}
   teamColor: {r: 0, g: 0.49411765, b: 1, a: 1}
   lookAtThreshold: 0.6
-  outlineColor:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &4094662510134437379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15325,7 +15320,7 @@ MonoBehaviour:
   maxSightDistance: 60
   eyeHeight: 1
   minGroupSize: 3
-  roundsBeforeSwap: 2
+  roundsBeforeSwap: 4
   teamUpTask: {fileID: 11400000, guid: 6127d27d42d630b49bc2d6241c60e1e2, type: 2}
 --- !u!1 &6094000583348113555
 GameObject:
@@ -18567,7 +18562,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &760910153089052490
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18583,10 +18578,10 @@ RectTransform:
   - {fileID: 8416940366277127629}
   m_Father: {fileID: 5725856147001665187}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -56.35695}
-  m_SizeDelta: {x: 55.575, y: 55.575}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 43.075, y: 43.075}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &2606526719987113341
 CanvasRenderer:

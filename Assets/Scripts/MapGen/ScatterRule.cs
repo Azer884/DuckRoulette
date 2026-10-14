@@ -78,6 +78,10 @@ namespace DuckRoulette.MapGen
         [Tooltip("Random lean, in degrees. Ignored when Align To Ground is on.")]
         public float tiltDegrees = 5f;
 
+        [Tooltip("Fixed spin around the prop's own local Z, applied after yaw and ground tilt. " +
+                 "For a prefab whose long axis is authored along Z instead of its local forward.")]
+        public float zSpawnOffset;
+
         [Tooltip("Pushed up or down after being placed on the ground, in world units. Negative " +
                  "sinks the prop, which is how snow piles and half-buried pipes are done.")]
         public float yOffset;

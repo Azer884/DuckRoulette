@@ -356,7 +356,14 @@ public class Ragdoll : NetworkBehaviour
         hands.SetActive(state);
         foots.SetActive(state);
         shadow.SetActive(state);
-        userName.userName.gameObject.SetActive(state);
+
+        // The owner's own nametag stays hidden (see Username.OnNetworkSpawn) - an ungated
+        // SetActive(true) here on recovery would show a player their own tag floating in front
+        // of their own camera.
+        if (!IsLocalPlayer)
+        {
+            userName.userName.gameObject.SetActive(state);
+        }
 
         // The gun's own visibility is otherwise driven every frame by GunStateChanger purely off
         // haveGun.Value, which ragdoll never touches - so it used to keep floating in its last
