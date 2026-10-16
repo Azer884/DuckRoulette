@@ -89,17 +89,15 @@ namespace DuckRoulette.Tests.Functional
         }
 
         [UnityTest]
-        public IEnumerator HandOff_TaskOpenForTwoRounds_IsSwappedForADifferentOne()
+        public IEnumerator HandOff_TaskOpenForTwoRounds_IsRemoved_AndPlayerRejoinsGunRotation()
         {
             Tasks(("A", Challenge.TaskType.Useful), ("B", Challenge.TaskType.Useless));
             Assigned.Add(new TaskManager.TaskEntry { ClientId = Host, TaskIndex = 0, RoundsOpen = 1 });
 
             Tm.OnGunHandedOff();
 
-            List<TaskManager.TaskEntry> open = EntriesFor(Host);
-            Assert.That(open, Has.Count.EqualTo(1), "still exactly one task");
-            Assert.That(open[0].TaskIndex, Is.EqualTo(1));
-            Assert.That(open[0].RoundsOpen, Is.EqualTo(0));
+            Assert.That(EntriesFor(Host), Is.Empty, "a stale task is withdrawn, not swapped");
+            Assert.That(Tm.HasCompletedAllTasks(Host), Is.True, "nothing keeps them off the gun any more");
             yield return null;
         }
 

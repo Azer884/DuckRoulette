@@ -1,5 +1,72 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &251499497404598231
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5360197092327328272}
+  - component: {fileID: 8167795262822884423}
+  - component: {fileID: 1543432502786475800}
+  m_Layer: 13
+  m_Name: DriveSeat
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5360197092327328272
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 251499497404598231}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552334134932057999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &8167795262822884423
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 251499497404598231}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 36.599976, y: 39.541504, z: 82.403984}
+  m_Center: {x: -2.426775, y: 26.154163, z: -2.6998901}
+--- !u!114 &1543432502786475800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 251499497404598231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85df6ff8ee59773428a0bc5339859e3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TruckDriveSeat
+  driver: {fileID: 2008990118884778573}
 --- !u!1 &749660397766861386
 GameObject:
   m_ObjectHideFlags: 0
@@ -603,6 +670,68 @@ Transform:
   - {fileID: 2679426763568927077}
   m_Father: {fileID: 1552334134932057999}
   m_LocalEulerAnglesHint: {x: -95.013, y: 0, z: 0}
+--- !u!1 &2892610098071489990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 159644329121605356}
+  m_Layer: 0
+  m_Name: DriftPoint0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &159644329121605356
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2892610098071489990}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.797209, y: -2.7621417, z: -23.510092}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552334134932057999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3473222570417051867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5785571506794184247}
+  m_Layer: 0
+  m_Name: DriveCamTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5785571506794184247
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3473222570417051867}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.426775, y: 45.724915, z: -2.6998901}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552334134932057999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3814322946255419711
 GameObject:
   m_ObjectHideFlags: 0
@@ -1160,6 +1289,37 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 7.7597594
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &7743622320105821100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4314600597792067188}
+  m_Layer: 0
+  m_Name: DriftPoint1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4314600597792067188
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7743622320105821100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -16.124763, y: -2.7621732, z: -23.51009}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552334134932057999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7758335709640026110
 GameObject:
   m_ObjectHideFlags: 0
@@ -1175,6 +1335,7 @@ GameObject:
   - component: {fileID: 6372926194749731963}
   - component: {fileID: 3357915466750702050}
   - component: {fileID: 4757105950862025830}
+  - component: {fileID: 2008990118884778573}
   m_Layer: 0
   m_Name: Truck
   m_TagString: Untagged
@@ -1197,6 +1358,11 @@ Transform:
   m_Children:
   - {fileID: 8217504523114580398}
   - {fileID: 1281444309412630837}
+  - {fileID: 5360197092327328272}
+  - {fileID: 5785571506794184247}
+  - {fileID: 9055523186408177880}
+  - {fileID: 159644329121605356}
+  - {fileID: 4314600597792067188}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &9216284553124852845
@@ -1336,6 +1502,8 @@ MonoBehaviour:
   - {fileID: 5650398338951994115}
   - {fileID: 2679426763568927077}
   wheelRadius: 7.7597594
+  maxWheelSteerAngle: 30
+  wheelSteerSpeed: 160
   wheelContacts:
   - {fileID: 4494161970482600857}
   - {fileID: 1261483165347563087}
@@ -1349,6 +1517,8 @@ MonoBehaviour:
   pushHoldTime: 0.15
   rollingResistance: 0.55
   sidewaysGrip: 6
+  maxDepenetrationSpeed: 1.5
+  maxUndrivenSpeed: 4
 --- !u!114 &4757105950862025830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1365,12 +1535,79 @@ MonoBehaviour:
   pushTask: {fileID: 11400000, guid: 54b67f89d10b7a740bb64b2d534a7232, type: 2}
   goalRadius: 6
   shoreSetback: 4
-  arrowMaterial: {fileID: 2100000, guid: 5bccd878ea7df1a41a39cff0b2efc4d5, type: 2}
+  soloTestGoalDistance: 15
+  arrowMaterial: {fileID: 2100000, guid: 8f69496b041c3024db0fcbe62902af70, type: 2}
+  goalRingMaterial: {fileID: 2100000, guid: e1bc628f3efb7804081add210cb04879, type: 2}
   arrowWidth: 1.6
   arrowSpacing: 2
   scrollSpeed: 3
   groundOffset: 0.25
   samplesPerMetre: 0.5
+--- !u!114 &2008990118884778573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7758335709640026110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890fb54ca44a03d49b71f4558f90a84c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TruckDriver
+  ShowTopMostFoldoutHeaderGroup: 1
+  driveCamera: {fileID: 8834925461110401915}
+  seat: {fileID: 5785571506794184247}
+  driveDuration: 4
+  timerColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  maxForwardSpeed: 22
+  maxReverseSpeed: 8
+  acceleration: 16
+  brakeDeceleration: 30
+  coastDeceleration: 4
+  maxSteerRate: 120
+  fullSteerSpeed: 7
+  highSpeedSteerFactor: 0.6
+  steerResponse: 10
+  grip: 9
+  driftGrip: 0.5
+  driftSteerMultiplier: 1.6
+  minDriftSpeed: 7
+  driftEnterRate: 5
+  driftExitRate: 1.2
+  driftMomentumKeep: 0.45
+  maxDriftAngle: 85
+  handbrakeDrag: 1.5
+  driftSlipThreshold: 2.5
+  downforce: 0.04
+  uprightStrength: 6
+  playerLayers:
+    serializedVersion: 2
+    m_Bits: 8
+  minBumpSpeed: 3
+  launchPerSpeed: 1.1
+  launchUpPerSpeed: 0.45
+  maxLaunchSpeed: 30
+  knockoutSeconds: {x: 2, y: 5}
+  bumpCooldown: 1.5
+  bumpMargin: 0.4
+  crashSpeed: 12
+  crashMinMass: 500
+  bumpFeedbackSpeed: 4
+  engineLoopClip: {fileID: 0}
+  engineIdlePitch: 0.8
+  engineTopPitch: 1.8
+  bumpClip: {fileID: 0}
+  crashClip: {fileID: 0}
+  explosionClip: {fileID: 0}
+  driftVfxPrefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
+  driftPoints:
+  - {fileID: 159644329121605356}
+  - {fileID: 4314600597792067188}
+  bumpVfxPrefab: {fileID: 3432958286849152088, guid: 87ee7299dd44ed747af24dbb91bcd33b, type: 3}
+  bumpVfxLifetime: 1.5
+  explosionVfxPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
+  explosionVfxLifetime: 3
 --- !u!1 &8118616571924380904
 GameObject:
   m_ObjectHideFlags: 0
@@ -1551,3 +1788,128 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &9215233997225286745
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9055523186408177880}
+  - component: {fileID: 8834925461110401915}
+  - component: {fileID: 2194286253999264302}
+  - component: {fileID: 4915651720954633532}
+  m_Layer: 0
+  m_Name: DriveCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &9055523186408177880
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9215233997225286745}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 49.724915, z: -53.601883}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552334134932057999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8834925461110401915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9215233997225286745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
+  Priority:
+    Enabled: 0
+    m_Value: 0
+  OutputChannel: 1
+  StandbyUpdate: 2
+  m_StreamingVersion: 0
+  m_LegacyPriority: 0
+  Target:
+    TrackingTarget: {fileID: 5785571506794184247}
+    LookAtTarget: {fileID: 0}
+    CustomLookAtTarget: 0
+  Lens:
+    FieldOfView: 65
+    OrthographicSize: 10
+    NearClipPlane: 0.1
+    FarClipPlane: 5000
+    Dutch: 0
+    ModeOverride: 0
+    PhysicalProperties:
+      GateFit: 2
+      SensorSize: {x: 21.946, y: 16.002}
+      LensShift: {x: 0, y: 0}
+      FocusDistance: 10
+      Iso: 200
+      ShutterSpeed: 0.005
+      Aperture: 16
+      BladeCount: 5
+      Curvature: {x: 2, y: 11}
+      BarrelClipping: 0.25
+      Anamorphism: 0
+  BlendHint: 0
+--- !u!114 &2194286253999264302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9215233997225286745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b617507da6d07e749b7efdb34e1173e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
+  TrackerSettings:
+    BindingMode: 1
+    PositionDamping: {x: 0.4, y: 0.3, z: 0.6}
+    AngularDampingMode: 0
+    RotationDamping: {x: 0, y: 0.6, z: 0}
+    QuaternionDamping: 1
+  FollowOffset: {x: 0, y: 4.5, z: -49.901993}
+--- !u!114 &4915651720954633532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9215233997225286745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f38bda98361e1de48a4ca2bd86ea3c17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotationComposer
+  Composition:
+    ScreenPosition: {x: 0, y: 0}
+    DeadZone:
+      Enabled: 0
+      Size: {x: 0.2, y: 0.2}
+    HardLimits:
+      Enabled: 0
+      Size: {x: 0.8, y: 0.8}
+      Offset: {x: 0, y: 0}
+  CenterOnActivate: 1
+  TargetOffset: {x: 0, y: 1, z: 2}
+  Damping: {x: 0.3, y: 0.3}
+  Lookahead:
+    Enabled: 0
+    Time: 0
+    Smoothing: 0
+    IgnoreY: 0

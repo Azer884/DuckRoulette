@@ -67,11 +67,23 @@ public class CardDeck : NetworkBehaviour
     private void OnEnable()
     {
         TaskManager.RegisterObjective(blackjackTask);
+        TaskHighlighter.Register(blackjackTask, HighlightTarget);
     }
 
     private void OnDisable()
     {
         TaskManager.UnregisterObjective(blackjackTask);
+        TaskHighlighter.Unregister(blackjackTask, HighlightTarget);
+    }
+
+    // The whole table, not just the deck, is what the player has to find.
+    private GameObject HighlightTarget
+    {
+        get
+        {
+            BlackjackTable table = GetComponentInParent<BlackjackTable>();
+            return table != null ? table.gameObject : gameObject;
+        }
     }
 
     public override void OnNetworkSpawn()

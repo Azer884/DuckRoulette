@@ -67,9 +67,48 @@ public class HidingSpotTimerUI : MonoBehaviour
         }
     }
 
+    // Another local countdown borrowing this bar (the truck's drive timer), in its own colour.
+    private static object externalOwner;
+    private static float externalRemaining;
+    private static float externalDuration;
+    private static Color externalColor;
+
+    /// <summary>Show a non-hiding countdown on this bar. Call every frame it should stay up; a
+    /// hiding spot, if the player is somehow in one, wins.</summary>
+    public static void ShowExternal(object owner, float remaining, float duration, Color color)
+    {
+        externalOwner = owner;
+        externalRemaining = remaining;
+        externalDuration = Mathf.Max(0.01f, duration);
+        externalColor = color;
+    }
+
+    /// <summary>The borrowed countdown, if any - for a debug readout where this bar isn't in the scene.</summary>
+    public static bool TryGetExternal(out float remaining, out Color color)
+    {
+        remaining = externalRemaining;
+        color = externalColor;
+        return externalOwner != null;
+    }
+
+    public static void HideExternal(object owner)
+    {
+        if (externalOwner == owner)
+        {
+            externalOwner = null;
+        }
+    }
+
     private void Update()
     {
         HidingSpot active = HidingSpot.LocalActive;
+
+        if (active == null && externalOwner != null)
+        {
+            ShowCountdown(externalRemaining, externalDuration, externalColor);
+            hideDuration = -1f;
+            return;
+        }
 
         if (active == null)
         {
@@ -83,12 +122,6 @@ public class HidingSpotTimerUI : MonoBehaviour
             return;
         }
 
-        IsShowing = true;
-        if (groupAlpha != null)
-        {
-            groupAlpha.alpha = 1f;
-        }
-
         // hideDuration only changes when a new spot starts being tracked - cached rather than
         // read every frame off the component, since RemainingHideTime is the only thing that
         // actually ticks.
@@ -97,11 +130,21 @@ public class HidingSpotTimerUI : MonoBehaviour
             hideDuration = Mathf.Max(0.01f, active.hideDuration);
         }
 
+        ShowCountdown(active.RemainingHideTime, hideDuration, active.barColor);
+    }
+
+    private void ShowCountdown(float remaining, float duration, Color tint)
+    {
+        IsShowing = true;
+        if (groupAlpha != null)
+        {
+            groupAlpha.alpha = 1f;
+        }
+
         bool stormActive = WeatherSystem.Instance != null && WeatherSystem.Instance.Phase == WeatherPhase.Storm;
         SetVisible(!stormActive, stormActive);
 
-        float remaining = active.RemainingHideTime;
-        float fraction = Mathf.Clamp01(remaining / hideDuration);
+        float fraction = Mathf.Clamp01(remaining / duration);
         bool urgent = remaining <= urgentThreshold;
         bool isNight = WeatherSystem.Instance != null && WeatherSystem.Instance.IsNight;
         bool badWeather = WeatherSystem.Instance != null &&
@@ -110,11 +153,11 @@ public class HidingSpotTimerUI : MonoBehaviour
 
         if (stormActive)
         {
-            Apply(thirdBarFill, thirdBarBackground, active.barColor, fraction, urgent, whiteLerp);
+            Apply(thirdBarFill, thirdBarBackground, tint, fraction, urgent, whiteLerp);
         }
         else
         {
-            Apply(secondBarFill, secondBarTrack, active.barColor, fraction, urgent, whiteLerp);
+            Apply(secondBarFill, secondBarTrack, tint, fraction, urgent, whiteLerp);
         }
     }
 

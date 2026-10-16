@@ -12,8 +12,11 @@ using UnityEngine;
 //   - If three or more players are idle past that mark at the same time, they are handed the
 //     SAME ThreePlus task instead and have to do it together.
 //   - An open task keeps its holder off the gun at every hand-off, and it carries over from
-//     round to round until it is done. It is only swapped for a different one when a group task
-//     loses members (death, disconnect) or when it has stayed open for roundsBeforeSwap rounds.
+//     round to round until it is done. It is swapped for a different one when a group task
+//     loses members (death, disconnect), and taken away (putting the player back in the gun
+//     rotation) once it has stayed open for roundsBeforeSwap rounds.
+//   - From the second round a task is open, its world object is outlined for the holder
+//     (TaskHighlighter).
 //   - Two players never hold the same open Useful/Useless task, because the world objects are
 //     shared now: once someone lights the campfire, everyone sees it lit.
 //
@@ -85,9 +88,15 @@ public class TaskManager : NetworkBehaviour
     [SerializeField, Tooltip("Idle players needed at the same time for a shared ThreePlus task.")]
     private int minGroupSize = 3;
 
-    [SerializeField, Tooltip("A task still open after this many gun hand-offs is swapped for a " +
-        "different one.")]
+    [SerializeField, Tooltip("A task still open after this many gun hand-offs is taken away, " +
+        "and the player goes back into the gun rotation.")]
     private int roundsBeforeSwap = 2;
+
+    [SerializeField, Tooltip("Gun hand-offs a task has to stay open before its world object is " +
+        "outlined for the holder.")]
+    private int roundsBeforeHighlight = 1;
+
+    public int RoundsBeforeHighlight => roundsBeforeHighlight;
 
     [SerializeField, Tooltip("The \"try to team up\" task. It has no world object - sending any " +
         "valid team-up request completes it - so it is always in rotation while more than two " +
@@ -232,6 +241,13 @@ public class TaskManager : NetworkBehaviour
 
         GameManager game = GameManager.Instance;
         if (game == null || game.IsGameEnded || NetworkManager.Singleton == null)
+        {
+            return;
+        }
+
+        // TaskTestBench hands tasks out by hand to a lone tester; the camping rules below would
+        // clear them straight away (a solo session is "down to the last two").
+        if (SoloTestMode)
         {
             return;
         }
@@ -540,12 +556,26 @@ public class TaskManager : NetworkBehaviour
             }
         }
 
-        // Copy: SwapToSoloTask reuses scratchIds for its own notification.
+        // A task left open this long is taken away rather than swapped for another one: the
+        // player has already sat out the gun for it, so they go straight back into the gun
+        // rotation. Their camping clock restarts too, or they would be handed a new task on the
+        // very next check.
         ulong[] stale = scratchIds.ToArray();
         foreach (ulong clientId in stale)
         {
-            SwapToSoloTask(clientId);
+            RemoveEntriesFor(clientId);
+            idle.Remove(clientId);
+            TaskWithdrawnClientRpc(new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } }
+            });
         }
+    }
+
+    [ClientRpc]
+    private void TaskWithdrawnClientRpc(ClientRpcParams rpcParams = default)
+    {
+        MessageBox.Informate("Task dropped. You're back in the gun rotation.", new Color(1f, 0.75f, 0.2f), MessagePriority.High);
     }
 
     /// <summary>Server only. A player died or left: their tasks go, and a group they were in is
@@ -566,6 +596,12 @@ public class TaskManager : NetworkBehaviour
 
     private void DissolveUndersizedGroups()
     {
+        // A lone tester holds group tasks on their own.
+        if (SoloTestMode)
+        {
+            return;
+        }
+
         Dictionary<int, int> sizes = new();
         foreach (TaskEntry entry in assignedTasks)
         {
@@ -1001,6 +1037,47 @@ public class TaskManager : NetworkBehaviour
         }
 
         return tasks[taskIndex];
+    }
+
+    #endregion
+
+    #region Solo testing (TaskTestBench)
+
+    /// <summary>Set by TaskTestBench in the testing scene. Turns off automatic camping
+    /// detection and the "two players left" clear-out, and lets one player hold a group task, so
+    /// every task can be tried alone.</summary>
+    public static bool SoloTestMode { get; set; }
+
+    /// <summary>Server only, solo testing. Hands this exact task to a player, replacing whatever
+    /// they had - including a ThreePlus task, which normally needs three campers.</summary>
+    public void DebugAssignTask(ulong clientId, int taskIndex)
+    {
+        if (!IsServer || GetTask(taskIndex) == null)
+        {
+            return;
+        }
+
+        bool isGroup = tasks[taskIndex].taskType == Challenge.TaskType.ThreePlus;
+        for (int i = assignedTasks.Count - 1; i >= 0; i--)
+        {
+            // Someone else holding it would make it unfinishable for the tester's run.
+            if (assignedTasks[i].ClientId == clientId || assignedTasks[i].TaskIndex == taskIndex)
+            {
+                assignedTasks.RemoveAt(i);
+            }
+        }
+
+        AddEntry(clientId, taskIndex, isGroup ? nextGroupId++ : 0);
+        OnTaskHandedOut(taskIndex, new[] { clientId }, false);
+    }
+
+    /// <summary>Server only, solo testing. Drops every task this player holds.</summary>
+    public void DebugClearTasks(ulong clientId)
+    {
+        if (IsServer)
+        {
+            RemoveEntriesFor(clientId);
+        }
     }
 
     #endregion

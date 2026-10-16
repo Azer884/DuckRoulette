@@ -154,6 +154,20 @@ public class Ragdoll : NetworkBehaviour
         SetScreenDizziness(true);
     }
 
+    /// <summary>Throws the limp body - call right after TriggerRagdoll. Each peer simulates its own
+    /// copy of the ragdoll, and the owner re-aligns the player to wherever the hips land when they
+    /// get back up, so the knockback distance carries over to everyone.</summary>
+    public void Launch(Vector3 velocity)
+    {
+        foreach (var rb in _ragdollRigidbodies)
+        {
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = velocity;
+            }
+        }
+    }
+
     /* ===================== STATES ===================== */
 
     private void RagdollBehaviour()

@@ -559,6 +559,29 @@ public class GameManager : NetworkBehaviour
         StunPlayerClientRpc(clientId, Random.Range(3f, 6f));
     }
 
+    /// <summary>Server only. A knockout that also throws the player (a truck running them over).
+    /// Same rules as StunPlayer: dead players are ignored.</summary>
+    public void KnockOutPlayer(ulong clientId, Vector3 launchVelocity, float wakeUpTime)
+    {
+        if (!IsServer || !TryGetPlayerObject(clientId, out NetworkObject playerObject) || IsPlayerObjectDead(playerObject))
+        {
+            return;
+        }
+
+        StunPlayerClientRpc(clientId, wakeUpTime);
+        LaunchRagdollClientRpc(clientId, launchVelocity);
+    }
+
+    [ClientRpc]
+    private void LaunchRagdollClientRpc(ulong clientId, Vector3 velocity)
+    {
+        NetworkObject playerObject = NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(clientId);
+        if (playerObject != null && playerObject.TryGetComponent(out Ragdoll ragdoll))
+        {
+            ragdoll.Launch(velocity);
+        }
+    }
+
     [ClientRpc]
     private void StunPlayerClientRpc(ulong clientId, float wakeUpTime)
     {

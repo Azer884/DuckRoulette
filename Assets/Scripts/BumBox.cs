@@ -95,11 +95,13 @@ public class BumBox : NetworkBehaviour, IInteractable
     private void OnEnable()
     {
         TaskManager.RegisterObjective(musicTask);
+        TaskHighlighter.Register(musicTask, gameObject);
     }
 
     private void OnDisable()
     {
         TaskManager.UnregisterObjective(musicTask);
+        TaskHighlighter.Unregister(musicTask, gameObject);
     }
 
     private void Awake()

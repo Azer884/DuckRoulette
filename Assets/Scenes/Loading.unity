@@ -1063,8 +1063,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SFXManager
   sfxMixerGroup: {fileID: -6730983486251991596, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
   dapMixerGroup: {fileID: 5529914607747943723, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
-  buttonClick: {fileID: 0}
-  buttonSelect: {fileID: 0}
+  buttonClick: {fileID: 8300000, guid: bbc683063ec0826439e64c5b083f7701, type: 3}
+  buttonSelect: {fileID: 8300000, guid: 82b2ec252dadab749a090bb868f5deac, type: 3}
   buttonHover: {fileID: 0}
   toggleOn: {fileID: 0}
   toggleOff: {fileID: 0}

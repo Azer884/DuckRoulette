@@ -31,6 +31,10 @@ public class TruckEngine : NetworkBehaviour, IInteractable
     private readonly NetworkVariable<bool> installed = new(false);
 
     public bool IsHeld { get => holder.Value != ulong.MaxValue; set { } }
+
+    /// <summary>Replicated. True while the engine sits in the truck - TruckDriver lets anyone
+    /// drive it until the drive ends and ServerRespawn takes the engine back out.</summary>
+    public bool IsInstalled => installed.Value;
     public bool IsPickable { get; set; } = false;
 
     public string InteractionPrompt => "Pick Up Engine";
@@ -64,12 +68,14 @@ public class TruckEngine : NetworkBehaviour, IInteractable
     private void OnEnable()
     {
         TaskManager.RegisterObjective(engineTask);
+        TaskHighlighter.Register(engineTask, gameObject);
         TaskManager.ServerTaskAssigned += OnServerTaskAssigned;
     }
 
     private void OnDisable()
     {
         TaskManager.UnregisterObjective(engineTask);
+        TaskHighlighter.Unregister(engineTask, gameObject);
         TaskManager.ServerTaskAssigned -= OnServerTaskAssigned;
     }
 
@@ -329,6 +335,15 @@ public class TruckEngine : NetworkBehaviour, IInteractable
         body.linearVelocity = Vector3.zero;
     }
 
+    /// <summary>Server only, solo testing (TaskTestBench): puts the engine straight in.</summary>
+    public void DebugInstall(ulong clientId)
+    {
+        if (IsServer && IsSpawned && !installed.Value)
+        {
+            Install(clientId);
+        }
+    }
+
     private void Install(ulong clientId)
     {
         holder.Value = ulong.MaxValue;
@@ -338,6 +353,12 @@ public class TruckEngine : NetworkBehaviour, IInteractable
         if (truck != null)
         {
             Teleport(truck.transform.position, truck.transform.rotation);
+
+            // The truck runs again: it becomes drivable until the drive blows this engine.
+            if (truck.TryGetComponent(out TruckDriver driver))
+            {
+                driver.ServerEngineInstalled();
+            }
         }
 
         TaskManager.Instance?.CompleteTaskForPlayer(clientId, engineTask);
@@ -346,9 +367,25 @@ public class TruckEngine : NetworkBehaviour, IInteractable
     // Handing the task out again puts the engine back where the map placed it, ready to be found.
     private void OnServerTaskAssigned(Challenge task)
     {
-        if (!IsServer || !IsSpawned || task != engineTask)
+        if (task == engineTask)
+        {
+            ServerRespawn();
+        }
+    }
+
+    /// <summary>Server only. Takes the engine out of the truck (or anyone's hands) and puts a fresh
+    /// one back where the map placed it - also used by TruckDriver once a drive blows the engine.</summary>
+    public void ServerRespawn()
+    {
+        if (!IsServer || !IsSpawned)
         {
             return;
+        }
+
+        // Taken back out before anyone drove: the truck is broken again.
+        if (installed.Value && FindTruck() != null && FindTruck().TryGetComponent(out TruckDriver driver))
+        {
+            driver.ServerEngineRemoved();
         }
 
         installed.Value = false;

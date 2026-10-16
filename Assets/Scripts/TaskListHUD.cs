@@ -14,13 +14,9 @@ using UnityEngine.UI;
 // once and edit colors/layout/fonts there like any other UI, the same way ShotClockUI works. This
 // script only drives it.
 //
-// Movement is script-driven coroutines rather than an Animator, matching ParryFeedbackHUD and
-// SpectateHUD. The list is rebuilt wholesale from replicated state at arbitrary moments, so the
-// animation is keyed off what actually changed since the last refresh rather than off a clip.
-//
-// Panel entrance is staged in three beats rather than one fade: the "!" icon slides in from the
-// right first, then the background panel fades in behind it, then the row text fades in last - so
-// the eye is pulled to the exclamation mark before anything else even has a shape.
+// The panel's show/hide motion is left to an optional Animator (panelAnimator, Show/Hide
+// triggers). The small reactions - a row's completion pop, the header punch, the '!' flash - are
+// still script-driven coroutines, keyed off what actually changed since the last refresh.
 public class TaskListHUD : MonoBehaviour
 {
     [SerializeField] private GameObject root;
@@ -63,22 +59,17 @@ public class TaskListHUD : MonoBehaviour
     [SerializeField, Tooltip("Turn every animation below off and snap straight to the new state.")]
     private bool animate = true;
 
-    [Header("Animation - panel appearing")]
-    [SerializeField, Tooltip("How far right the '!' icon (and, after it, the rest of the panel) " +
-        "slides in from, in reference pixels.")]
-    private float panelSlideDistance = 60f;
-    [SerializeField] private float iconSlideDuration = 0.18f;
-    [SerializeField] private float backgroundFadeDuration = 0.16f;
-    [SerializeField] private float textFadeDuration = 0.18f;
-    [SerializeField, Tooltip("Gap after the icon finishes sliding before the background starts " +
-        "fading in, and again before the text starts fading in.")]
-    private float introStageGap = 0.05f;
-
-    [Header("Animation - rows appearing")]
-    [SerializeField] private float rowFadeDuration = 0.2f;
-    [SerializeField, Tooltip("Delay between each row's entrance, so the list deals itself out.")]
-    private float rowStagger = 0.05f;
-    [SerializeField, Range(0.5f, 1f)] private float rowIntroScale = 0.92f;
+    [Header("Animation - panel show / hide")]
+    [SerializeField, Tooltip("Optional Animator that plays the panel's show and hide animations. " +
+        "Left empty, the panel just appears and disappears.")]
+    private Animator panelAnimator;
+    [SerializeField, Tooltip("Trigger set on Panel Animator when the panel appears.")]
+    private string showTrigger = "Show";
+    [SerializeField, Tooltip("Trigger set on Panel Animator when the panel goes away.")]
+    private string hideTrigger = "Hide";
+    [SerializeField, Tooltip("Seconds the hide animation needs before the panel is switched off. " +
+        "0 = switch off straight away.")]
+    private float hideAnimationDuration = 0f;
 
     [Header("Animation - task completed")]
     [SerializeField] private float completePunchScale = 1.14f;
@@ -113,7 +104,7 @@ public class TaskListHUD : MonoBehaviour
     private readonly Dictionary<int, int> roundsOpenState = new();
     private readonly Dictionary<GameObject, Coroutine> rowRoutines = new();
     private readonly List<GameObject> rowsEnteringThisRefresh = new();
-    private Coroutine panelRoutine;
+    private Coroutine hideAnimationRoutine;
     private Coroutine headerRoutine;
     private Coroutine hideRoutine;
     private Coroutine iconFlashRoutine;
@@ -187,6 +178,9 @@ public class TaskListHUD : MonoBehaviour
     {
         GameplaySettings.Changed -= Refresh;
 
+        // Disabling stops coroutines; don't leave a dead hide in flight blocking the next one.
+        hideAnimationRoutine = null;
+
         if (subscribedManager != null)
         {
             subscribedManager.OnTasksChanged -= Refresh;
@@ -225,6 +219,15 @@ public class TaskListHUD : MonoBehaviour
         }
 
         bool panelWasVisible = root.activeSelf;
+
+        // Coming back while the hide animation is still playing: cancel it and show again.
+        if (hideAnimationRoutine != null)
+        {
+            StopCoroutine(hideAnimationRoutine);
+            hideAnimationRoutine = null;
+            panelWasVisible = false;
+        }
+
         bool allDone = true;
         foreach (TaskManager.TaskEntry entry in localTasks)
         {
@@ -304,20 +307,20 @@ public class TaskListHUD : MonoBehaviour
             hideRoutine = StartCoroutine(HideAfterComplete());
         }
 
+        foreach (GameObject row in rowsEnteringThisRefresh)
+        {
+            ResetRowVisualState(row);
+        }
+
         if (!panelWasVisible)
         {
-            PlayPanelIntro();
+            ShowPanel();
         }
         else
         {
-            if (rowsEnteringThisRefresh.Count > 0)
-            {
-                PlayRowIntros(rowsEnteringThisRefresh, 0f);
-            }
-
             // The panel was already up, so a brand new task slotted into an existing list, or a
             // round ending with a task still undone, both deserve the same "look here" flash - not
-            // the quiet one the panel's own first appearance already got from PlayPanelIntro.
+            // the one the panel's own first appearance already got from ShowPanel.
             if (animate && (anyNewTask || anyRoundMissed))
             {
                 PlayIconAlert();
@@ -534,17 +537,39 @@ public class TaskListHUD : MonoBehaviour
             hideRoutine = null;
         }
 
+        if (!root.activeSelf || hideAnimationRoutine != null)
+        {
+            // Already hidden, or the hide animation is already on its way out.
+            if (!root.activeSelf)
+            {
+                lastHeaderText = null;
+            }
+            return;
+        }
+
+        if (panelAnimator != null && !string.IsNullOrEmpty(hideTrigger) && hideAnimationDuration > 0f &&
+            panelAnimator.isActiveAndEnabled)
+        {
+            panelAnimator.SetTrigger(hideTrigger);
+            hideAnimationRoutine = StartCoroutine(HideAfterAnimation());
+            return;
+        }
+
+        SnapHidePanel();
+    }
+
+    private IEnumerator HideAfterAnimation()
+    {
+        yield return new WaitForSeconds(hideAnimationDuration);
+        hideAnimationRoutine = null;
+        SnapHidePanel();
+    }
+
+    private void SnapHidePanel()
+    {
         if (root.activeSelf)
         {
-            // Snap rather than fade out: the panel hides when the player dies or the round resets,
-            // and a lingering ghost of a list that no longer applies reads worse than a clean cut.
             StopAllRowRoutines();
-
-            if (panelRoutine != null)
-            {
-                StopCoroutine(panelRoutine);
-                panelRoutine = null;
-            }
 
             if (iconFlashRoutine != null)
             {
@@ -592,108 +617,36 @@ public class TaskListHUD : MonoBehaviour
         lastHeaderText = null;
     }
 
-    private void PlayPanelIntro()
+    // The panel snaps to its authored layout; any entrance motion is Panel Animator's "Show".
+    private void ShowPanel()
     {
         CachePanelRefs();
 
-        if (!animate)
-        {
-            if (panelGroup != null) panelGroup.alpha = 1f;
-            if (iconGroup != null) iconGroup.alpha = 1f;
-            if (backgroundGroup != null) backgroundGroup.alpha = 1f;
-            if (panelRect != null && panelBaseCaptured) panelRect.anchoredPosition = panelBasePosition;
-            if (iconRect != null && panelBaseCaptured) iconRect.anchoredPosition = iconBasePosition;
+        if (panelGroup != null) panelGroup.alpha = 1f;
+        if (iconGroup != null) iconGroup.alpha = 1f;
+        if (backgroundGroup != null) backgroundGroup.alpha = 1f;
+        if (panelRect != null && panelBaseCaptured) panelRect.anchoredPosition = panelBasePosition;
+        if (iconRect != null && panelBaseCaptured) iconRect.anchoredPosition = iconBasePosition;
 
-            foreach (GameObject row in spawnedRows)
+        foreach (GameObject row in spawnedRows)
+        {
+            ResetRowVisualState(row);
+        }
+
+        if (panelAnimator != null && !string.IsNullOrEmpty(showTrigger) && panelAnimator.isActiveAndEnabled)
+        {
+            if (!string.IsNullOrEmpty(hideTrigger))
             {
-                ResetRowVisualState(row);
+                panelAnimator.ResetTrigger(hideTrigger);
             }
-            return;
+            panelAnimator.SetTrigger(showTrigger);
         }
 
-        if (panelRoutine != null)
+        // A brand new task still gets the '!' attention flash.
+        if (animate)
         {
-            StopCoroutine(panelRoutine);
+            PlayIconAlert();
         }
-        panelRoutine = StartCoroutine(PanelIntro());
-    }
-
-    // Three beats: the "!" slides in from the right, then the background fades in behind it,
-    // then the row text fades in last - each stage starting only once the previous one lands.
-    private IEnumerator PanelIntro()
-    {
-        if (panelGroup != null)
-        {
-            panelGroup.alpha = 1f;
-        }
-
-        if (iconGroup != null)
-        {
-            iconGroup.alpha = 0f;
-        }
-        if (backgroundGroup != null)
-        {
-            backgroundGroup.alpha = 0f;
-        }
-
-        if (iconRect != null)
-        {
-            Vector2 from = iconBasePosition + new Vector2(panelSlideDistance, 0f);
-            yield return SlidePosition(iconRect, iconGroup, from, iconBasePosition, iconSlideDuration);
-        }
-
-        yield return new WaitForSeconds(introStageGap);
-
-        if (backgroundGroup != null)
-        {
-            yield return FadeGroup(backgroundGroup, 0f, 1f, backgroundFadeDuration);
-        }
-
-        yield return new WaitForSeconds(introStageGap);
-
-        // Rows fade in together with their own staggered entrance, standing in for "the text".
-        PlayRowIntros(spawnedRows, 0f, localTasks.Count);
-
-        panelRoutine = null;
-
-        // The icon still gets its attention flash on a first appearance - a brand new task is a
-        // brand new task whether or not the panel itself was already on screen.
-        PlayIconAlert();
-    }
-
-    private IEnumerator SlidePosition(RectTransform rect, CanvasGroup group, Vector2 from, Vector2 to, float duration)
-    {
-        float t = 0f;
-        rect.anchoredPosition = from;
-        if (group != null) group.alpha = 0f;
-
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float k = EaseOut(Mathf.Clamp01(t / duration));
-            if (group != null) group.alpha = k;
-            rect.anchoredPosition = Vector2.LerpUnclamped(from, to, k);
-            yield return null;
-        }
-
-        if (group != null) group.alpha = 1f;
-        rect.anchoredPosition = to;
-    }
-
-    private IEnumerator FadeGroup(CanvasGroup group, float from, float to, float duration)
-    {
-        float t = 0f;
-        group.alpha = from;
-
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float k = EaseOut(Mathf.Clamp01(t / duration));
-            group.alpha = Mathf.LerpUnclamped(from, to, k);
-            yield return null;
-        }
-
-        group.alpha = to;
     }
 
     // The "!" icon flashing red and scaling up - on a brand new task appearing, and again on the
@@ -746,65 +699,6 @@ public class TaskListHUD : MonoBehaviour
         warningIcon.color = iconBaseColor;
         iconRect.localScale = Vector3.one;
         iconFlashRoutine = null;
-    }
-
-    private void PlayRowIntros(List<GameObject> rows, float delay, int limit = int.MaxValue)
-    {
-        int staggerIndex = 0;
-        for (int i = 0; i < rows.Count && i < limit; i++)
-        {
-            GameObject row = rows[i];
-            if (row == null || !row.activeSelf)
-            {
-                continue;
-            }
-
-            StopRowRoutine(row);
-
-            if (!animate)
-            {
-                ResetRowVisualState(row);
-                continue;
-            }
-
-            rowRoutines[row] = StartCoroutine(RowIntro(row, delay + staggerIndex * rowStagger));
-            staggerIndex++;
-        }
-    }
-
-    private IEnumerator RowIntro(GameObject row, float delay)
-    {
-        CanvasGroup group = GetRowGroup(row);
-        RectTransform rect = row.transform as RectTransform;
-
-        group.alpha = 0f;
-        rect.localScale = Vector3.one * rowIntroScale;
-
-        if (delay > 0f)
-        {
-            yield return new WaitForSeconds(delay);
-        }
-
-        float t = 0f;
-        while (t < rowFadeDuration)
-        {
-            // The panel can be switched off mid-entrance (death, settings toggle) - bail rather
-            // than keep driving a row nobody is looking at.
-            if (root == null || !root.activeSelf)
-            {
-                break;
-            }
-
-            t += Time.deltaTime;
-            float k = EaseOut(Mathf.Clamp01(t / rowFadeDuration));
-            group.alpha = k;
-            rect.localScale = Vector3.LerpUnclamped(Vector3.one * rowIntroScale, Vector3.one, k);
-            yield return null;
-        }
-
-        group.alpha = 1f;
-        rect.localScale = Vector3.one;
-        rowRoutines.Remove(row);
     }
 
     private void PlayRowCompleted(GameObject row)
@@ -944,13 +838,5 @@ public class TaskListHUD : MonoBehaviour
         {
             group.alpha = 1f;
         }
-    }
-
-    private static float EaseOut(float k)
-    {
-        // Cubic ease-out: quick off the mark, settles softly. Cheap, and matches the snappy feel of
-        // the other HUD pops.
-        float inv = 1f - k;
-        return 1f - inv * inv * inv;
     }
 }

@@ -1329,11 +1329,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.1
-  far clip plane: 5000
-  field of view: 65.81041
+  near clip plane: 0.01
+  far clip plane: 1000
+  field of view: 70.73708
   orthographic: 0
-  orthographic size: 10
+  orthographic size: 5
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -1357,8 +1357,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 257529923}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0022646186, y: 0.0001619958, z: -0.0000063311445, w: 0.9999975}
-  m_LocalPosition: {x: -0.0033370361, y: 1.3707383, z: 0.11877243}
+  m_LocalRotation: {x: -0.5216783, y: -0.51315063, z: 0.48192033, w: 0.48195532}
+  m_LocalPosition: {x: 52.66445, y: -4.9125004, z: 0.96150494}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -66171,6 +66171,7 @@ MonoBehaviour:
       edgeMargin: 4
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 1
       hugEdge: 1
@@ -66200,6 +66201,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 1
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66229,6 +66231,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66258,6 +66261,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66287,6 +66291,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66316,6 +66321,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66345,6 +66351,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 1
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66374,6 +66381,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 1
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66403,6 +66411,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66424,7 +66433,7 @@ MonoBehaviour:
       regions: 040000000700000003000000
       count: {x: 1, y: 1}
       role: 2
-      sizeTarget: 3
+      sizeTarget: 1.3
       scaleJitter: {x: 1, y: 1}
       footprintPadding: 0.6
       selfSpacing: 0
@@ -66432,6 +66441,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 4.25
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66461,6 +66471,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66490,6 +66501,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 2
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66519,6 +66531,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 0
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66548,6 +66561,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 6
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66577,6 +66591,7 @@ MonoBehaviour:
       edgeMargin: 8
       alignToGround: 0
       tiltDegrees: 3
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66606,6 +66621,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 1
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66636,6 +66652,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 1
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 2
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66668,6 +66685,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 1
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 0
       faceAwayFromEdge: 0
       hugEdge: 0
@@ -66689,7 +66707,7 @@ MonoBehaviour:
       regions: 06000000030000000700000005000000
       count: {x: 1, y: 1}
       role: 0
-      sizeTarget: 1
+      sizeTarget: 3
       scaleJitter: {x: 0.8, y: 1.2}
       footprintPadding: 0.6
       selfSpacing: 0
@@ -66697,6 +66715,7 @@ MonoBehaviour:
       edgeMargin: 10
       alignToGround: 0
       tiltDegrees: 5
+      zSpawnOffset: 0
       yOffset: 2.19
       faceAwayFromEdge: 0
       hugEdge: 0

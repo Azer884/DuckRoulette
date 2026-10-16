@@ -25,10 +25,18 @@ public class TruckPushObjective : NetworkBehaviour
         "stops on the bank instead of rolling in.")]
     private int shoreSetback = 4;
 
+    [SerializeField, Tooltip("Solo testing only (TaskManager.SoloTestMode, no river on the map): the " +
+        "goal is placed this many metres in front of the truck.")]
+    private float soloTestGoalDistance = 15f;
+
     [Header("Arrows")]
     [SerializeField, Tooltip("Material for the arrow strip and goal ring. A tiling arrow texture on " +
         "an unlit, additive or transparent URP shader; an HDR colour above 1 makes it bloom.")]
     private Material arrowMaterial;
+    [SerializeField, Tooltip("Material for the goal ring. Plain (untextured) so the ring is drawn all " +
+        "the way round - the arrow texture stretched over it left half the circle empty. Falls back " +
+        "to Arrow Material.")]
+    private Material goalRingMaterial;
     [SerializeField] private float arrowWidth = 1.6f;
     [SerializeField, Tooltip("Metres between arrow heads along the path.")]
     private float arrowSpacing = 2f;
@@ -52,16 +60,19 @@ public class TruckPushObjective : NetworkBehaviour
     private readonly RaycastHit[] hits = new RaycastHit[8];
 
     private const int RingSegments = 40;
+    private static readonly int ScrollSpeedId = Shader.PropertyToID("_ScrollSpeed");
 
     private void OnEnable()
     {
         TaskManager.RegisterObjective(pushTask);
+        TaskHighlighter.Register(pushTask, gameObject);
         TaskManager.ServerTaskAssigned += OnServerTaskAssigned;
     }
 
     private void OnDisable()
     {
         TaskManager.UnregisterObjective(pushTask);
+        TaskHighlighter.Unregister(pushTask, gameObject);
         TaskManager.ServerTaskAssigned -= OnServerTaskAssigned;
         SetArrowsVisible(false);
     }
@@ -86,6 +97,16 @@ public class TruckPushObjective : NetworkBehaviour
         if (TryFindRiverGoal(transform.position, out Vector3 point))
         {
             goal.Value = point;
+            active.Value = true;
+        }
+        else if (TaskManager.SoloTestMode)
+        {
+            // The testing scene has no generated river: a goal straight ahead of the truck is
+            // enough to try the push alone.
+            Vector3 ahead = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            Vector3 test = transform.position + ahead * soloTestGoalDistance;
+            test.y = SampleGround(test, transform.position.y);
+            goal.Value = test;
             active.Value = true;
         }
         else
@@ -247,9 +268,19 @@ public class TruckPushObjective : NetworkBehaviour
             return;
         }
 
-        scroll -= scrollSpeed / Mathf.Max(0.01f, arrowSpacing) * Time.deltaTime;
-        scroll %= 1f;
-        pathMaterial.mainTextureOffset = new Vector2(scroll, 0f);
+        // Arrows crawl from the truck towards the goal, looping forever. The ScrollingArrow shader
+        // scrolls by itself; anything else gets its texture offset moved (URP particle shaders
+        // ignore that, which is why the arrows used to stand still).
+        float tilesPerSecond = scrollSpeed / Mathf.Max(0.01f, arrowSpacing);
+        if (pathMaterial.HasProperty(ScrollSpeedId))
+        {
+            pathMaterial.SetFloat(ScrollSpeedId, tilesPerSecond);
+        }
+        else
+        {
+            scroll = Mathf.Repeat(scroll - tilesPerSecond * Time.deltaTime, 1f);
+            pathMaterial.mainTextureOffset = new Vector2(scroll, 0f);
+        }
 
         // The ring breathes so it reads as a destination, not a decal.
         float pulse = 1f + Mathf.Sin(Time.time * 3f) * 0.06f;
@@ -290,7 +321,7 @@ public class TruckPushObjective : NetworkBehaviour
         pathLine.textureScale = new Vector2(1f / Mathf.Max(0.1f, arrowSpacing), 1f);
         pathLine.widthMultiplier = arrowWidth;
 
-        goalRing = CreateLine("TruckPushGoal", arrowMaterial);
+        goalRing = CreateLine("TruckPushGoal", goalRingMaterial != null ? goalRingMaterial : arrowMaterial);
         goalRing.loop = true;
         goalRing.useWorldSpace = false;
         goalRing.widthMultiplier = arrowWidth * 0.5f;
@@ -323,16 +354,25 @@ public class TruckPushObjective : NetworkBehaviour
         flat.y = 0f;
         float length = flat.magnitude;
 
+        // The arrows stop where they meet the ring's outer edge instead of running on into it.
+        float ringEdge = goalRadius + goalRing.widthMultiplier * 0.5f;
+        float pathLength = length - ringEdge;
+
         samples.Clear();
-        int count = Mathf.Max(2, Mathf.CeilToInt(length * samplesPerMetre) + 1);
-        for (int i = 0; i < count; i++)
+        if (pathLength > 0.05f)
         {
-            float t = i / (float)(count - 1);
-            Vector3 p = Vector3.Lerp(start, end, t);
-            p.y = SampleGround(p, p.y) + groundOffset;
-            samples.Add(p);
+            Vector3 pathEnd = start + flat / length * pathLength;
+            int count = Mathf.Max(2, Mathf.CeilToInt(pathLength * samplesPerMetre) + 1);
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)(count - 1);
+                Vector3 p = Vector3.Lerp(start, pathEnd, t);
+                p.y = SampleGround(p, p.y) + groundOffset;
+                samples.Add(p);
+            }
         }
 
+        // Already inside the ring: nothing left to point at.
         pathLine.positionCount = samples.Count;
         pathLine.SetPositions(samples.ToArray());
 

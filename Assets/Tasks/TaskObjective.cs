@@ -57,6 +57,7 @@ public class TaskObjective : MonoBehaviour, IInteractable
         // Puts this task into rotation for as long as this object exists. A task with no objective
         // in the level is never dealt, so adding this component is the whole opt-in.
         TaskManager.RegisterObjective(task);
+        TaskHighlighter.Register(task, gameObject);
     }
 
     // TaskManager sits on the player prefab, so it does not exist yet when an in-scene prop like
@@ -89,6 +90,7 @@ public class TaskObjective : MonoBehaviour, IInteractable
     private void OnDisable()
     {
         TaskManager.UnregisterObjective(task);
+        TaskHighlighter.Unregister(task, gameObject);
 
         if (subscribedManager != null)
         {
