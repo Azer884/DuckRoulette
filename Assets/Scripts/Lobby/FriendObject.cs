@@ -16,6 +16,7 @@ public class FriendObject : MonoBehaviour
     [SerializeField] private string sentLabel = "Invite sent!";
     [SerializeField] private string failedLabel = "Invite failed";
     [SerializeField] private string sendingLabel = "Inviting...";
+    [SerializeField] private string joiningLabel = "Joining party...";
     [SerializeField] private Color sentColor = new(0.45f, 0.9f, 0.4f, 1f);
     [SerializeField] private Color failedColor = new(0.95f, 0.35f, 0.3f, 1f);
 
@@ -108,6 +109,15 @@ public class FriendObject : MonoBehaviour
             return;
         }
 
+        // They already invited us: join their party instead of pulling them into a new lobby.
+        // Not while we share a lobby with someone else, so one click can't break up that party.
+        GameNetworkManager network = GameNetworkManager.Instance;
+        if (network != null && network.HasInviteFrom(steamid) && !InPartyWithOthers())
+        {
+            StartCoroutine(JoinInviterParty(network));
+            return;
+        }
+
         GameObject settingsBar = GameObject.FindGameObjectWithTag("SettingsBar");
         if (settingsBar != null && settingsBar.TryGetComponent(out Animator settingsAnim))
         {
@@ -127,6 +137,21 @@ public class FriendObject : MonoBehaviour
         {
             SendInvite();
         }
+    }
+
+    private static bool InPartyWithOthers()
+    {
+        return LobbySaver.instance != null && LobbySaver.instance.currentLobby.HasValue &&
+               LobbySaver.instance.currentLobby.Value.MemberCount > 1;
+    }
+
+    private IEnumerator JoinInviterParty(GameNetworkManager network)
+    {
+        BeginFeedback(joiningLabel, sentColor);
+        network.JoinInviteFrom(steamid);
+
+        yield return new WaitForSecondsRealtime(inviteCooldown);
+        EndFeedback();
     }
 
     private IEnumerator WaitForLobbyCreationAndInvite()
@@ -166,7 +191,9 @@ public class FriendObject : MonoBehaviour
 
         if (sent && SFXManager.Instance != null)
         {
-            SFXManager.Instance.PlayUI(SFXManager.Instance.taskCompleteClip);
+            SFXManager.Instance.PlayUI(SFXManager.Instance.inviteSentClip != null
+                ? SFXManager.Instance.inviteSentClip
+                : SFXManager.Instance.taskCompleteClip);
         }
 
         yield return new WaitForSecondsRealtime(inviteCooldown);

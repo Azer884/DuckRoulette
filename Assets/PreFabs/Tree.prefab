@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8168531518459472093}
   - component: {fileID: 3668105301228654770}
   - component: {fileID: 5506406766690811684}
+  - component: {fileID: 8398249277287533852}
   m_Layer: 0
   m_Name: Tree
   m_TagString: Untagged
@@ -139,3 +140,19 @@ MonoBehaviour:
   gustAmount: 0.35
   gustLength: 25
   gustSpeed: 9
+--- !u!114 &8398249277287533852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5236731590719459693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 2
+  customValues: 0
+  muffle: 1
+  dampen: 0.5

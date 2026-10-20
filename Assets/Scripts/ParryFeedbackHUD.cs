@@ -62,6 +62,11 @@ public class ParryFeedbackHUD : MonoBehaviour
         bannerText.text = label;
         bannerGroup.gameObject.SetActive(true);
 
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.parryClip);
+        }
+
         if (bannerRoutine != null)
         {
             StopCoroutine(bannerRoutine);

@@ -126,7 +126,7 @@ namespace DuckRoulette.MapGen
         // The play mode bake, owned here so a regenerate does not leak the previous one.
         Material runtimeTerrainMaterial;
         Texture2D runtimeTerrainTexture;
-        MeshRenderer terrainRenderer;
+        readonly List<MeshRenderer> terrainRenderers = new List<MeshRenderer>();
 
         const string GeneratedRootName = "Generated";
 
@@ -211,28 +211,39 @@ namespace DuckRoulette.MapGen
 
             // Fixed points first, then the scatter, which is told to avoid them.
             populator.Clear();
-            river.PlaceRiverProps(River, CreateChild(root, "RiverProps"), HeightMap, heightMultiplier, populator);
+            Transform riverProps = CreateChild(root, "RiverProps");
+            river.PlaceRiverProps(River, riverProps, HeightMap, heightMultiplier, populator);
 
             // The outfall raises a bank under itself, so the waterline has to be worked out again
             // before anything is scattered on the result.
             KeepLandAboveWater();
-            populator.Populate(CreateChild(root, "Props"), HeightMap, RegionMap, Pollution, heightMultiplier, rng,
-                River.surfaceHeight);
+            Transform props = CreateChild(root, "Props");
+            populator.Populate(props, HeightMap, RegionMap, Pollution, heightMultiplier, rng, River.surfaceHeight);
 
             // The mesh is built after the scatter because rules may flatten the ground they stand on.
-            BuildTerrain(root);
+            Transform terrain = BuildTerrain(root);
 
             if (buildWater)
             {
                 BuildWater(root);
             }
 
+            Transform mountainRing = null;
             if (buildMountains)
             {
-                mountains.Build(CreateChild(root, "Mountains"), width, height, HeightMap, heightMultiplier, rng);
+                mountainRing = CreateChild(root, "Mountains");
+                mountainRing.gameObject.AddComponent<SoundOccluder>().Type = SoundOccluderType.Heavy;
+                mountains.Build(mountainRing, width, height, HeightMap, heightMultiplier, rng);
             }
 
             BuildRegionMarkers(CreateChild(root, "Regions"), centres);
+
+            if (TryGetComponent(out MapChunkStreamer streamer))
+            {
+                // The ground and the mountain ring are what you see across the whole map, so they
+                // are culled by view only; props are also hidden by distance.
+                streamer.Rebuild(new[] { props, riverProps }, new[] { terrain, mountainRing });
+            }
 
             var summary = new System.Text.StringBuilder();
             foreach (KeyValuePair<string, int> pair in populator.LastCounts)
@@ -413,29 +424,47 @@ namespace DuckRoulette.MapGen
             TerrainShaper.ResolveWater(HeightMap, RegionMap, regionPartition, River.surfaceHeight, River.waterSeeds);
         }
 
-        void BuildTerrain(Transform root)
+        Transform BuildTerrain(Transform root)
         {
             MeshData meshData = MeshGenerator.GenerateTerrainMesh(HeightMap, heightMultiplier);
             Mesh mesh = meshData.CreateMesh();
             mesh.name = "ProceduralTerrain";
 
+            // The collider is always the whole map in one piece, on the Terrain object itself:
+            // chunk streaming hides renderers only, so the ground under a hidden chunk stays solid,
+            // and the spawn placer finds the ground collider here.
             Transform terrain = CreateChild(root, "Terrain");
-            var filter = terrain.gameObject.AddComponent<MeshFilter>();
-            var renderer = terrain.gameObject.AddComponent<MeshRenderer>();
             var collider = terrain.gameObject.AddComponent<MeshCollider>();
-
-            filter.sharedMesh = mesh;
             collider.sharedMesh = mesh;
-
-            terrainRenderer = renderer;
-            PaintTerrain();
-
             terrain.gameObject.isStatic = true;
+            terrain.gameObject.AddComponent<SoundOccluder>().Type = SoundOccluderType.Heavy;
+
+            terrainRenderers.Clear();
+            if (TryGetComponent(out MapChunkStreamer streamer))
+            {
+                // Drawn as one mesh per streamer chunk, so each piece can be culled on its own.
+                foreach (Mesh chunk in MeshGenerator.SplitIntoChunks(mesh, width, height, streamer.chunkCells))
+                {
+                    Transform child = CreateChild(terrain, chunk.name);
+                    child.gameObject.AddComponent<MeshFilter>().sharedMesh = chunk;
+                    terrainRenderers.Add(child.gameObject.AddComponent<MeshRenderer>());
+                    child.gameObject.isStatic = true;
+                }
+            }
+            else
+            {
+                terrain.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+                terrainRenderers.Add(terrain.gameObject.AddComponent<MeshRenderer>());
+            }
+
+            PaintTerrain();
 
             if (display != null)
             {
                 display.DrawMesh(meshData);
             }
+
+            return terrain;
         }
 
         /// <summary>
@@ -445,7 +474,8 @@ namespace DuckRoulette.MapGen
         /// </summary>
         public bool RepaintTerrain()
         {
-            if (RegionMap == null || HeightMap == null || terrainRenderer == null)
+            terrainRenderers.RemoveAll(renderer => renderer == null);
+            if (RegionMap == null || HeightMap == null || terrainRenderers.Count == 0)
             {
                 return false;
             }
@@ -479,7 +509,10 @@ namespace DuckRoulette.MapGen
 
             if (material != null)
             {
-                terrainRenderer.sharedMaterial = material;
+                foreach (MeshRenderer renderer in terrainRenderers)
+                {
+                    renderer.sharedMaterial = material;
+                }
             }
         }
 
@@ -623,6 +656,7 @@ namespace DuckRoulette.MapGen
             Transform ice = CreateChild(water, "RiverIce");
             ice.gameObject.tag = IceTag;
             ice.gameObject.isStatic = true;
+            ice.gameObject.AddComponent<SoundOccluder>().Type = SoundOccluderType.Heavy;
             var collider = ice.gameObject.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }

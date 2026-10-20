@@ -8730,26 +8730,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2946876386710230079, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-      propertyPath: openMarker
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 2946876386710230079, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-      propertyPath: warningIcon
-      value: 
-      objectReference: {fileID: 1030995919}
-    - target: {fileID: 2946876386710230079, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-      propertyPath: warningMessage
-      value: No Gun until you finish!
-      objectReference: {fileID: 0}
-    - target: {fileID: 2946876386710230079, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-      propertyPath: completedMarker
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 2946876386710230079, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-      propertyPath: panelBackground
-      value: 
-      objectReference: {fileID: 1030995918}
     - target: {fileID: 4653028441534765520, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -8839,28 +8819,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
---- !u!114 &1030995918 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 120538552519331576, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-  m_PrefabInstance: {fileID: 1030995917}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
---- !u!114 &1030995919 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2974392468106968039, guid: a5c31f06cba151d4ca531509e29ee998, type: 3}
-  m_PrefabInstance: {fileID: 1030995917}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &1099347518
 GameObject:
   m_ObjectHideFlags: 0
@@ -37745,6 +37703,7 @@ GameObject:
   - component: {fileID: 5045124084103498974}
   - component: {fileID: 8165831869895342449}
   - component: {fileID: 8165831869895342450}
+  - component: {fileID: 8165831869895342451}
   m_Layer: 0
   m_Name: MapGen
   m_TagString: Untagged
@@ -47816,6 +47775,7 @@ GameObject:
   - component: {fileID: 3658226472830866636}
   - component: {fileID: 8995423332780462087}
   - component: {fileID: 8995423332780462088}
+  - component: {fileID: 8995423332780462089}
   m_Layer: 0
   m_Name: Snow
   m_TagString: Untagged
@@ -65813,6 +65773,7 @@ GameObject:
   - component: {fileID: 5700249662366136589}
   - component: {fileID: 2832818612059062994}
   - component: {fileID: 5700249662366136590}
+  - component: {fileID: 5700249662366136591}
   m_Layer: 0
   m_Name: Ice
   m_TagString: Ice
@@ -66639,8 +66600,8 @@ MonoBehaviour:
     - label: Physics Rocks
       enabled: 1
       prefabs:
-      - {fileID: 1616440189193386292, guid: 7f48c478836372749a0a62aa5bed828e, type: 3}
-      - {fileID: 919132149155446097, guid: 2a4f1c9ce48fafc409ee7c299541ad03, type: 3}
+      - {fileID: 4917207058090941407, guid: bc08338bb3029044b9daf1a74663847c, type: 3}
+      - {fileID: 5347738327213277360, guid: bd6a5b26f1773c14ba5d5f62add89476, type: 3}
       regions: 06000000030000000700000005000000
       count: {x: 6, y: 10}
       role: 0
@@ -66854,6 +66815,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1165073596168651963, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+--- !u!114 &5700249662366136591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4210489978116530825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 1
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!4 &5727802014012398378 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7107292004119505543, guid: 94d37003903034d4190fc580beabceef, type: 3}
@@ -67398,12 +67375,12 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2264448434851250257}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: -6730983486251991596, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: f5df38976dca08a40a6a761bc2e04db5, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 0.774
   m_Pitch: 1
   Loop: 1
@@ -67712,6 +67689,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DuckRoulette.MapGen.MapSeedSync
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8165831869895342451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 328969039037144830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36f27a4e3b97ea647bd14805d9ef5bc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DuckRoulette.MapGen.MapChunkStreamer
+  chunkCells: 16
+  viewDistance: 70
+  hysteresis: 6
+  viewMargin: 12
 --- !u!23 &8193994245938721932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -67984,6 +67977,7 @@ GameObject:
   - component: {fileID: 3260616447143550286}
   - component: {fileID: 7762067044114760927}
   - component: {fileID: 8707273951189100255}
+  - component: {fileID: 8707273951189100256}
   m_Layer: 0
   m_Name: Mountains
   m_TagString: Untagged
@@ -68013,6 +68007,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4493585093827132993, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+--- !u!114 &8707273951189100256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8707273951189100254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 1
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!23 &8995423332780462087
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -68084,6 +68094,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 6124436484349841348, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+--- !u!114 &8995423332780462089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585015376958130796}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 1
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!4 &9082730343484627499
 Transform:
   m_ObjectHideFlags: 0

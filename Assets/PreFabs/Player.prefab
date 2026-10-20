@@ -12214,7 +12214,7 @@ GameObject:
   - component: {fileID: 6107794117867015541}
   - component: {fileID: 5193729548571918748}
   - component: {fileID: 6929125359085407976}
-  m_Layer: 13
+  m_Layer: 6
   m_Name: Bumbox
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -12231,7 +12231,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.76767284, y: 0.0013952131, z: 0.001665302, w: 0.64083827}
   m_LocalPosition: {x: -0.007, y: 0.396, z: 0.303}
-  m_LocalScale: {x: 15.317909, y: 15.317911, z: 15.317911}
+  m_LocalScale: {x: 13.786118, y: 13.786119, z: 13.786119}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6566756217050747349}
@@ -15321,6 +15321,7 @@ MonoBehaviour:
   eyeHeight: 1
   minGroupSize: 3
   roundsBeforeSwap: 4
+  roundsBeforeHighlight: 1
   teamUpTask: {fileID: 11400000, guid: 6127d27d42d630b49bc2d6241c60e1e2, type: 2}
 --- !u!1 &6094000583348113555
 GameObject:

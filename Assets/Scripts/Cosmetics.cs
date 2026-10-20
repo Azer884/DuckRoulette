@@ -95,6 +95,12 @@ public class Cosmetics : MonoBehaviour
 
     public void SaveCosmeticIndexes()
     {
+        // Only the player's own changes save; loading the outfit goes through Change() alone.
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.cosmeticChangeClip);
+        }
+
         string data = $"{hatIndex},{accessorieIndex},{shirtIndex}";
 
         // Steam Cloud is per Steam account, so the outfit follows the account to any PC. Without

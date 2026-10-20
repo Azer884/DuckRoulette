@@ -136,6 +136,7 @@ MonoBehaviour:
   maxPitch: 40
   causeOfLeaving: Radiation
   hideDuration: 10
+  barColor: {r: 0.251, g: 0.812, b: 0, a: 1}
   holderId: -1
 --- !u!1 &2259649261540452183
 GameObject:
@@ -209,6 +210,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3814611192847959391}
   - component: {fileID: 1454827725880538497}
+  - component: {fileID: 3329574990883251093}
   m_Layer: 0
   m_Name: Pipe
   m_TagString: Untagged
@@ -258,6 +260,22 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &3329574990883251093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7161275464176366664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 3
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &8269278124029303356
 GameObject:
   m_ObjectHideFlags: 0

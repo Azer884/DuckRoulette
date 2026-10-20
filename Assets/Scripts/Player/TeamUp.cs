@@ -281,6 +281,11 @@ public class TeamUp : NetworkBehaviour
 
         string name = GameManager.Instance != null ? GameManager.Instance.GetPlayerNickname(requesterId) : "Player " + requesterId;
         TeamUpRequestHUD.Show(name, requesterId, interactAction, endTeamUpAction, timeout);
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayNotification();
+        }
     }
 
     /// <summary>Closes the incoming request alert without answering - the request was answered,

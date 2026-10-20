@@ -12,7 +12,6 @@ public class PlayerInfo : MonoBehaviour
     public Image readyStatus;
     public ulong steamId;
     public bool isReady;
-    public bool haveEoughCoins;
 
     private GameObject arrow;
 

@@ -193,6 +193,11 @@ namespace Weather
             // A rain-to-storm escalation is worth shouting about again, so restart the whole
             // sequence rather than quietly relabelling the docked bar.
             EnterState(State.Announcing);
+
+            if (SFXManager.Instance != null)
+            {
+                SFXManager.Instance.PlayUI(SFXManager.Instance.stormWarningClip);
+            }
         }
 
         private void EnterState(State next)

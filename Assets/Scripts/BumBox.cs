@@ -13,11 +13,17 @@ public class BumBox : NetworkBehaviour, IInteractable
     public int holderId = -1;
 
     [Header("Music")]
-    [Tooltip("The tracks this boombox cycles through with the Change Music key (N). Drop new " +
-        "AudioClips in here and they are in rotation - no code change. Order is the play order; " +
-        "the list wraps around. Leaving it empty falls back to whatever clip the AudioSource was " +
-        "authored with, and the Change Music key does nothing.")]
+    [Tooltip("Fallback tracks, only used when there is no MusicManager (e.g. a test scene). In a " +
+        "normal session the box plays MusicManager's in-game tracks, so the game music and the " +
+        "boombox are always the same list.")]
     public AudioClip[] playlist;
+
+    /// <summary>The tracks this box cycles through: MusicManager's in-game tracks, or the local
+    /// fallback list when there is no MusicManager.</summary>
+    public AudioClip[] Playlist =>
+        MusicManager.Instance != null && MusicManager.Instance.GameTracks.Length > 0
+            ? MusicManager.Instance.GameTracks
+            : playlist;
 
     [SerializeField, Tooltip("Optional: the task completed by changing this box's music (the " +
         "Change Music key). Leave empty on a box that is not a task objective. This box already " +
@@ -32,12 +38,15 @@ public class BumBox : NetworkBehaviour, IInteractable
 
     private AudioSource _audioSource;
 
+    // MusicManager's source while it plays this box's music; null when the box plays on its own.
+    private AudioSource _drivingSource;
+
     [Header("Map-wide music events")]
     [SerializeField, Tooltip("Seconds between the moments the boombox is heard across the whole " +
         "map (2D for everyone), picked at random in this range.")]
-    private Vector2 broadcastIntervalRange = new(45f, 90f);
+    private Vector2 broadcastIntervalRange = new(150f, 300f);
     [SerializeField, Tooltip("How long, in seconds, one of those map-wide moments lasts.")]
-    private Vector2 broadcastDurationRange = new(12f, 20f);
+    private Vector2 broadcastDurationRange = new(10f, 15f);
 
     // True while the music is heard everywhere at full volume instead of from the box. Server
     // decides, so every player hears the switch at the same moment.
@@ -68,7 +77,7 @@ public class BumBox : NetworkBehaviour, IInteractable
 
     /// <summary>The track picked with the Change Music key, or null before anyone has pressed it.</summary>
     public AudioClip CurrentClip =>
-        playlist != null && trackIndex.Value >= 0 && trackIndex.Value < playlist.Length ? playlist[trackIndex.Value] : null;
+        Playlist != null && trackIndex.Value >= 0 && trackIndex.Value < Playlist.Length ? Playlist[trackIndex.Value] : null;
 
     /// <summary>True while the music is heard across the whole map instead of from the box.</summary>
     public bool IsBroadcasting => broadcasting.Value;
@@ -77,6 +86,7 @@ public class BumBox : NetworkBehaviour, IInteractable
     /// isn't heard twice) and its pulse follows the manager's source instead.</summary>
     public void SetDrivenBy(AudioSource musicSource)
     {
+        _drivingSource = musicSource;
         if (_audioSource != null)
         {
             _audioSource.mute = musicSource != null;
@@ -117,6 +127,13 @@ public class BumBox : NetworkBehaviour, IInteractable
 
         if (IsServer)
         {
+            // Start on a random in-game track so each match doesn't open with the same song.
+            AudioClip[] tracks = Playlist;
+            if (trackIndex.Value < 0 && tracks != null && tracks.Length > 0)
+            {
+                trackIndex.Value = UnityEngine.Random.Range(0, tracks.Length);
+            }
+
             StartCoroutine(BroadcastLoop());
         }
 
@@ -165,7 +182,7 @@ public class BumBox : NetworkBehaviour, IInteractable
     /// pressed while looking at (or holding) this box.</summary>
     public void ChangeMusic()
     {
-        if (playlist == null || playlist.Length == 0)
+        if (Playlist == null || Playlist.Length == 0)
         {
             return;
         }
@@ -186,23 +203,23 @@ public class BumBox : NetworkBehaviour, IInteractable
     [ServerRpc(RequireOwnership = false)]
     private void ChangeMusicServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        if (!IsSenderNear(serverRpcParams.Receive.SenderClientId) || playlist == null || playlist.Length == 0)
+        if (!IsSenderNear(serverRpcParams.Receive.SenderClientId) || Playlist == null || Playlist.Length == 0)
         {
             return;
         }
 
-        trackIndex.Value = (trackIndex.Value + 1) % playlist.Length;
+        trackIndex.Value = (trackIndex.Value + 1) % Playlist.Length;
     }
 
     /// <summary>Server only: move on to the next song (the current one finished playing).</summary>
     public void ServerNextTrack()
     {
-        if (!IsServer || playlist == null || playlist.Length == 0)
+        if (!IsServer || Playlist == null || Playlist.Length == 0)
         {
             return;
         }
 
-        trackIndex.Value = (trackIndex.Value + 1) % playlist.Length;
+        trackIndex.Value = (trackIndex.Value + 1) % Playlist.Length;
     }
 
     private void OnTrackChanged(int previous, int current)
@@ -212,12 +229,12 @@ public class BumBox : NetworkBehaviour, IInteractable
 
     private void ApplyTrack(int index)
     {
-        if (_audioSource == null || playlist == null || index < 0 || index >= playlist.Length)
+        if (_audioSource == null || Playlist == null || index < 0 || index >= Playlist.Length)
         {
             return;
         }
 
-        AudioClip clip = playlist[index];
+        AudioClip clip = Playlist[index];
         if (clip == null)
         {
             return;
@@ -349,7 +366,9 @@ public class BumBox : NetworkBehaviour, IInteractable
     [ClientRpc]
     private void MuteClientRpc()
     {
-        if (TryGetComponent<AudioSource>(out var audioSource))
+        // While MusicManager plays this box's music, muting the box mutes that music.
+        AudioSource audioSource = _drivingSource != null ? _drivingSource : _audioSource;
+        if (audioSource != null)
         {
             if (audioSource.isPlaying)
             {

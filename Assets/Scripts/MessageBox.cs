@@ -60,6 +60,11 @@ public class MessageBox : MonoBehaviour
         Instance.textMeshPro.color = color ?? Color.white;
         Instance.textMeshPro.gameObject.SetActive(true);
 
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayNotification();
+        }
+
         if (Instance.hideCoroutine != null)
         {
             Instance.StopCoroutine(Instance.hideCoroutine);

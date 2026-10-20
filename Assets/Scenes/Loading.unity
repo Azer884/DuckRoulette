@@ -321,22 +321,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicManager
   audioMixer: {fileID: 24100000, guid: bde1baeb29023574d8e731fa4458f0f7, type: 2}
-  fadeDuration: 5
+  fadeDuration: 3
   musicClips:
   - {fileID: 8300000, guid: e75fcf201bb09f84aa441d07e0482da9, type: 3}
   - {fileID: 8300000, guid: 523d42d22f5db3c43bbbfba2259f35e1, type: 3}
+  - {fileID: 8300000, guid: d9c076ba20ab4cf4ba5c57161e9b2b56, type: 3}
+  - {fileID: 8300000, guid: 1659e416a9f4f2347a2b8356d53cb73e, type: 3}
+  - {fileID: 8300000, guid: bee9f64a3ffd9a945b369b586412ffd5, type: 3}
+  - {fileID: 8300000, guid: 454e4273b814c3d4faf0258ac9bffe0c, type: 3}
+  - {fileID: 8300000, guid: be74815bcefda5c42a83bc8c84936c7f, type: 3}
+  - {fileID: 8300000, guid: 405b3b1aea7cdae4a89be1eae9eb345d, type: 3}
+  - {fileID: 8300000, guid: 2937f609f0e8f70499ac232e404a2422, type: 3}
+  - {fileID: 8300000, guid: 9cb951c1eb613d64bbb8c481d2f49033, type: 3}
+  - {fileID: 8300000, guid: f1bd6fe9181c18e4d95932a6d3dde880, type: 3}
+  - {fileID: 8300000, guid: e268875d914d3c944a0d7a541b21c06d, type: 3}
+  - {fileID: 8300000, guid: 13fa662e2c5469e41b5723453f9c168c, type: 3}
   spatialFadeSeconds: 12.43
   travelSeconds: 25.9
   broadcastBlendSeconds: 3.98
   minDistance: 4
-  maxDistance: 45
+  maxDistance: 30
+  falloffPower: 2
   trackCrossfadeSeconds: 1
   wallLayerMask:
     serializedVersion: 2
     m_Bits: 1
   muffledCutoff: 448
-  muffledVolume: 0.5
   muffleBlendSeconds: 0.25
+  muffleCheckInterval: 0.1
 --- !u!4 &119620256
 Transform:
   m_ObjectHideFlags: 0
@@ -1066,8 +1078,19 @@ MonoBehaviour:
   buttonClick: {fileID: 8300000, guid: bbc683063ec0826439e64c5b083f7701, type: 3}
   buttonSelect: {fileID: 8300000, guid: 82b2ec252dadab749a090bb868f5deac, type: 3}
   buttonHover: {fileID: 0}
-  toggleOn: {fileID: 0}
-  toggleOff: {fileID: 0}
+  toggleOn: {fileID: 8300000, guid: 780c81327d56cca41a6ea919d6547e50, type: 3}
+  toggleOff: {fileID: 8300000, guid: 780c81327d56cca41a6ea919d6547e50, type: 3}
+  errorClip: {fileID: 8300000, guid: db910224840535f49833fadd883d5ac1, type: 3}
+  notificationClip: {fileID: 8300000, guid: 9d14bedfd0796f94ea01118b1137f5ad, type: 3}
+  chatMessageClip: {fileID: 0}
+  playerJoinedClip: {fileID: 0}
+  playerLeftClip: {fileID: 0}
+  readyClip: {fileID: 0}
+  unreadyClip: {fileID: 0}
+  inviteSentClip: {fileID: 0}
+  cosmeticChangeClip: {fileID: 0}
+  parryClip: {fileID: 0}
+  stormWarningClip: {fileID: 0}
   slapClip: {fileID: 8300000, guid: b979c3d6692c5444e98d85f8cc9a76a4, type: 3}
   slapPainClips:
   - {fileID: 8300000, guid: 272a9da28725d324f944dbc24d25bf72, type: 3}
@@ -1102,12 +1125,13 @@ MonoBehaviour:
   victoryClip: {fileID: 0}
   defeatClip: {fileID: 0}
   coinRewardClip: {fileID: 0}
-  taskCompleteClip: {fileID: 0}
+  taskCompleteClip: {fileID: 8300000, guid: 55930e391c3b1d24dad2624047cc9f77, type: 3}
   rainLoopClip: {fileID: 8300000, guid: f5df38976dca08a40a6a761bc2e04db5, type: 3}
   windLoopClip: {fileID: 0}
   hailLoopClip: {fileID: 0}
   thunderClips: []
   uiSource: {fileID: 0}
+  uiPitchJitter: 0.06
 --- !u!1 &8113528663145672095
 GameObject:
   m_ObjectHideFlags: 0

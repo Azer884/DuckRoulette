@@ -211,6 +211,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6269374238150525853}
+  - component: {fileID: 280407805259744612}
   m_Layer: 0
   m_Name: BeerCrate
   m_TagString: Untagged
@@ -242,6 +243,22 @@ Transform:
   - {fileID: 7125148826621963215}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &280407805259744612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5210149900004806807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 2
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &5430944491094016579
 GameObject:
   m_ObjectHideFlags: 0

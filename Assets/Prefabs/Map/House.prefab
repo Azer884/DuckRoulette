@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 671871079464158067}
   - component: {fileID: 1995224415369300320}
   - component: {fileID: 4878373013366865718}
+  - component: {fileID: 4131438042414327056}
   m_Layer: 0
   m_Name: Stands
   m_TagString: Untagged
@@ -225,6 +226,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+--- !u!114 &4131438042414327056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2088720452657714491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 2
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &2143628890038064681
 GameObject:
   m_ObjectHideFlags: 0
@@ -584,6 +601,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8287619663560305037}
+  - component: {fileID: 2055175199703586385}
   m_Layer: 0
   m_Name: House
   m_TagString: Untagged
@@ -607,6 +625,22 @@ Transform:
   - {fileID: 1123093896261846540}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2055175199703586385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3711437184591324984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 0
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &4002957874130931298
 GameObject:
   m_ObjectHideFlags: 0

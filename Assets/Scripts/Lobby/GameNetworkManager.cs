@@ -24,6 +24,12 @@ public class GameNetworkManager : MonoBehaviour
 
     private readonly SemaphoreSlim actionLock = new SemaphoreSlim(1, 1);
     private static bool handledLaunchConnect;
+    private bool quickJoining;
+
+    // Lobby invites friends sent us in-game, by inviter. Clicking that friend in the menu joins
+    // their party instead of creating a new lobby to invite them into.
+    private readonly Dictionary<ulong, (Lobby lobby, float receivedAt)> pendingInvites = new();
+    private const float InviteLifetimeSeconds = 300f;
 
     private void Awake()
     {
@@ -107,6 +113,7 @@ public class GameNetworkManager : MonoBehaviour
             if (joinedLobby != RoomEnter.Success)
             {
                 Debug.Log("Failed to join lobby.");
+                ShowJoinFailed(joinedLobby);
             }
             else
             {
@@ -115,6 +122,18 @@ public class GameNetworkManager : MonoBehaviour
                 Debug.Log("Joined Lobby.");
             }
         });
+    }
+
+    private static void ShowJoinFailed(RoomEnter result)
+    {
+        string reason = result switch
+        {
+            RoomEnter.Full => "The lobby is full.",
+            RoomEnter.DoesntExist => "The lobby no longer exists.",
+            RoomEnter.Banned => "You can't join this lobby.",
+            _ => $"Steam refused the join ({result}).",
+        };
+        ErrorPopup.Show("Couldn't join", reason);
     }
 
     private void SteamMatchmaking_OnLobbyGameCreated(Lobby _lobby, uint _ip, ushort _port, SteamId _steamId)
@@ -126,11 +145,64 @@ public class GameNetworkManager : MonoBehaviour
     private void SteamMatchmaking_OnLobbyInvite(Friend _steamId, Lobby _lobby)
     {
         Debug.Log($"Invite from {_steamId.Name}");
+        pendingInvites[_steamId.Id.Value] = (_lobby, Time.realtimeSinceStartup);
+
+        if (MessageBox.Instance != null)
+        {
+            MessageBox.Informate($"{_steamId.Name} invited you to their party. Click them in your friends list to join.",
+                UnityEngine.Color.yellow, MessagePriority.High, 6f);
+        }
+        else if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayNotification();
+        }
+    }
+
+    /// <summary>True while an in-game invite from this friend is still fresh.</summary>
+    public bool HasInviteFrom(SteamId friend)
+    {
+        if (!pendingInvites.TryGetValue(friend.Value, out var invite))
+        {
+            return false;
+        }
+
+        if (Time.realtimeSinceStartup - invite.receivedAt > InviteLifetimeSeconds)
+        {
+            pendingInvites.Remove(friend.Value);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Joins the party this friend invited us to. A lobby we're sitting in alone is left
+    /// first; callers must not use this while we share a lobby with someone.</summary>
+    public async void JoinInviteFrom(SteamId friend)
+    {
+        if (!HasInviteFrom(friend))
+        {
+            return;
+        }
+
+        Lobby lobby = pendingInvites[friend.Value].lobby;
+        pendingInvites.Remove(friend.Value);
+
+        if (LobbySaver.instance != null && LobbySaver.instance.currentLobby.HasValue)
+        {
+            Disconnected();
+        }
+
+        await JoinLobbyAsync(lobby);
     }
 
     private void SteamMatchmaking_OnLobbyMemberLeave(Lobby _lobby, Friend _steamId)
     {
         Debug.Log("Member left.");
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.playerLeftClip);
+        }
 
         // The host leaving closes the party. Steam would otherwise just hand lobby ownership to
         // another member, so everyone left behind stayed "in party" together with nobody hosting
@@ -170,6 +242,11 @@ public class GameNetworkManager : MonoBehaviour
     private void SteamMatchmaking_OnLobbyMemberJoined(Lobby _lobby, Friend _steamId)
     {
         Debug.Log("Member joined.");
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.playerJoinedClip);
+        }
     }
 
     private void SteamMatchmaking_OnLobbyEntered(Lobby _lobby)
@@ -276,6 +353,7 @@ public class GameNetworkManager : MonoBehaviour
             if (!lobby.HasValue)
             {
                 Debug.Log("Lobby not found or inaccessible.");
+                ErrorPopup.Show("Couldn't join", "Lobby not found. Check the ID, or the lobby may be full or closed.");
                 return;
             }
 
@@ -309,6 +387,7 @@ public class GameNetworkManager : MonoBehaviour
             if (joinedLobby != RoomEnter.Success)
             {
                 Debug.Log("Failed to join lobby.");
+                ShowJoinFailed(joinedLobby);
             }
             else
             {
@@ -541,8 +620,7 @@ public class GameNetworkManager : MonoBehaviour
         NetworkTransmission.instance.AddMeToDictionaryServerRPC(SteamClient.SteamId, SteamClient.Name, _clientId);
         LobbyManager.instance.myClientId = _clientId;
         
-        bool hasEnoughCoins = Coin.Instance != null && Coin.Instance.amount >= 5;
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, hasEnoughCoins, _clientId);
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(false, _clientId);
         Debug.Log($"Client has connected: {SteamClient.Name}");
 
         if (LobbySaver.instance != null && LobbySaver.instance.currentLobby?.MemberCount >= 6)
@@ -627,7 +705,6 @@ public class GameNetworkManager : MonoBehaviour
 
         PendingGameSceneName = sceneName;
         NetworkManager.Singleton.SceneManager.LoadScene("LoadingScreen", LoadSceneMode.Single);
-        NetworkTransmission.instance.StarGameFeeServerRpc();
     }
     
     #region MapSelection
@@ -697,40 +774,78 @@ public class GameNetworkManager : MonoBehaviour
         }
     }
 
+    // Quick join. It used to pick from Lobbies, which only the lobby browser fills, so it did
+    // nothing unless the browser had been opened first; it also tried full lobbies, never set
+    // currentLobby, and held actionLock across the join, which made StartClient (fired from
+    // OnLobbyEntered, also behind that lock) skip starting the client.
     public async void RandomJoin()
     {
-        await PerformActionWithLock(async () =>
+        if (quickJoining)
         {
-            try
+            return;
+        }
+
+        quickJoining = true;
+        try
+        {
+            if (LobbySaver.instance != null && LobbySaver.instance.currentLobby.HasValue)
             {
-                if (Lobbies.Count == 0)
+                if (LobbySaver.instance.currentLobby.Value.MemberCount > 1)
                 {
-                    Debug.Log("No available lobbies to join.");
+                    ErrorPopup.Show("Quick Join", "Leave your current party before quick joining.");
                     return;
                 }
 
-                int randomIndex = Random.Range(0, Lobbies.Count);
-                RoomEnter result = await Lobbies[randomIndex].Join();
+                // Alone in our own lobby: nothing to keep.
+                Disconnected();
+            }
 
+            if (!await RefreshLobbies(50))
+            {
+                ErrorPopup.Show("Quick Join", "Couldn't reach Steam to look for lobbies. Try again in a moment.");
+                return;
+            }
+
+            List<Lobby> open = Lobbies.FindAll(l => l.MemberCount > 0 && l.MemberCount < l.MaxMembers);
+            for (int i = open.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (open[i], open[j]) = (open[j], open[i]);
+            }
+
+            foreach (Lobby lobby in open)
+            {
+                RoomEnter result = await lobby.Join();
                 if (result != RoomEnter.Success)
                 {
-                    Debug.Log("Failed to join random lobby.");
+                    continue;
                 }
-                else
+
+                if (LobbySaver.instance != null)
                 {
-                    if (LobbyManager.instance == null)
-                    {
-                        Debug.LogError("LobbyManager not found");
-                        return;
-                    }
-                    LobbyManager.instance.ConnectedAsClient();
-                    Debug.Log("Joined Random Lobby");
+                    LobbySaver.instance.currentLobby = lobby;
                 }
+
+                if (LobbyManager.instance != null)
+                {
+                    LobbyManager.instance.ConnectedAsClient();
+                }
+
+                Debug.Log("Joined Random Lobby");
+                return;
             }
-            catch (System.Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        });
+
+            ErrorPopup.Show("Quick Join", open.Count == 0
+                ? "No open lobbies right now. Host one and invite your friends!"
+                : "Every open lobby filled up before you could join. Try again.");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+        finally
+        {
+            quickJoining = false;
+        }
     }
 }

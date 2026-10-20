@@ -118,6 +118,11 @@ public class ErrorPopup : MonoBehaviour
         Root.transform.SetAsLastSibling();
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayError();
+        }
     }
 
     public void Close() => Root.SetActive(false);

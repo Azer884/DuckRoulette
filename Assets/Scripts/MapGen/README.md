@@ -297,5 +297,34 @@ end crashes Blender on a file this size.
   so it comes out of the border wall. It stays level with the ground it was placed on. The rear
   face is measured from the bounds, because the pipe's pivot is at one end.
 * **Loose rocks** use `physicsBody`: convex colliders, a Rigidbody weighted by size, not static.
-  Only the mountain ring is static rock. Physics is local to each client - nothing replicates a
-  pushed rock over the network, so two players can see it in different places.
+  Only the mountain ring is static rock. The rule uses `PhysicsRock` and `PhysicsRock_Small`,
+  which carry `NetworkObject`, `NetworkTransform` and `NetworkRigidbody` and are registered in
+  `DefaultNetworkPrefabs`, so the server simulates each rock and every client sees it in the same
+  place. Every Rigidbody prop the map spawns must be networked the same way; the populator warns
+  when a `physicsBody` rule spawns a prefab without a `NetworkObject`.
+
+## Chunk streaming
+
+`MapChunkStreamer` (on `MapGen`) sorts the generated map into a grid of `chunkCells`-wide chunks
+after every generate, and each peer culls them for its own camera:
+
+* **Props** (`Props`, `RiverProps`) are hidden completely beyond `viewDistance` (with
+  `hysteresis` against flicker), and drawn shadows-only when outside the view.
+* **Terrain and mountains** are drawn shadows-only when outside the view and never hidden by
+  distance, since that would open holes in the ground and gaps in the skyline. With a streamer
+  present the terrain is drawn as one mesh per chunk (`Terrain/TerrainChunk_x_y`), cut by
+  `MeshGenerator.SplitIntoChunks`, which copies normals and UVs from the whole mesh so the pieces
+  meet without a seam.
+
+Shadows-only keeps a mountain or tree behind the player casting its shadow into view. The test
+runs in `RenderPipelineManager.beginCameraRendering` for the main camera, after the camera has
+moved for the frame and right before it is drawn. An earlier version tested on a 0.2 s timer and
+lagged fast camera turns, so chunks visibly popped in at the screen edge. The Scene view shows the
+game camera's result, so the streaming can be watched there; select `MapGen` to see chunk gizmos
+(green drawn, yellow shadows-only, red hidden).
+
+Only renderers, lights and tree wind sway are switched off. Colliders and GameObjects are never
+disabled: the terrain's `MeshCollider` stays one whole-map mesh on the `Terrain` object itself,
+separate from its render pieces, so nothing resting on a hidden chunk can fall through it (and
+`PlayerSpawnPlacer` still finds it there). Props with a Rigidbody and networked props are never
+chunked, since they move. The water plane spans the whole map and is left alone.

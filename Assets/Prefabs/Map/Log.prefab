@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5515247485897271748}
+  - component: {fileID: 3141495749352636150}
   m_Layer: 0
   m_Name: Log
   m_TagString: Untagged
@@ -32,6 +33,22 @@ Transform:
   - {fileID: 1713897940999632650}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3141495749352636150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2506170243202860004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 2
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &8551540724148861698
 GameObject:
   m_ObjectHideFlags: 0

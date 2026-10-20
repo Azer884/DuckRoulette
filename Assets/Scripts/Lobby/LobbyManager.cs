@@ -24,6 +24,14 @@ public class LobbyManager : MonoBehaviour
     public GameObject lobbiesBox, lobbiesObj;
 
     public Dictionary<ulong, GameObject> playerInfo = new();
+
+    // Last ready state of each client, kept apart from the cards. A card is created only after its
+    // avatar download finishes, so a state that arrived first used to be dropped; and a player who
+    // joined after someone readied never got that state at all. The host replays this to every
+    // newcomer (UpdateClients), and each card picks its state up when it is created.
+    private readonly Dictionary<ulong, bool> readyStates = new();
+    private static readonly Color ReadyColor = new(0.1686275f, 1f, 0.05098039f);
+    private static readonly Color NotReadyColor = new(1f, 0.2588235f, 0.03137255f);
     public Transform playerObjContainer;
 
     [SerializeField]
@@ -208,6 +216,11 @@ public class LobbyManager : MonoBehaviour
 
     public void SendMessageToChat(string _text, ulong _fromwho, bool _server, bool _private = false)
     {
+        if (!_server && _fromwho != myClientId && SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(SFXManager.Instance.chatMessageClip);
+        }
+
         // Safety checks
         if (messageList == null)
         {
@@ -342,6 +355,7 @@ public class LobbyManager : MonoBehaviour
     public void Disconnected()
     {
         playerInfo.Clear();
+        readyStates.Clear();
         GameObject[] playercards = GameObject.FindGameObjectsWithTag("PlayerCard");
         foreach(GameObject card in playercards)
         {
@@ -376,6 +390,31 @@ public class LobbyManager : MonoBehaviour
             var image = await SteamFriends.GetLargeAvatarAsync(_steamId);
             _pi.profilePic.texture = SteamFriendsManager.GetTextureFromImage(image.Value);
             playerInfo.Add(_cliendId, _pi.gameObject);
+            ApplyReadyState(_cliendId);
+        }
+    }
+
+    public void SetReadyState(ulong clientId, bool ready)
+    {
+        readyStates[clientId] = ready;
+        ApplyReadyState(clientId);
+    }
+
+    private void ApplyReadyState(ulong clientId)
+    {
+        if (!readyStates.TryGetValue(clientId, out bool ready) ||
+            !playerInfo.TryGetValue(clientId, out GameObject card) || card == null)
+        {
+            return;
+        }
+
+        PlayerInfo info = card.GetComponent<PlayerInfo>();
+        info.isReady = ready;
+        info.readyStatus.color = ready ? ReadyColor : NotReadyColor;
+
+        if (isHost)
+        {
+            CheckIfPlayersAreReady();
         }
     }
 
@@ -390,6 +429,12 @@ public class LobbyManager : MonoBehaviour
             NetworkTransmission.instance.UpdateClientsPlayerInfoClientRPC(_steamId, _steamName, _clientId);
 
         }
+
+        foreach (KeyValuePair<ulong, bool> state in readyStates)
+        {
+            NetworkTransmission.instance.SyncReadyStateClientRPC(state.Key, state.Value);
+        }
+
         CheckIfPlayersAreReady();
     }
 
@@ -410,6 +455,7 @@ public class LobbyManager : MonoBehaviour
         if(found)
         {
             playerInfo.Remove(_key);
+            readyStates.Remove(_key);
         }
         if(_value!= null)
         {
@@ -419,41 +465,42 @@ public class LobbyManager : MonoBehaviour
 
     public void ReadyButton(bool _ready)
     {
-        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, Coin.Instance.amount >= 5 && playerInfo.Count > 1, myClientId);
+        if (SFXManager.Instance != null)
+        {
+            SFXManager.Instance.PlayUI(_ready ? SFXManager.Instance.readyClip : SFXManager.Instance.unreadyClip);
+        }
+
+        NetworkTransmission.instance.IsTheClientReadyServerRPC(_ready, myClientId);
     }
 
     public bool CheckIfPlayersAreReady()
     {
-        bool _ready = false;
+        bool anyReady = false;
+        bool allReady = playerInfo.Count > 0;
 
         foreach(KeyValuePair<ulong,GameObject> _player in playerInfo)
         {
-            if (!(_player.Value.GetComponent<PlayerInfo>().isReady && _player.Value.GetComponent<PlayerInfo>().haveEoughCoins))
+            PlayerInfo info = _player.Value.GetComponent<PlayerInfo>();
+            anyReady |= info.isReady;
+
+            if (!info.isReady)
             {
-                startButton.SetActive(false);
-                mapButton.SetActive(false);
-                if (_player.Value.GetComponent<PlayerInfo>().isReady && !_player.Value.GetComponent<PlayerInfo>().haveEoughCoins)
-                {
-                    if (LobbySaver.instance.currentLobby?.MemberCount > 1)
-                    {
-                        NetworkTransmission.instance.IWishToSendAChatServerRPC(_player.Value.GetComponent<PlayerInfo>().steamName + " Don't have enough money", 0, true);
-                    }
-                    else
-                    {
-                        NetworkTransmission.instance.IWishToSendAChatServerRPC("Not enough players to start the game", 0, true);
-                    }
-                }
-                return false;
-            }
-            else
-            {
-                startButton.SetActive(true);
-                mapButton.SetActive(true);
-                _ready = true;
+                allReady = false;
             }
         }
 
-        return _ready;
+        if (allReady && playerInfo.Count < 2)
+        {
+            allReady = false;
+            if (anyReady)
+            {
+                NetworkTransmission.instance.IWishToSendAChatServerRPC("Not enough players to start the game", 0, true);
+            }
+        }
+
+        startButton.SetActive(allReady);
+        mapButton.SetActive(allReady);
+        return allReady;
     }
 
     public void OpenPrivateChat(ulong targetClientId, string targetName)

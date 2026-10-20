@@ -73,6 +73,13 @@ namespace DuckRoulette.MapGen
         /// <summary>How far above the water surface a footprint must stay, in normalised height.</summary>
         const float WaterMargin = 0.03f;
 
+        /// <summary>Most the ground may already rise or fall under a flattened footprint, in world
+        /// units. More than this and the spot is a cliff edge, not a building site.</summary>
+        const float MaxPadStep = 1.5f;
+
+        /// <summary>Width of the blend ring a flattened pad gets outside the footprint, in cells.</summary>
+        const float PadBlendCells = 2f;
+
         /// <summary>What each rule managed to place on the last run, for reporting.</summary>
         public Dictionary<string, int> LastCounts { get; private set; } = new Dictionary<string, int>();
 
@@ -238,7 +245,17 @@ namespace DuckRoulette.MapGen
 
                 if (rule.flattenRadius > 0f)
                 {
-                    TerrainShaper.Flatten(heightMap, point, rule.flattenRadius, 0.6f);
+                    // The level part of the pad has to cover the whole footprint. It used to be
+                    // flattenRadius with a 60% falloff, so only the middle was level and the rim of
+                    // a wide prop (an igloo on the bluff's edge) hung over the original drop.
+                    float pad = Mathf.Max(rule.flattenRadius, radius);
+                    if (HeightRange(heightMap, point, pad) * heightMultiplier > MaxPadStep)
+                    {
+                        continue;
+                    }
+
+                    float outer = pad + PadBlendCells;
+                    TerrainShaper.Flatten(heightMap, point, outer, PadBlendCells / outer);
                 }
 
                 // The base height is taken before any wall snap, so a snapped prop stays level with
@@ -334,6 +351,15 @@ namespace DuckRoulette.MapGen
             bool networked = MapSpawner.IsNetworked(instance);
             if (rule.physicsBody)
             {
+                // A loose body that is not networked is simulated separately on every peer, so
+                // one push puts it in a different place for each player.
+                if (!networked && Application.isPlaying)
+                {
+                    Debug.LogWarning($"MapPopulator: '{rule.label}' spawned '{prefab.name}' as a physics " +
+                                     "body without a NetworkObject. It will not be synced; give the " +
+                                     "prefab NetworkObject, NetworkTransform and NetworkRigidbody.");
+                }
+
                 MakePhysical(instance, rule.physicsDensity);
             }
             else if (!networked)
@@ -387,6 +413,35 @@ namespace DuckRoulette.MapGen
             int x = Mathf.Clamp(Mathf.RoundToInt(point.x), 0, regionMap.GetLength(0) - 1);
             int y = Mathf.Clamp(Mathf.RoundToInt(point.y), 0, regionMap.GetLength(1) - 1);
             return regionMap[x, y];
+        }
+
+        /// <summary>Highest minus lowest ground inside a disc, in normalised height.</summary>
+        static float HeightRange(float[,] heightMap, Vector2 centre, float radius)
+        {
+            int width = heightMap.GetLength(0);
+            int height = heightMap.GetLength(1);
+            int minX = Mathf.Max(0, Mathf.FloorToInt(centre.x - radius));
+            int maxX = Mathf.Min(width - 1, Mathf.CeilToInt(centre.x + radius));
+            int minY = Mathf.Max(0, Mathf.FloorToInt(centre.y - radius));
+            int maxY = Mathf.Min(height - 1, Mathf.CeilToInt(centre.y + radius));
+
+            float low = float.MaxValue;
+            float high = float.MinValue;
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    if (Vector2.Distance(new Vector2(x, y), centre) > radius)
+                    {
+                        continue;
+                    }
+
+                    low = Mathf.Min(low, heightMap[x, y]);
+                    high = Mathf.Max(high, heightMap[x, y]);
+                }
+            }
+
+            return high >= low ? high - low : 0f;
         }
 
         /// <summary>

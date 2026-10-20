@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -10,6 +11,12 @@ public class SFXManager : MonoBehaviour
 
     // Buttons already given a click sound, so re-scanning a scene never double-hooks one.
     private readonly HashSet<Button> hookedButtons = new();
+    private readonly HashSet<Toggle> hookedToggles = new();
+
+    // Buttons instantiated at runtime (friend rows, popups, spawned HUDs) are picked up by a
+    // periodic rescan, so nothing has to remember to call RegisterButton.
+    private const float ButtonRescanInterval = 0.5f;
+    private float nextButtonRescan;
 
     [Header("Mixer")]
     public AudioMixerGroup sfxMixerGroup;
@@ -21,6 +28,31 @@ public class SFXManager : MonoBehaviour
     public AudioClip buttonHover;
     public AudioClip toggleOn;
     public AudioClip toggleOff;
+
+    [Header("Notifications")]
+    // Played by ErrorPopup whenever an error window opens.
+    public AudioClip errorClip;
+    // Played for things that want the player's attention: MessageBox notices, team-up requests,
+    // Steam lobby invites.
+    public AudioClip notificationClip;
+
+    [Header("Lobby")]
+    // Chat line from another player, public or whisper. Own and system lines stay silent.
+    public AudioClip chatMessageClip;
+    public AudioClip playerJoinedClip;
+    public AudioClip playerLeftClip;
+    // Local player pressing Ready / Not Ready.
+    public AudioClip readyClip;
+    public AudioClip unreadyClip;
+    // Friend invite went through. Falls back to taskCompleteClip when unset.
+    public AudioClip inviteSentClip;
+    // Hat / accessory / shirt cycled in the customisation menu.
+    public AudioClip cosmeticChangeClip;
+
+    [Header("Gameplay HUD")]
+    public AudioClip parryClip;
+    // Played with the storm warning banner.
+    public AudioClip stormWarningClip;
 
     [Header("Slap")]
     public AudioClip slapClip;
@@ -86,6 +118,10 @@ public class SFXManager : MonoBehaviour
 
     [SerializeField] private AudioSource uiSource;
 
+    [SerializeField, Range(0f, 0.3f), Tooltip("Random pitch offset each UI sound gets, so repeated " +
+        "clicks don't sound identical.")]
+    private float uiPitchJitter = 0.06f;
+
     private void Awake()
     {
         if (Instance == null)
@@ -148,18 +184,50 @@ public class SFXManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        hookedButtons.RemoveWhere(button => button == null);
+        hookedToggles.RemoveWhere(toggle => toggle == null);
         HookAllButtons();
     }
 
-    // Wires every Button already in the loaded scene(s) to play the click sound.
-    // Buttons created later at runtime (e.g. an instantiated lobby list row) need
-    // RegisterButton(button) called on them once, right after Instantiate.
+    private void Update()
+    {
+        if (Time.unscaledTime < nextButtonRescan) return;
+
+        nextButtonRescan = Time.unscaledTime + ButtonRescanInterval;
+        HookAllButtons();
+    }
+
+    // Wires every Button in the loaded scene(s) to play the click sound. Inactive ones are
+    // included: menus, tabs and popups hidden at load used to be skipped and stayed silent.
     public void HookAllButtons()
     {
-        foreach (Button button in FindObjectsByType<Button>(FindObjectsSortMode.None))
+        foreach (Button button in FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             RegisterButton(button);
         }
+
+        foreach (Toggle toggle in FindObjectsByType<Toggle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            RegisterToggle(toggle);
+        }
+    }
+
+    public void RegisterToggle(Toggle toggle)
+    {
+        if (toggle == null || hookedToggles.Contains(toggle)) return;
+
+        hookedToggles.Add(toggle);
+        toggle.onValueChanged.AddListener(isOn =>
+        {
+            // isOn is also set from code (settings loading, tab groups), which must not click.
+            // A toggle the player actually used is the selected object.
+            if (EventSystem.current == null || EventSystem.current.currentSelectedGameObject != toggle.gameObject) return;
+            // In a group the old tab switching off is not a second click.
+            if (!isOn && toggle.group != null) return;
+
+            if (isOn) PlayToggleOn();
+            else PlayToggleOff();
+        });
     }
 
     public void RegisterButton(Button button)
@@ -178,6 +246,7 @@ public class SFXManager : MonoBehaviour
     public void PlayUI(AudioClip clip)
     {
         if (clip == null) return;
+        uiSource.pitch = 1f + Random.Range(-uiPitchJitter, uiPitchJitter);
         uiSource.PlayOneShot(clip);
     }
 
@@ -186,6 +255,8 @@ public class SFXManager : MonoBehaviour
     public void PlayButtonHover() => PlayUI(buttonHover);
     public void PlayToggleOn() => PlayUI(toggleOn);
     public void PlayToggleOff() => PlayUI(toggleOff);
+    public void PlayError() => PlayUI(errorClip);
+    public void PlayNotification() => PlayUI(notificationClip);
 
     // Spawns a temporary positional AudioSource for a 3D one-shot, matching the old
     // per-script PlayLocalOneShot implementations this manager replaces.

@@ -57,6 +57,13 @@ public class TaskOutlineFeature : ScriptableRendererFeature
             return;
         }
 
+        // Overlay cameras in the stack (the Player prefab's overlay camera) share the base camera's
+        // image but not its projection, so drawing here too would add a second, offset ring.
+        if (renderingData.cameraData.renderType == CameraRenderType.Overlay)
+        {
+            return;
+        }
+
         if (maskMaterial == null && maskShader != null)
         {
             maskMaterial = CoreUtils.CreateEngineMaterial(maskShader);

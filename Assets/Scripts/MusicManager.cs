@@ -11,7 +11,24 @@ public class MusicManager : MonoBehaviour
     [SerializeField] private AudioMixer audioMixer;
     [SerializeField] private float fadeDuration = 2f; // Duration for the crossfade effect
     private AudioSource musicSource;
-    [SerializeField] private AudioClip[] musicClips; // Array to hold different music clips
+    [SerializeField, Tooltip("Element 0 is the lobby song. Every other element is an in-game track: " +
+        "the boombox plays them in this order and the Change Music key cycles through them.")]
+    private AudioClip[] musicClips;
+
+    private AudioClip[] gameTracks;
+
+    /// <summary>The in-game tracks (every music clip except the lobby one). The boombox plays these.</summary>
+    public AudioClip[] GameTracks
+    {
+        get
+        {
+            if (gameTracks == null)
+            {
+                gameTracks = musicClips != null && musicClips.Length > 1 ? musicClips[1..] : Array.Empty<AudioClip>();
+            }
+            return gameTracks;
+        }
+    }
 
     [Header("Game scene: music comes from the boombox")]
     [SerializeField, Tooltip("Seconds for the music to go from flat 2D to positional 3D, still at " +
@@ -22,21 +39,28 @@ public class MusicManager : MonoBehaviour
     [SerializeField, Tooltip("Seconds to blend between 3D (at the box) and 2D (everywhere) when a " +
         "map-wide moment starts or ends.")]
     private float broadcastBlendSeconds = 2f;
-    [SerializeField] private float minDistance = 4f;
-    [SerializeField] private float maxDistance = 45f;
+    [SerializeField, Tooltip("Full volume within this many meters of the boombox.")]
+    private float minDistance = 4f;
+    [SerializeField, Tooltip("Silent past this many meters from the boombox.")]
+    private float maxDistance = 30f;
+    [SerializeField, Tooltip("How fast the music fades between min and max distance. 1 = linear, " +
+        "higher drops off sooner, so it is only loud close to the box.")]
+    private float falloffPower = 2f;
     [SerializeField] private float trackCrossfadeSeconds = 1f;
 
     [Header("Behind walls (same effect as proximity voice chat)")]
-    [SerializeField, Tooltip("Anything on these layers between you and the boombox muffles it.")]
+    [SerializeField, Tooltip("Layers that can block the boombox. What each object does to the sound " +
+        "comes from its SoundOccluder, or is guessed from its collider when it has none.")]
     private LayerMask wallLayerMask = 1; // Default
     [SerializeField] private float muffledCutoff = 448f;
-    [SerializeField] private float muffledVolume = 0.5f;
-    [SerializeField, Tooltip("Seconds to ease in/out of the muffled sound when a wall comes between.")]
-    private float muffleBlendSeconds = 0.25f;
+    [SerializeField, Tooltip("Roughly how many seconds the muffle takes to fade in or out.")]
+    private float muffleBlendSeconds = 0.3f;
+    [SerializeField, Tooltip("Seconds between occlusion checks. The filter still eases every frame.")]
+    private float muffleCheckInterval = 0.1f;
 
-    private AudioLowPassFilter lowPass;
-    private AudioReverbFilter reverb;
-    private float muffle; // 0 = clear line to the box, 1 = fully behind a wall
+    private OcclusionFilter occlusion;
+    private SoundOcclusion.Amount occlusionTarget;
+    private float nextOcclusionCheck;
     private bool nextTrackRequested;
 
     // Volume the fades drive; LateUpdate combines it with the behind-a-wall muffle.
@@ -61,12 +85,7 @@ public class MusicManager : MonoBehaviour
             baseVolume = musicSource.volume;
             fadeLevel = baseVolume;
 
-            lowPass = GetComponent<AudioLowPassFilter>();
-            if (lowPass == null) lowPass = gameObject.AddComponent<AudioLowPassFilter>();
-            reverb = GetComponent<AudioReverbFilter>();
-            if (reverb == null) reverb = gameObject.AddComponent<AudioReverbFilter>();
-            reverb.reverbPreset = AudioReverbPreset.Room;
-            SetMuffle(0f);
+            occlusion = new OcclusionFilter(gameObject, muffledCutoff);
         }
         else
         {
@@ -119,9 +138,7 @@ public class MusicManager : MonoBehaviour
         followedBox = box;
         box.SetDrivenBy(musicSource);
 
-        musicSource.rolloffMode = AudioRolloffMode.Linear;
-        musicSource.minDistance = minDistance;
-        musicSource.maxDistance = maxDistance;
+        ApplyRolloff();
         musicSource.dopplerLevel = 0f;
 
         if (box.CurrentClip != null && box.CurrentClip != musicSource.clip)
@@ -163,30 +180,53 @@ public class MusicManager : MonoBehaviour
         followRoutine = StartCoroutine(FollowBoombox());
     }
 
-    // Same as proximity voice: with a wall between you and the box the music gets quieter and
-    // muffled. Map-wide (2D) moments aren't muffled - the music is everywhere then.
-    private void UpdateMuffle(BumBox box)
+    // Full volume up to minDistance, then a curve that drops quickly and reaches silence at
+    // maxDistance. A plain linear fade left the music clearly audible most of the way across the map.
+    private void ApplyRolloff()
     {
-        bool blocked = false;
-        if (musicSource.spatialBlend > 0.5f)
+        float max = Mathf.Max(minDistance + 0.1f, maxDistance);
+        float min = Mathf.Clamp(minDistance, 0f, max - 0.1f);
+
+        const int Samples = 12;
+        Keyframe[] keys = new Keyframe[Samples + 1];
+        for (int i = 0; i <= Samples; i++)
         {
-            Vector3 from = ListenerPosition();
-            Vector3 to = box.transform.position + Vector3.up * 0.3f;
-            Vector3 dir = to - from;
-            float distance = dir.magnitude;
-            blocked = distance > 0.01f && Physics.Raycast(from, dir / distance, distance, wallLayerMask, QueryTriggerInteraction.Ignore);
+            float distance = Mathf.Lerp(min, max, i / (float)Samples);
+            float remaining = 1f - Mathf.InverseLerp(min, max, distance);
+            keys[i] = new Keyframe(distance / max, Mathf.Pow(remaining, Mathf.Max(0.01f, falloffPower)));
         }
 
-        float target = blocked ? 1f : 0f;
-        SetMuffle(Mathf.MoveTowards(muffle, target, Time.deltaTime / Mathf.Max(0.01f, muffleBlendSeconds)));
+        AnimationCurve curve = new(keys);
+        for (int i = 0; i < keys.Length; i++)
+        {
+            curve.SmoothTangents(i, 0f);
+        }
+
+        musicSource.rolloffMode = AudioRolloffMode.Custom;
+        musicSource.minDistance = min;
+        musicSource.maxDistance = max;
+        musicSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curve);
     }
 
-    private void SetMuffle(float amount)
+    // Same as proximity voice: what stands between you and the box muffles and quiets the music,
+    // by what it is made of. Map-wide (2D) moments aren't muffled - the music is everywhere then.
+    private void UpdateMuffle(BumBox box)
     {
-        muffle = amount;
-        lowPass.enabled = amount > 0.001f;
-        lowPass.cutoffFrequency = Mathf.Lerp(22000f, muffledCutoff, amount);
-        reverb.enabled = amount > 0.5f;
+        if (musicSource.spatialBlend <= 0.5f)
+        {
+            occlusionTarget = SoundOcclusion.Amount.Clear;
+        }
+        else if (Time.time >= nextOcclusionCheck)
+        {
+            nextOcclusionCheck = Time.time + muffleCheckInterval;
+            AudioListener listener = FindListener();
+            Transform listenerRoot = listener != null ? listener.transform.root : null;
+            Vector3 ears = listener != null ? listener.transform.position : transform.position;
+            occlusionTarget = SoundOcclusion.Evaluate(ears, box.transform.position + Vector3.up * 0.3f,
+                wallLayerMask, listenerRoot, box.transform);
+        }
+
+        occlusion.Step(occlusionTarget, muffleBlendSeconds, Time.deltaTime);
     }
 
     // The host moves the box on to its next song when the current one ends; every player follows
@@ -231,13 +271,27 @@ public class MusicManager : MonoBehaviour
 
         musicSource.spatialBlend = 0f;
         transform.localPosition = Vector3.zero;
-        SetMuffle(0f);
+        occlusionTarget = SoundOcclusion.Amount.Clear;
+        occlusion.Set(SoundOcclusion.Amount.Clear);
         fadeLevel = baseVolume;
+    }
+
+    private AudioListener cachedListener;
+
+    // The listener moves with the local player and changes on respawn/scene load, so it is
+    // cached until it goes away or is disabled instead of searched for every frame.
+    private AudioListener FindListener()
+    {
+        if (cachedListener == null || !cachedListener.isActiveAndEnabled)
+        {
+            cachedListener = FindFirstObjectByType<AudioListener>();
+        }
+        return cachedListener;
     }
 
     private Vector3 ListenerPosition()
     {
-        AudioListener listener = FindFirstObjectByType<AudioListener>();
+        AudioListener listener = FindListener();
         return listener != null ? listener.transform.position : transform.position;
     }
 
@@ -319,7 +373,7 @@ public class MusicManager : MonoBehaviour
     {
         if (musicSource != null && this == Instance)
         {
-            musicSource.volume = fadeLevel * Mathf.Lerp(1f, muffledVolume, muffle);
+            musicSource.volume = fadeLevel * occlusion.VolumeMultiplier;
         }
     }
 

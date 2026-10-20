@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 240965796073741467}
   - component: {fileID: 6850253318740075155}
   - component: {fileID: 7992167707416195227}
+  - component: {fileID: 1786146050410853370}
   m_Layer: 0
   m_Name: Rock
   m_TagString: Untagged
@@ -113,3 +114,19 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -561946047348813703, guid: 13ee00534ef55b440add704a3b367230, type: 3}
+--- !u!114 &1786146050410853370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616440189193386292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 1
+  customValues: 0
+  muffle: 1
+  dampen: 0.5

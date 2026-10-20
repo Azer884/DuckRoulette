@@ -1336,6 +1336,7 @@ GameObject:
   - component: {fileID: 3357915466750702050}
   - component: {fileID: 4757105950862025830}
   - component: {fileID: 2008990118884778573}
+  - component: {fileID: 1078108238813822231}
   m_Layer: 0
   m_Name: Truck
   m_TagString: Untagged
@@ -1404,7 +1405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3758485790
+  GlobalObjectIdHash: 3192626476
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1451,9 +1452,9 @@ MonoBehaviour:
   SyncRotAngleX: 1
   SyncRotAngleY: 1
   SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
@@ -1571,6 +1572,9 @@ MonoBehaviour:
   steerResponse: 10
   grip: 9
   driftGrip: 0.5
+  driftOversteer: 9
+  driftWobble: 200
+  driftSteerControl: 0.3
   driftSteerMultiplier: 1.6
   minDriftSpeed: 7
   driftEnterRate: 5
@@ -1608,6 +1612,22 @@ MonoBehaviour:
   bumpVfxLifetime: 1.5
   explosionVfxPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
   explosionVfxLifetime: 3
+--- !u!114 &1078108238813822231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7758335709640026110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 3
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &8118616571924380904
 GameObject:
   m_ObjectHideFlags: 0

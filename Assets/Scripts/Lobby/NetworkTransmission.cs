@@ -215,51 +215,29 @@ public class NetworkTransmission : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void IsTheClientReadyServerRPC(bool _ready, bool haveEoughCoins, ulong _clientId, ServerRpcParams serverRpcParams = default)
+    public void IsTheClientReadyServerRPC(bool _ready, ulong _clientId, ServerRpcParams serverRpcParams = default)
     {
-        // A client may only set its own ready state (_clientId used to be trusted). haveEoughCoins
-        // is still self-reported - coins are client-side Steam Cloud data.
-        AClientMightBeReadyClientRPC(_ready, haveEoughCoins, serverRpcParams.Receive.SenderClientId);
+        // A client may only set its own ready state (_clientId used to be trusted).
+        AClientMightBeReadyClientRPC(_ready, serverRpcParams.Receive.SenderClientId);
     }
 
     [ClientRpc]
-    private void AClientMightBeReadyClientRPC(bool _ready, bool haveEoughCoins, ulong _clientId)
+    private void AClientMightBeReadyClientRPC(bool _ready, ulong _clientId)
     {
-        foreach(KeyValuePair<ulong,GameObject> player in LobbyManager.instance.playerInfo)
+        LobbyManager.instance.SetReadyState(_clientId, _ready);
+    }
+
+    // Host replay of every known ready state, sent when someone joins so they see who readied
+    // before them.
+    [ClientRpc]
+    public void SyncReadyStateClientRPC(ulong _clientId, bool _ready)
+    {
+        if (IsServer)
         {
-            if(player.Key == _clientId)
-            {
-                player.Value.GetComponent<PlayerInfo>().isReady = _ready;
-                player.Value.GetComponent<PlayerInfo>().haveEoughCoins = haveEoughCoins;
-                
-                if (_ready)
-                {
-                    player.Value.GetComponent<PlayerInfo>().readyStatus.color = new Color(0.1686275f, 1f, 0.05098039f);
-                }
-                else
-                {
-                    player.Value.GetComponent<PlayerInfo>().readyStatus.color = new Color(1f, 0.2588235f, 0.03137255f);
-                }
-
-                
-                if (NetworkManager.Singleton.IsHost)
-                {
-                    Debug.Log(LobbyManager.instance.CheckIfPlayersAreReady());
-                }
-            }
+            return;
         }
-    }
 
-    [ServerRpc]
-    public void StarGameFeeServerRpc()
-    {
-        StarGameFeeClientRpc();
-    }
-
-    [ClientRpc]
-    public void StarGameFeeClientRpc()
-    {
-        Coin.Instance.UpdateCoinAmount(-5);
+        LobbyManager.instance.SetReadyState(_clientId, _ready);
     }
 
     [ClientRpc]

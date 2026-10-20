@@ -1017,6 +1017,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1805374489700407672}
+  - component: {fileID: 1278767605617196769}
   m_Layer: 0
   m_Name: Cabin
   m_TagString: Untagged
@@ -1050,6 +1051,22 @@ Transform:
   - {fileID: 1568837179935774917}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1278767605617196769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5086308867562971890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7bcaf53a93e8854c91ddea67ee7dae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundOccluder
+  type: 0
+  customValues: 0
+  muffle: 1
+  dampen: 0.5
 --- !u!1 &6333207400327729676
 GameObject:
   m_ObjectHideFlags: 0
