@@ -342,6 +342,10 @@ MonoBehaviour:
   maxPitch: 360
   causeOfLeaving: Presure
   hideDuration: 10
+  spotType: Log
+  refillDuration: 30
+  minHideTimeToEnter: 2
+  barColor: {r: 0.251, g: 0.812, b: 0, a: 1}
   holderId: -1
 --- !u!65 &712897018784502321
 BoxCollider:
@@ -386,7 +390,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00216
+      value: -0.0004
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalPosition.y
@@ -398,23 +402,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.5
+      value: -0.70710677
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.5
+      value: 0.70710677
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d1f79c4dfa3e1614e8490d4274a9e829, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y

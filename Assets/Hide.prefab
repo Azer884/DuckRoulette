@@ -123,6 +123,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &601637825244925332
 BoxCollider:
@@ -163,6 +164,7 @@ MonoBehaviour:
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  <InScenePlaced>k__BackingField: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
@@ -183,9 +185,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HidingSpot
   ShowTopMostFoldoutHeaderGroup: 1
-  animations: []
+  viewType: 0
+  hidingCamera: {fileID: 0}
+  hidingModel: {fileID: 0}
+  thirdPersonLookTarget: {fileID: 0}
+  minYaw: -60
+  maxYaw: 60
+  minPitch: -40
+  maxPitch: 40
   causeOfLeaving: 
   hideDuration: 10
-  hidingSpot: {fileID: 2388887163439530431}
-  leavingSpot: {fileID: 3010685108231050111}
+  spotType: Hide
+  refillDuration: 30
+  minHideTimeToEnter: 2
+  barColor: {r: 0.251, g: 0.812, b: 0, a: 1}
   holderId: -1

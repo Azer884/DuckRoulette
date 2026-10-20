@@ -136,6 +136,9 @@ MonoBehaviour:
   maxPitch: 40
   causeOfLeaving: Radiation
   hideDuration: 10
+  spotType: Pipe
+  refillDuration: 30
+  minHideTimeToEnter: 2
   barColor: {r: 0.251, g: 0.812, b: 0, a: 1}
   holderId: -1
 --- !u!1 &2259649261540452183

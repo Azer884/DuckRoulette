@@ -32,7 +32,18 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     public float maxPitch = 40f;
 
     public string causeOfLeaving;
+    [Tooltip("Total hide time per spot type - every spot sharing spotType drains the same " +
+        "budget, so hopping between logs doesn't reset it.")]
     public float hideDuration = 10f;
+
+    [Header("Hide budget")]
+    [Tooltip("Spots with the same type share one hide budget. Leave empty to use the object's " +
+        "name (minus \"(Clone)\"/\" (1)\" suffixes).")]
+    [SerializeField] private string spotType;
+    [Tooltip("Seconds for an empty budget to refill completely while not hiding in this type.")]
+    public float refillDuration = 30f;
+    [Tooltip("Budget seconds needed before this spot type can be entered again.")]
+    public float minHideTimeToEnter = 2f;
     [Tooltip("Tint HidingSpotTimerUI's bar while this spot is occupied, so a log and a pipe " +
         "door don't have to share one colour.")]
     public Color barColor = new(0.251f, 0.812f, 0f, 1f);
@@ -40,7 +51,59 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     public bool IsHeld { get; set; }
     public bool IsPickable { get; set; } = false;
     public string InteractionPrompt => "Hide";
+    public bool CanInteract => !IsHeld && GetBudget() >= Mathf.Min(minHideTimeToEnter, hideDuration);
     public int holderId = -1;
+
+    // The local player's remaining hide seconds per spot type. Only the local hider's own client
+    // runs the countdown (see StartCountDown), so the budget lives there too. Refill is computed
+    // lazily from the time it was last written instead of ticking every spot every frame.
+    private struct HideBudget
+    {
+        public float remaining;
+        public float stamp;
+        public bool draining;
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<string, HideBudget> Budgets = new();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetBudgets() => Budgets.Clear();
+
+    private string TypeKey
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(spotType))
+            {
+                return spotType;
+            }
+
+            string key = name.Replace("(Clone)", "");
+            int suffix = key.IndexOf(" (");
+            return (suffix >= 0 ? key.Substring(0, suffix) : key).Trim();
+        }
+    }
+
+    private float GetBudget()
+    {
+        if (!Budgets.TryGetValue(TypeKey, out HideBudget budget))
+        {
+            return hideDuration;
+        }
+
+        if (budget.draining)
+        {
+            return budget.remaining;
+        }
+
+        float refillRate = refillDuration > 0f ? hideDuration / refillDuration : float.MaxValue;
+        return Mathf.Min(hideDuration, budget.remaining + (Time.time - budget.stamp) * refillRate);
+    }
+
+    private void SetBudget(float remaining, bool draining)
+    {
+        Budgets[TypeKey] = new HideBudget { remaining = Mathf.Max(0f, remaining), stamp = Time.time, draining = draining };
+    }
 
     /// <summary>The hiding spot the local client is currently inside, or null. Read by
     /// HidingSpotTimerUI - this is the only hiding spot whose countdown the local player's own
@@ -328,6 +391,8 @@ public class HidingSpot : NetworkBehaviour, IInteractable
         lookAction = null;
         lookPivot = null;
 
+        StopCountDown();
+
         if (LocalActive == this)
         {
             LocalActive = null;
@@ -452,19 +517,34 @@ public class HidingSpot : NetworkBehaviour, IInteractable
     private void StartCountDown()
     {
         LocalActive = this;
-        RemainingHideTime = hideDuration;
+        RemainingHideTime = GetBudget();
+        SetBudget(RemainingHideTime, draining: true);
+        StopAllCoroutines();
         StartCoroutine(CountDown());
+    }
+
+    // Leaving early (E, shot, round end) keeps whatever was left and starts refilling from there.
+    private void StopCountDown()
+    {
+        if (!Budgets.TryGetValue(TypeKey, out HideBudget budget) || !budget.draining)
+        {
+            return;
+        }
+
+        StopAllCoroutines();
+        SetBudget(RemainingHideTime, draining: false);
     }
 
     private IEnumerator CountDown()
     {
-        float elapsed = 0f;
-        while (elapsed < hideDuration)
+        while (RemainingHideTime > 0f)
         {
-            elapsed += Time.deltaTime;
-            RemainingHideTime = Mathf.Max(0f, hideDuration - elapsed);
+            RemainingHideTime = Mathf.Max(0f, RemainingHideTime - Time.deltaTime);
+            SetBudget(RemainingHideTime, draining: true);
             yield return null;
         }
+
+        SetBudget(0f, draining: false);
 
         if (LocalActive == this)
         {
